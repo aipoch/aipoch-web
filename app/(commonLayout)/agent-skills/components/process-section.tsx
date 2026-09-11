@@ -31,7 +31,7 @@ export const ProcessSection = () => {
             </p>
           </div>
           <p className="hidden shrink-0 font-mono text-[11px] leading-[1.3] text-[#6B6B66] uppercase sm:block">
-            04 / PROCESS
+            02 / PROCESS
           </p>
         </div>
 

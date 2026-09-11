@@ -31,7 +31,7 @@ export const IntroSection = () => {
             New to Skills?
           </h2>
           <p className="hidden shrink-0 font-mono text-[11px] leading-[1.3] text-[#6B6B66] uppercase sm:block">
-            03 / INTRODUCTION
+            01 / INTRODUCTION
           </p>
         </div>
 

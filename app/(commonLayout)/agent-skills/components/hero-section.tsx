@@ -6,8 +6,8 @@ const heroStats = ['597 ACTIVE SKILLS', '3 CONTRIBUTORS', 'OPEN SOURCE', 'AUDITA
 
 export const HeroSection = () => {
   return (
-    <section className="relative isolate min-h-[calc(620px+var(--nav-h))] overflow-hidden bg-[#f6f3ef]">
-      {/* Match the artwork's warm paper tone and fade its edges to avoid a visible seam. */}
+    <section className="relative isolate min-h-[calc(620px+var(--nav-h))] overflow-hidden bg-[#f6f6f4]">
+      {/* Match the reference canvas and fade the artwork edges to avoid a visible seam. */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         {/* Serve the lossless CDN original without another resize or lossy encoding pass. */}
         <Image
@@ -16,10 +16,10 @@ export const HeroSection = () => {
           aria-hidden="true"
           priority
           unoptimized
-          className="absolute inset-y-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-center opacity-64 [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)] lg:ml-[124px]"
+          className="absolute inset-y-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-center opacity-64 [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)] lg:ml-[69px]"
         />
       </div>
-      <div className="absolute inset-y-0 left-0 -z-10 w-full bg-gradient-to-r from-[#f6f3ef] via-[#f6f3ef]/94 via-[58%] to-transparent lg:w-[62.5%]" />
+      <div className="absolute inset-y-0 left-0 -z-10 w-full bg-gradient-to-r from-[#f6f6f4] via-[#f6f6f4]/94 via-[58%] to-transparent lg:w-[62.5%]" />
 
       {/* Keep all original destinations while matching the quieter editorial hierarchy. */}
       <div className="mx-auto w-full max-w-[1264px] px-5 pt-[calc(var(--nav-h)+80px)] pb-20 sm:px-8 lg:pt-[calc(var(--nav-h)+123.5px)] lg:pb-[123.5px]">
@@ -46,7 +46,7 @@ export const HeroSection = () => {
             <a
               href="https://aipoch.com/skill.md"
               download="skill.md"
-              className="inline-flex h-[46px] w-[170px] items-center justify-center border border-[#111] bg-[#f6f3ef]/78 px-6 text-[14px] font-medium text-[#111] transition-colors hover:bg-white"
+              className="inline-flex h-[46px] w-[170px] items-center justify-center border border-[#111] bg-[#f6f6f4]/78 px-6 text-[14px] font-medium text-[#111] transition-colors hover:bg-white"
             >
               aipoch/skill.md
             </a>
