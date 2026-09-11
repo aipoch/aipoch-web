@@ -1,76 +1,66 @@
-'use client'
-
-import { Step } from './step'
-
 const processSteps = [
   {
     number: '01',
     title: 'DISCOVER',
-    description:
-      'Explore skills your research team can use directly, or that AI agents can autonomously invoke.'
+    description: 'Explore skills for your research task.'
   },
   {
     number: '02',
     title: 'CONNECT',
-    description:
-      'Access structured skill files that can be used by humans or programmatically called by AI agents.'
+    description: 'Access structured skill files.'
   },
   {
     number: '03',
     title: 'OPERATE',
-    description:
-      'Let humans or AI agents execute skills to turn questions into structured scientific results.'
+    description: 'Turn questions into scientific results.'
   }
 ]
 
-export function ProcessSection() {
+export const ProcessSection = () => {
   return (
-    <section className="py-20 lg:py-42">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        {/* Section header */}
-        <div className="mb-16 text-center">
-          <Step index="02" name="Process" className="mb-4 inline-block" />
-          <h2 className="mb-4 text-4xl font-light text-black md:text-6xl">
-            Accelerate <em className="font-serif italic">Discovery</em>
-          </h2>
-          <p className="text-sm text-black/40">
-            From questions to evidence, executed by humans or AI agents.
+    <section className="bg-[#f6f6f4] py-16">
+      <div className="mx-auto max-w-[1264px] px-5 sm:px-8">
+        {/* The process label aligns with the right edge on larger screens. */}
+        <div className="flex items-end justify-between gap-8 lg:h-[86px]">
+          <div>
+            <h2 className="font-[Georgia,serif] text-[42px] font-normal leading-[1.3] tracking-normal sm:text-[48px]">
+              Accelerate Discovery
+            </h2>
+            <p className="mt-2 text-[16px] leading-[1.3] text-[#6B6B66]">
+              From questions to evidence, executed by humans or AI agents.
+            </p>
+          </div>
+          <p className="hidden shrink-0 font-mono text-[11px] leading-[1.3] text-[#6B6B66] uppercase sm:block">
+            04 / PROCESS
           </p>
         </div>
 
-        {/* Process steps */}
-        <div className="relative">
-          {/* Connection line - desktop only */}
-          <div className="absolute left-0 right-0 top-6 hidden lg:block">
-            <div className="mx-auto h-px w-2/3 border-t border-dashed border-black/10"></div>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-3 lg:gap-4">
+        {/* Circles and the shared rule describe one continuous three-step path. */}
+        <div className="relative mt-[60px] lg:h-[220px]">
+          <div
+            aria-hidden="true"
+            className="absolute top-[31px] right-[16.666%] left-[16.666%] hidden border-t border-[#6B6B66] lg:block"
+          />
+          <div className="grid gap-12 lg:grid-cols-3 lg:gap-0">
             {processSteps.map((step, index) => (
-              <div
-                key={step.number}
-                className="relative group flex flex-col items-center text-center"
-              >
-                {/* Step number circle */}
-                <div
-                  className="relative z-10 mb-6 flex size-12 items-center justify-center rounded-full 
-                border-2 border-black/80 bg-white group-hover:bg-primary transition-all duration-300 group-hover:border-primary"
-                >
-                  <span className="text-sm font-medium text-black">{step.number}</span>
+              <div key={step.number} className="relative flex flex-col items-center text-center">
+                <div className="relative z-10 flex size-[62px] items-center justify-center rounded-full border border-[#6B6B66] bg-[#f6f6f4]">
+                  <span className="font-mono text-[11px] leading-[1.3] text-[#6B6B66]">
+                    {step.number}
+                  </span>
                 </div>
-
-                {/* Step content */}
-                <h3 className="mb-2 text-sm font-medium uppercase tracking-wider text-black">
+                <h3 className="mt-[14px] text-[14px] font-semibold leading-[1.3] text-[#111]">
                   {step.title}
                 </h3>
-                <p className="max-w-xs text-sm text-black/60">{step.description}</p>
-
-                {/* Arrow between steps - mobile only */}
-                {index < processSteps.length - 1 && (
-                  <div className="mt-6 flex items-center justify-center lg:hidden">
-                    <div className="h-8 w-px bg-black/10"></div>
-                  </div>
-                )}
+                <p className="mt-[14px] max-w-[310px] text-[13px] leading-[1.3] text-[#6B6B66]">
+                  {step.description}
+                </p>
+                {index < processSteps.length - 1 ? (
+                  <div
+                    aria-hidden="true"
+                    className="mt-6 h-8 border-l border-[#6B6B66] lg:hidden"
+                  />
+                ) : null}
               </div>
             ))}
           </div>

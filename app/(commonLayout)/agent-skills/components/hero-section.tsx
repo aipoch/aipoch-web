@@ -1,66 +1,64 @@
-'use client'
-
-import { ArrowRight, Terminal } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { OpenClawInteractionCard } from './code-card'
+import { staticImage } from '@/lib/staticAsset'
 
-export function HeroSection() {
+const heroStats = ['597 ACTIVE SKILLS', '3 CONTRIBUTORS', 'OPEN SOURCE', 'AUDITABLE']
+
+export const HeroSection = () => {
   return (
-    <section className="relative overflow-hidden bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-size-[60px_60px]">
-      <div className="mx-auto max-w-7xl px-4 py-16 lg:px-8 lg:py-24">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
-          {/* Left content */}
-          <div className="flex flex-col gap-6">
-            <h1 className="text-5xl font-light leading-tight text-black md:text-6xl lg:text-7xl">
-              The Ultimate
-              <br />
-              <span className="bg-[#ecd44c] px-2 py-1 -rotate-2 inline-block w-fit">Skills</span>
-              <br />
-              Hub for <br /> Medical Research
-            </h1>
-            <p className="max-w-lg text-sm text-black/50 leading-relaxed">
-              Explore reusable medical knowledge units that researchers can run directly or that AI agents can invoke programmatically—making scientific work faster and smarter.
-            </p>
+    <section className="relative isolate min-h-[calc(620px+var(--nav-h))] overflow-hidden bg-[#f6f3ef]">
+      {/* Match the artwork's warm paper tone and fade its edges to avoid a visible seam. */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        {/* Serve the lossless CDN original without another resize or lossy encoding pass. */}
+        <Image
+          {...staticImage('agent-skills-hero-3854ac8d.webp')}
+          alt=""
+          aria-hidden="true"
+          priority
+          unoptimized
+          className="absolute inset-y-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 object-contain object-center opacity-64 [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)] lg:ml-[124px]"
+        />
+      </div>
+      <div className="absolute inset-y-0 left-0 -z-10 w-full bg-gradient-to-r from-[#f6f3ef] via-[#f6f3ef]/94 via-[58%] to-transparent lg:w-[62.5%]" />
 
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Link
-                href="/agent-skills/list"
-                className="bg-[#ea580c] text-white px-8 py-4 font-mono text-xs uppercase tracking-widest
-                  hover:bg-orange-700 transition-colors flex items-center
-                  shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none
-                  hover:translate-x-0.5 hover:translate-y-0.5 border border-black"
-              >
-                Explore Skills
-                <ArrowRight className="ml-2 size-4" />
-              </Link>
-              {/*
-              <Link
-                href="/community"
-                className="bg-white text-black px-8 py-4 font-mono text-xs uppercase tracking-widest
-                  hover:bg-gray-50 transition-colors flex items-center
-                  shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none
-                  hover:translate-x-0.5 hover:translate-y-0.5 border border-black"
-              >
-                Join Community
-              </Link>
-              */}
-            </div>
+      {/* Keep all original destinations while matching the quieter editorial hierarchy. */}
+      <div className="mx-auto w-full max-w-[1264px] px-5 pt-[calc(var(--nav-h)+80px)] pb-20 sm:px-8 lg:pt-[calc(var(--nav-h)+123.5px)] lg:pb-[123.5px]">
+        <div className="max-w-[900px]">
+          <p className="mb-[22px] font-mono text-[12px] leading-[1.2] tracking-[0.08em] text-[#6b6b66] uppercase">
+            AIPOCH / AGENT SKILLS
+          </p>
+          <h1 className="font-[Georgia,serif] text-[48px] font-normal leading-[1.02] tracking-normal text-[#111] sm:text-[64px] lg:text-[78px] lg:leading-[79.6px]">
+            The Ultimate Skills Hub
+            <br className="hidden sm:block" /> for Medical Research
+          </h1>
+          <p className="mt-[22px] max-w-[760px] text-[16px] leading-[26px] text-[#6b6b66]">
+            Explore reusable medical knowledge units that researchers can run directly
+            <br className="hidden sm:block" /> or that AI agents can invoke programmatically.
+          </p>
 
-            {/* Install command */}
+          <div className="mt-[22px] flex flex-wrap gap-3">
+            <Link
+              href="/agent-skills/list"
+              className="inline-flex h-[46px] w-[148px] items-center justify-center border border-[#111] bg-[#111] px-6 text-[14px] font-medium text-[#fafafa] transition-colors hover:bg-[#333]"
+            >
+              Explore Skills
+            </Link>
             <a
-              className="mt-4 inline-flex items-center gap-2 bg-black text-white px-5 py-2 text-sm font-mono w-fit"
               href="https://aipoch.com/skill.md"
               download="skill.md"
+              className="inline-flex h-[46px] w-[170px] items-center justify-center border border-[#111] bg-[#f6f3ef]/78 px-6 text-[14px] font-medium text-[#111] transition-colors hover:bg-white"
             >
-              <Terminal className="h-4 w-4 text-white/60" />
-              <span>aipoch/skill.md</span>
+              aipoch/skill.md
             </a>
           </div>
 
-          {/* Right content - Code Card */}
-          <div className="relative lg:px-12">
-            <OpenClawInteractionCard />
+          <div className="mt-[22px] flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] leading-[1.2] text-[#6B6B66]">
+            {heroStats.map((stat, index) => (
+              <span key={stat} className="inline-flex items-center gap-4">
+                {index > 0 ? <span aria-hidden="true">·</span> : null}
+                {stat}
+              </span>
+            ))}
           </div>
         </div>
       </div>

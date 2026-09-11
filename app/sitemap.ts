@@ -7,6 +7,8 @@ import { fetchBlogSitemap } from '@/service/blog'
 import { fetchOpenScienceDownloadManifest } from '@/service/open-science-download'
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
+const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
+
 // Disable cache, regenerate on every request
 export const dynamic = 'force-dynamic'
 
@@ -105,7 +107,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     withReliableLastModified({
       url: `${SITE_DOMAIN}/agent-skills`,
-      lastModified: SEO_PAGE_LAST_MODIFIED,
+      lastModified: AGENT_SKILLS_LAST_MODIFIED,
       changeFrequency: 'weekly',
       priority: 0.8
     }),

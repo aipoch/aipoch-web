@@ -92,9 +92,9 @@ describe('sitemap', () => {
       (route) => route.url === `${siteDomain}/open-science/download`
     )
     const medFlowRoute = routes.find((route) => route.url === `${siteDomain}/medflow`)
+    const agentSkillsRoute = routes.find((route) => route.url === `${siteDomain}/agent-skills`)
     const medSkillAuditRoute = routes.find((route) => route.url === `${siteDomain}/medskillaudit`)
     const skillsListRoute = routes.find((route) => route.url === `${siteDomain}/agent-skills/list`)
-    const skillsHubRoute = routes.find((route) => route.url === `${siteDomain}/agent-skills`)
     const skillDetailRoute = routes.find(
       (route) => route.url === `${siteDomain}/agent-skills/demo-skill`
     )
@@ -126,6 +126,12 @@ describe('sitemap', () => {
     })
     expect(medFlowRoute?.lastModified).toBeUndefined()
 
+    expect(agentSkillsRoute).toMatchObject({
+      changeFrequency: 'weekly',
+      priority: 0.8
+    })
+    expect((agentSkillsRoute?.lastModified as Date).toISOString()).toBe('2026-09-11T00:00:00.000Z')
+
     expect(medSkillAuditRoute).toMatchObject({
       changeFrequency: 'monthly',
       priority: 0.8
@@ -134,7 +140,6 @@ describe('sitemap', () => {
       '2026-09-10T00:00:00.000Z'
     )
     expect((skillsListRoute?.lastModified as Date).toISOString()).toBe('2026-09-10T00:00:00.000Z')
-    expect((skillsHubRoute?.lastModified as Date).toISOString()).toBe('2026-09-10T00:00:00.000Z')
     expect((skillDetailRoute?.lastModified as Date).toISOString()).toBe('2026-09-10T00:00:00.000Z')
     expect((blogRoute?.lastModified as Date).toISOString()).toBe('2026-09-10T00:00:00.000Z')
     expect(guidesIndexRoute).toBeUndefined()

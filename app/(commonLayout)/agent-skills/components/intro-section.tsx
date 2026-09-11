@@ -1,65 +1,58 @@
-'use client'
-
-import { cn } from '@/lib/utils'
-import { Dna, FileSearchCorner, Microscope } from 'lucide-react'
 import Link from 'next/link'
-import { Step } from './step'
 
 const introCards = [
   {
-    icon: Dna,
+    number: '01',
     title: 'What are Skills?',
-    description:
-      'Understand how skills package biomedical expertise into executable units that humans can use — and AI agents can invoke autonomously.',
-    iconColor: 'text-red-500',
-    containerBg: 'bg-red-100/50',
+    description: 'Reusable biomedical expertise.',
     href: '/guides/what-is-a-skill'
   },
   {
-    icon: Microscope,
+    number: '02',
     title: 'Getting Started',
-    description:
-      'Run skills manually in your research workflow, or integrate them with AI agents to execute tasks automatically.',
-    iconColor: 'text-blue-600',
-    containerBg: 'bg-blue-100/50',
+    description: 'Run skills manually or with agents.',
     href: '/guides/get-started-with-skills'
   },
   {
-    icon: FileSearchCorner,
+    number: '03',
     title: 'Create a Skill',
-    description:
-      'Design custom skills that humans can use and that AI agents can invoke directly in real research environments.',
-    iconColor: 'text-emerald-600',
-    containerBg: 'bg-emerald-100/50',
+    description: 'Package your research workflow.',
     href: '/guides/build-your-own-skill'
   }
 ]
 
-export function IntroSection() {
+export const IntroSection = () => {
   return (
-    <section className="py-16 lg:py-24">
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        {/* Section header */}
-        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:gap-8 items-baseline">
-          <Step index="01" name="Introduction" />
-          <h2 className="text-4xl font-light text-black md:text-5xl">New to Skills?</h2>
+    <section className="bg-[#f6f6f4] py-16">
+      <div className="mx-auto max-w-[1264px] px-5 sm:px-8">
+        {/* Section numbering stays secondary to the editorial heading. */}
+        <div className="flex items-end justify-between gap-8 lg:h-[55px]">
+          <h2 className="font-[Georgia,serif] text-[46px] font-normal leading-[1.1] tracking-normal sm:text-[56px]">
+            New to Skills?
+          </h2>
+          <p className="hidden shrink-0 font-mono text-[11px] leading-[1.3] text-[#6B6B66] uppercase sm:block">
+            03 / INTRODUCTION
+          </p>
         </div>
 
-        {/* Cards grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Each card preserves the guide route while adopting the reference card treatment. */}
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:mt-[76px] lg:grid-cols-3 lg:gap-7">
           {introCards.map((card) => (
             <Link
               key={card.title}
               href={card.href}
-              className={cn(
-                'border px-8 py-6 flex flex-col gap-6 border-black/20 rounded-none bg-white/60 hover:border-black/60 transition-colors'
-              )}
+              className="group flex min-h-[190px] flex-col justify-between gap-4 border border-[#736761]/20 bg-white/92 p-5 transition-colors hover:border-[#b9b8b1] hover:bg-white"
             >
-              <div className={cn('flex size-10 items-center justify-center', card.containerBg)}>
-                <card.icon className={cn('size-6', card.iconColor)} />
-              </div>
-              <h3 className="text-base font-medium text-black">{card.title}</h3>
-              <p className="text-sm leading-relaxed text-black/60">{card.description}</p>
+              <span className="font-mono text-[10px] leading-[1.3] text-[#6B6B66]">
+                {card.number}
+              </span>
+              <h3 className="font-[Georgia,serif] text-[21px] font-normal leading-[1.3]">
+                {card.title}
+              </h3>
+              <p className="text-[13px] leading-[1.3] text-[#6B6B66]">{card.description}</p>
+              <span className="font-mono text-[11px] font-bold leading-[1.3] text-[#d08d23] uppercase transition-transform group-hover:translate-x-1">
+                READ GUIDE →
+              </span>
             </Link>
           ))}
         </div>

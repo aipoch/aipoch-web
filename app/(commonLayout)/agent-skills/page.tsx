@@ -33,7 +33,7 @@ const agentSkillsItemListSchema = {
 
 export default function AgentSkillsPage() {
   return (
-    <main className="min-h-screen">
+    <main className="-mt-[var(--nav-h)] min-h-screen bg-[#f6f6f4] text-[#111]">
       <JsonLd data={agentSkillsItemListSchema} />
       <HeroSection />
       <IntroSection />
