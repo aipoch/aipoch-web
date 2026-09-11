@@ -301,14 +301,19 @@ export default async function OpenScienceDownloadPage() {
         </div>
       </section>
 
-      <section className="grid gap-8 border-t-4 border-b border-t-[#f2bd2f] border-b-[#dfdfda] bg-[#efefec] px-5 py-20 sm:px-[3.2vw] lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.7fr)] lg:gap-[7vw] lg:py-24">
+      <section
+        id="automatic-updates"
+        className="grid items-center gap-6 border-t-4 border-b border-t-[#f2bd2f] border-b-[#dfdfda] bg-[#efefec] px-5 py-12 sm:px-10 sm:py-14 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16 lg:px-[max(5.5vw,calc((100vw-1320px)/2))] lg:py-16"
+      >
         <div>
           <p className={kickerClass}>AUTOMATIC UPDATES</p>
-          <h2 className={`${headingClass} mt-6 text-[clamp(36px,4vw,56px)] leading-[1.1]`}>
+          <h2
+            className={`${headingClass} mt-5 max-w-[440px] text-[clamp(30px,2.8vw,40px)] leading-[1.15] text-balance`}
+          >
             How automatic updates work
           </h2>
         </div>
-        <p className="max-w-[650px] self-end text-[16px] leading-[1.7] text-[#10110f]">
+        <p className="max-w-[680px] text-[16px] leading-[1.7] text-[#575853]">
           Packaged stable builds check the official stable update feed and can update in place when
           an installer is available for the platform. Changes published to the official stable
           manifest also appear on this page automatically within one hour.

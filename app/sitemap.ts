@@ -8,6 +8,7 @@ import { fetchOpenScienceDownloadManifest } from '@/service/open-science-downloa
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
+const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-11'
 
 // Disable cache, regenerate on every request
 export const dynamic = 'force-dynamic'
@@ -96,7 +97,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     withReliableLastModified({
       url: `${SITE_DOMAIN}/open-science/download`,
-      lastModified: openScienceReleaseDate,
+      lastModified: latestPageDate(openScienceReleaseDate, OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED),
       changeFrequency: 'weekly',
       priority: 0.8
     }),
