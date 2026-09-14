@@ -70,7 +70,9 @@ This repository is one Bun + Next.js application rooted here:
 - `components/`: application components, with local primitives in `components/ui/`.
 - `lib/`, `hooks/`, `service/`, `store/`: utilities, hooks, API clients and state.
 - `data/`, `public/`: content and static assets.
-- `tests/unit/`, `tests/e2e/`: Bun and Playwright tests.
+- `mocks/`: shared MSW handlers, fixtures, and browser/server initialization.
+- `scripts/`: mock development launcher and session lifecycle.
+- `tests/unit/`, `tests/integration/`, `tests/e2e/`: Bun and Playwright tests.
 
 Keep dependencies in the root `package.json` and `bun.lock`.
 
@@ -78,8 +80,10 @@ Keep dependencies in the root `package.json` and `bun.lock`.
 
 - `bun install --frozen-lockfile`: install the locked dependencies.
 - `bun run dev`: start Next.js on port 3202.
+- `bun run dev:mock`: start Next.js on port 3202 and the local mock state adapter on port 3203.
 - `bun run build` / `bun run start`: build and serve the production application.
 - `bun run test:unit`: run unit tests.
+- `bun run test:mock`: validate the mock launcher, SSR, and browser flows on temporary ports.
 - `bun run test:e2e`: run desktop and mobile Playwright tests.
 - `bun run typecheck`: check TypeScript.
 - `bun run lint`: run Biome lint checks.
@@ -103,6 +107,58 @@ Keep dependencies in the root `package.json` and `bun.lock`.
 - Test location and naming: `tests/e2e/*.spec.ts`.
 - Add/update tests for behavior changes, especially routing, data fetching, and critical forms.
 - There is no enforced coverage threshold currently; focus on regression coverage for touched paths.
+
+## API Changes and Mock Development
+
+Treat mock support as part of every requirement that adds or changes an API call.
+Proactively add or update the corresponding fixtures, handlers, and tests in the
+same task; do not wait for a separate mock request. Inspect existing coverage
+first and reuse it when it already matches the contract. Apply this to browser
+requests, SSR fetches, and external JSON dependencies used by the affected flow.
+For removed calls, remove mock coverage only when no remaining consumer needs it.
+If a dependency cannot be mocked, explain the gap and its effect on local validation.
+
+### Architecture and implementation
+
+- Use MSW 2 handlers in `mocks/handlers/` and deterministic, typed sample data in
+  `mocks/fixtures.ts`. Match the service contract: method, URL, parameters,
+  response envelope, status codes, and relevant success, empty, missing, and error
+  cases. Support the filtering, sorting, pagination, and mutations the UI uses;
+  derive behavior from fixture fields rather than IDs or array positions.
+- Register read-only handlers through `interceptionHandlers` in
+  `mocks/handlers/index.ts`, shared by `mocks/server.ts` and `mocks/browser.ts`.
+  SSR starts through `instrumentation.ts`; browser startup begins through
+  `instrumentation-client.ts`. Axios already awaits readiness in `service/index.tsx`.
+  New native browser fetch entry points must await `waitForBrowserMock()` from
+  `mocks/ready.ts` before requesting mocked data. Do not hide SSR HTML behind a
+  mock-loading provider or duplicate fixtures in page components.
+- Keep mutable state in HTTP-adapter-owned handler instances, following
+  `mocks/handlers/state.ts`. Register them in `adapterHandlers` and add matching
+  passthrough handlers before the interception fallback so browser and SSR share
+  one state owner. Navigational sample downloads also use the adapter.
+- Preserve development-only initialization and production guards. Keep unknown
+  business API requests rejected; do not conceal missing handlers with live
+  backend fallbacks. External assets can still require network access. Generate
+  `public/mockServiceWorker.js` with MSW's CLI when upgrading MSW; do not hand-edit it.
+
+### Running and verifying
+
+- Use `bun run dev:mock`; optional ports are supported via
+  `bun run dev:mock --port 3302 --mock-port 3303`. See [README.md](README.md#mock-development)
+  for sample routes and scenarios. Use launcher-provided settings rather than
+  editing `.env` files. The protected-configuration authorization rules still apply.
+- TypeScript/JSON edits under `mocks/` restart the session and reset sample state. Failed edits
+  wait for a correction; reload the browser if needed. Ctrl+C stops the session.
+  Mock development and `test:mock` share `.next/e2e` with the existing Playwright
+  suite; do not run them concurrently in one worktree.
+- Add focused contract regressions under `tests/unit/` and extend
+  `tests/integration/mock-development.test.ts` for affected end-to-end flows.
+  Verify the real request path: SSR output and browser interception where used,
+  plus shared mutation state across reloads where relevant. A direct handler test
+  alone does not prove Next.js interception works.
+- Run the relevant unit tests, `bun run test:mock` for changed API flows, and
+  applicable type/lint checks. Use in-memory data or temporary directories for
+  tests. Report covered endpoints, scenarios, actual results, and remaining gaps.
 
 ## Next.js Page Changes & Sitemap Last Modified
 
