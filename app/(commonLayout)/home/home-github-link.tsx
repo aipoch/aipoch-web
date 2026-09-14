@@ -3,6 +3,7 @@
 import { ArrowUpRight, Star } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { waitForBrowserMock } from '@/mocks/ready'
 import { GithubIcon } from '@/components/svg-icons/github-icon'
 import { DEFAULT_GITHUB_STAR_COUNT, formatCompactGithubCount } from './home-data'
 
@@ -13,6 +14,7 @@ let githubStarsRequest: Promise<number | null> | null = null
 
 const requestGithubStars = async (): Promise<number | null> => {
   try {
+    await waitForBrowserMock()
     // Use a page timestamp to bypass browser caching while keeping a simple GET without a CORS preflight.
     const requestUrl = `${GITHUB_REPOSITORY_API_URL}?homepage_load=${Date.now()}`
     const response = await fetch(requestUrl, {

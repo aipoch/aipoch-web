@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
 import { type ReactNode, useState } from 'react'
 import { API_URL } from '@/lib/config'
+import { waitForBrowserMock } from '@/mocks/ready'
 
 // Create the Axios instance.
 export const apiClient = axios.create({
@@ -16,7 +17,8 @@ export const apiClient = axios.create({
 
 // Request interceptor.
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    await waitForBrowserMock()
     // Add an authentication token here when needed.
     return config
   },
