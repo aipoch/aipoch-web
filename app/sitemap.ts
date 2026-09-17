@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { OPEN_SCIENCE_PAGE_LAST_MODIFIED } from '@/app/(commonLayout)/open-science/open-science-metadata'
 import { toSchemaDate } from '@/app/(commonLayout)/open-science/open-science-structured-data'
+import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { INTERNAL_API_URL, SITE_DOMAIN } from '@/lib/config'
 import { getAllGuides } from '@/lib/guides'
 import { fetchBlogSitemap } from '@/service/blog'
@@ -47,15 +48,14 @@ async function fetchSkillsSitemap(): Promise<SitemapItem[]> {
   }
 }
 
-/** Emit lastmod only when a reliable content update time exists; never use deployment-time new Date(). */
+/** All local sitemap routes share the navigation; Wiki entries retain their own dates. */
 const withReliableLastModified = (
   route: Omit<MetadataRoute.Sitemap[number], 'lastModified'> & {
     lastModified?: string | Date
   }
 ): MetadataRoute.Sitemap[number] => {
   const { lastModified, ...rest } = route
-  if (!lastModified) return rest
-  return { ...rest, lastModified: new Date(lastModified) }
+  return { ...rest, lastModified: new Date(commonLayoutLastModified(lastModified)) }
 }
 
 const latestPageDate = (...values: Array<string | undefined>): string | undefined =>
@@ -141,7 +141,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   )
 
-  // Fetch blog posts from the API; omit lastmod when updatedAt is missing.
+  // Preserve newer API content dates alongside the persistent shared-layout date.
   const blogRoutes: MetadataRoute.Sitemap = blogSitemap.map((item) =>
     withReliableLastModified({
       url: item.url,

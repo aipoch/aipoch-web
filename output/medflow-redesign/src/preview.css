@@ -1,0 +1,97 @@
+:root {
+  --font-inter: "Inter";
+  --font-mono: "Roboto Mono";
+}
+.mf-preview {
+  background: #f6f6f4;
+  width: 100%;
+  overflow-x: auto;
+}
+.mf-canvas {
+  position: relative;
+  width: 1440px;
+  height: 1352px;
+  margin: 0 auto;
+  background: #f6f6f4;
+}
+.mf-artwork,
+.mf-artwork > svg {
+  width: 1440px;
+  height: 1352px;
+}
+.mf-artwork {
+  position: absolute;
+  inset: 0;
+}
+.mf-artwork text {
+  font-synthesis: none;
+}
+.mf-hit,
+.mf-field,
+.mf-checkbox {
+  position: absolute;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.mf-hit {
+  display: block;
+  padding: 0;
+  cursor: pointer;
+}
+.mf-hit:disabled {
+  cursor: default;
+}
+.mf-field {
+  padding: 0 16px;
+  font:
+    400 14px / 20px "Inter",
+    sans-serif;
+  letter-spacing: 0;
+  color: #2e2e2b;
+  background: white;
+  caret-color: #2e2e2b;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 15%);
+}
+.mf-field::placeholder {
+  color: #61615c;
+  opacity: 1;
+}
+.mf-field:focus {
+  box-shadow:
+    inset 0 0 0 1.5px #171717,
+    0 0 0 2px rgb(0 0 0 / 8%);
+}
+.mf-field[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 2px #b42318;
+}
+.mf-field:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #2e2e2b;
+}
+.mf-checkbox {
+  appearance: none;
+  padding: 0;
+  cursor: pointer;
+}
+.mf-hit:focus-visible,
+.mf-checkbox:focus-visible {
+  outline: 1px solid #97a0af;
+  outline-offset: 2px;
+}
+
+.mf-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf-confetti {
+    display: none;
+  }
+}

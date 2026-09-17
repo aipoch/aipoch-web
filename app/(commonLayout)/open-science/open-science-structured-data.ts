@@ -3,6 +3,7 @@ import {
   AIPOCH_WEBSITE_ID,
   buildAipochOrganizationSchema
 } from '@/lib/aipoch-organization'
+import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { openScienceScreenshotUrls } from '@/lib/open-science-media-assets'
 import {
@@ -154,7 +155,7 @@ export const buildOpenSciencePageGraph = ({
         isPartOf: { '@id': AIPOCH_WEBSITE_ID },
         mainEntity: { '@id': OPEN_SCIENCE_PRODUCT_ID },
         breadcrumb: { '@id': OPEN_SCIENCE_BREADCRUMB_ID },
-        ...(schemaDate ? { dateModified: schemaDate } : {})
+        dateModified: commonLayoutLastModified(schemaDate)
       },
       softwareApplication,
       {

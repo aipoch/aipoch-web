@@ -4,6 +4,7 @@ import {
   AIPOCH_WEBSITE_ID,
   buildAipochOrganizationSchema
 } from '@/lib/aipoch-organization'
+import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { openScienceScreenshotUrls } from '@/lib/open-science-media-assets'
 import { resolveSkillLibraryCount } from './home-data'
@@ -158,7 +159,7 @@ export const buildHomepageStructuredData = ({
     description: entityDescription,
     isPartOf: { '@id': AIPOCH_WEBSITE_ID },
     about: { '@id': AIPOCH_ORGANIZATION_ID },
-    dateModified: lastUpdated.dateTime,
+    dateModified: commonLayoutLastModified(lastUpdated.dateTime),
     speakable: {
       '@type': 'SpeakableSpecification',
       cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']
