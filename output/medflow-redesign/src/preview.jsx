@@ -1,4 +1,4 @@
-import { createElement, useMemo, useRef, useState } from 'react'
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime'
 import { Navbar } from '@/components/navbar'
@@ -6,6 +6,7 @@ import { Footer } from '@/components/footer'
 import { CookieConsentBanner } from '@/components/cookie-consent/cookie-consent-banner'
 import scenes from './scenes.json'
 import { SuccessConfetti } from './success-confetti'
+import { MobileIntro, MobileSuccess, MobilePrinciples } from './mobile-content'
 
 const parameters = new URLSearchParams(location.search)
 const requestedState = parameters.get('state')
@@ -15,7 +16,12 @@ const parseScene = (state) => parser.parseFromString(scenes[state], 'image/svg+x
 const originalCheckbox = (state) => parseScene(state).querySelector('[id="Checkbox:margin"]')
 const sampleValue = (state, field) =>
   parseScene(state).querySelector(`[data-field="${field}"]`)?.textContent || ''
-const position = (left, top, width, height) => ({ left, top: top - 72, width, height })
+const position = (left, top, width, height) => ({
+  left,
+  top: top - 72,
+  '--mf-width': `${width}px`,
+  '--mf-height': `${height}px`
+})
 
 // Render the inspected SVG export as React elements; form values remain text nodes.
 function renderLayer(node, key = 0) {
@@ -58,6 +64,18 @@ function MedFlow() {
   const [consent, setConsent] = useState(initialState !== 'default')
   const [focused, setFocused] = useState(null)
   const nameRef = useRef(null)
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    if (status === 'success' && window.matchMedia('(max-width: 1439px)').matches) {
+      canvasRef.current?.querySelector('.mf-mobile-success')?.focus()
+    }
+  }, [status])
+
+  function joinWaitlist() {
+    if (success) setStatus('default')
+    requestAnimationFrame(() => nameRef.current?.focus())
+  }
+
   const ready = Boolean(name.trim() && email.trim() && consent)
   const busy = status === 'submitting'
   const success = status === 'success'
@@ -116,22 +134,28 @@ function MedFlow() {
 
   return (
     <main id="top" className="mf-preview" data-state={sceneState}>
-      <div className="mf-canvas">
-        <h1 className="sr-only">MedFlow</h1>
+      <div className="mf-canvas" ref={canvasRef}>
+        <svg
+          className="mf-mobile mf-mobile-background"
+          viewBox="0 0 390 850"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          <image href={window.MEDFLOW_BACKGROUND} x="-650" y="50" width="1336" height="752" />
+        </svg>
+        <MobileIntro joinWaitlist={joinWaitlist} />
+        <h1 className="sr-only mf-desktop">MedFlow</h1>
         <div className="mf-artwork">{artwork}</div>
         <SuccessConfetti active={success} />
         <button
           type="button"
-          className="mf-hit"
+          className="mf-hit mf-desktop"
           style={position(184, 448.719, 164, 44)}
           aria-label="Join the waitlist"
-          onClick={() => {
-            if (success) setStatus('default')
-            requestAnimationFrame(() => nameRef.current?.focus())
-          }}
+          onClick={joinWaitlist}
         />
         <a
-          className="mf-hit"
+          className="mf-hit mf-desktop"
           style={position(360, 448.719, 146, 44)}
           aria-label="Join Discord"
           href="https://discord.gg/zxQAYjReRv"
@@ -141,7 +165,16 @@ function MedFlow() {
           <span className="sr-only">Join Discord</span>
         </a>
         {!success && (
-          <form aria-label="MedFlow early access" onSubmit={submit} noValidate>
+          <form className="mf-form" aria-label="MedFlow early access" onSubmit={submit} noValidate>
+            <div className="mf-mobile mf-form-intro">
+              <p className="mf-eyebrow">WAITLIST</p>
+              <h2>Be first in line.</h2>
+              <p>
+                When MedFlow opens its private beta, everyone on the waitlist becomes one of our
+                first testers. Leave your name and email — the moment we launch, your activation
+                code lands straight in your inbox.
+              </p>
+            </div>
             <input
               ref={nameRef}
               className="mf-field"
@@ -175,17 +208,30 @@ function MedFlow() {
               onFocus={() => setFocused('email')}
               onBlur={() => setFocused(null)}
             />
-            <input
-              className="mf-checkbox"
-              aria-label="I agree to the processing of my data described in the Privacy Policy"
-              type="checkbox"
-              checked={consent}
-              disabled={busy}
-              style={position(847, 547.844, 14, 14)}
-              onChange={(event) => update(setConsent, event.target.checked)}
-            />
+            <div className="mf-consent">
+              <input
+                id="mf-consent"
+                className="mf-checkbox"
+                aria-label="I agree to the processing of my data described in the Privacy Policy"
+                type="checkbox"
+                checked={consent}
+                disabled={busy}
+                style={position(847, 547.844, 14, 14)}
+                onChange={(event) => update(setConsent, event.target.checked)}
+              />
+              <label className="mf-mobile mf-consent-copy" htmlFor="mf-consent">
+                You hereby acknowledge and agree that your above data will be processed by AIPOCH
+                PTE. LTD. for the purpose of processing your request and sending you a trial
+                activation code when MedFlow's private beta is ready. For additional information
+                please check our{' '}
+                <a href="https://aipoch.com/privacy-policy" target="_blank" rel="noreferrer">
+                  Privacy Policy
+                </a>
+                .
+              </label>
+            </div>
             <a
-              className="mf-hit"
+              className="mf-hit mf-desktop"
               style={position(924.409, 615.344, 72, 16)}
               aria-label="Privacy Policy"
               href="https://aipoch.com/privacy-policy"
@@ -196,12 +242,21 @@ function MedFlow() {
             </a>
             <button
               type="submit"
-              className="mf-hit"
+              className="mf-hit mf-submit"
               style={position(847, 720.844, 370, 56)}
               disabled={!ready || busy}
               aria-label={busy ? 'Requesting…' : 'Request early access'}
-            />
-            <span className="sr-only" id="form-message" role="status" aria-live="polite">
+            >
+              <span className="mf-mobile">
+                {busy ? 'Requesting…' : 'Request early access'} <span aria-hidden="true">→</span>
+              </span>
+            </button>
+            <span
+              className="sr-only mf-form-message"
+              id="form-message"
+              role="status"
+              aria-live="polite"
+            >
               {status === 'error'
                 ? 'Enter a valid email address.'
                 : status === 'server'
@@ -216,8 +271,9 @@ function MedFlow() {
         )}
         {success && (
           <>
+            <MobileSuccess />
             <a
-              className="mf-hit"
+              className="mf-hit mf-desktop"
               style={position(857, 672.148, 171, 44)}
               aria-label="Join our Discord"
               href="https://discord.gg/zxQAYjReRv"
@@ -227,7 +283,7 @@ function MedFlow() {
               <span className="sr-only">Join our Discord</span>
             </a>
             <a
-              className="mf-hit"
+              className="mf-hit mf-desktop"
               style={position(1036, 672.148, 171, 44)}
               aria-label="Follow @aipoch_ai"
               href="https://x.com/aipoch_ai"
@@ -237,7 +293,7 @@ function MedFlow() {
               <span className="sr-only">Follow @aipoch_ai</span>
             </a>
             <a
-              className="mf-hit"
+              className="mf-hit mf-desktop"
               style={position(1041.62, 756, 135, 25)}
               aria-label="Explore AIPOCH"
               href="https://aipoch.com/"
@@ -246,6 +302,7 @@ function MedFlow() {
             </a>
           </>
         )}
+        <MobilePrinciples />
       </div>
     </main>
   )

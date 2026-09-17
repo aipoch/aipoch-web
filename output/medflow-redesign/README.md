@@ -12,8 +12,10 @@ server to view. Internal site links resolve to `https://aipoch.com`.
   colors, spacing, and line breaks. Native HTML inputs own their field text,
   caret, selection, clipping, and focus state; their dimensions, fonts, colors,
   and border tokens match the exported fields.
-- The content preserves the 1440 px desktop artboard. Smaller screens can scroll
-  the content horizontally; no unprovided mobile layout has been invented.
+- The original 1440 px desktop artboard is preserved at desktop widths. Below
+  1440 px, content reflows into a single column using the same fonts, copy, colors,
+  and assets. Headings scale with the viewport and form inputs use 16 px text to
+  avoid automatic zoom in mobile Safari. The shared navigation/footer remain unchanged.
 - Inter and Roboto Mono are embedded. Georgia uses the installed system font,
   matching the design on this Mac. A device without Georgia needs that font for
   the same serif rendering.
@@ -133,3 +135,23 @@ persistent date source, verification results, and deployment scope.
 ![Desktop preview](review/desktop.png)
 
 The production `/medflow` route is not replaced by this standalone HTML preview.
+
+## Mobile layout update
+
+The mobile preview now uses readable HTML headings, vertically stacked form and
+principle cards, and the original background asset with feathered edges. Desktop
+SVG artwork and field positions are preserved. Both layouts share one form and
+the same state; resizing does not clear input. The waitlist CTA focuses the name
+field, and mobile success moves focus to the confirmation card. Confetti covers
+the visible mobile viewport and continues to respect reduced-motion preferences.
+
+Browser checks passed at 320, 390, 768, 1024, and 1440 px: no document-level
+horizontal overflow, usable fields, email validation, consent gating, submitting
+lock, success/focus/confetti, and server/duplicate messages. Authored-source Biome
+lint passed with no diagnostics. This update only changes the standalone preview;
+no Next.js route or shared component changed, so no additional sitemap date update
+or protected operational configuration change is required.
+
+![Mobile layout](review/mobile-page.png)
+
+![Mobile success](review/mobile-success.png)
