@@ -98,7 +98,7 @@ describe('navbar', () => {
     expect(html).not.toContain('before:border-transparent')
     expect(openScienceLink).not.toContain('uppercase')
     expect(openScienceLink).not.toContain('tracking-[0.08em]')
-    expect(primaryAction).toContain('rounded-[2px]')
+    expect(primaryAction).toContain('rounded-none')
     expect(primaryAction).not.toContain('uppercase')
   })
 

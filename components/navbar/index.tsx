@@ -106,23 +106,23 @@ export function Navbar() {
       data-nav-scrolled={scrolled ? 'true' : 'false'}
       className={cn(
         'fixed inset-x-0 top-0 z-50 w-full bg-transparent transition-[color] duration-[350ms]',
-        'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:border-b before:transition-[background-color,border-color,box-shadow,backdrop-filter] before:duration-500 before:ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'before:pointer-events-none before:absolute before:inset-0 before:z-0 before:border-b before:transition-[background-color,border-color,backdrop-filter] before:duration-500 before:ease-[cubic-bezier(0.4,0,0.2,1)]',
         'after:pointer-events-none after:absolute after:inset-x-0 after:top-0 after:z-0 after:h-[62%] after:bg-[linear-gradient(180deg,rgba(255,255,255,var(--nav-sheen)),rgba(255,255,255,0))] after:transition-[background] after:duration-500 after:ease-[cubic-bezier(0.4,0,0.2,1)]',
         'motion-reduce:transition-none motion-reduce:before:transition-none motion-reduce:after:transition-none',
         isDark
           ? cn(
               '[--nav-bg:rgba(14,15,19,0.55)] [--nav-sheen:0.07] text-white',
-              'before:border-white/[.12] before:bg-[var(--nav-bg)] before:backdrop-blur-[22px] before:backdrop-saturate-[170%] before:backdrop-brightness-[.85] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_10px_30px_rgba(0,0,0,0.35)]',
+              'before:border-white/[.12] before:bg-[var(--nav-bg)] before:backdrop-blur-[22px] before:backdrop-saturate-[170%] before:backdrop-brightness-[.85]',
               "[&_a[aria-current='page']]:!bg-white/[.08] [&_a[aria-current='page']:hover]:!bg-white/[.12]",
               "[&_a[data-nav-plain-link][aria-current='page']]:!bg-transparent [&_a[data-nav-plain-link][aria-current='page']:hover]:!bg-transparent",
               !scrolled &&
-                '[--nav-bg:rgba(255,255,255,0.02)] [--nav-sheen:0.02] before:border-white/[.08] before:backdrop-blur-none before:backdrop-saturate-100 before:backdrop-brightness-100 before:shadow-[0_2px_8px_rgba(0,0,0,0.16)]'
+                '[--nav-bg:rgba(255,255,255,0.02)] [--nav-sheen:0.02] before:border-white/[.08] before:backdrop-blur-none before:backdrop-saturate-100 before:backdrop-brightness-100'
             )
           : cn(
               '[--nav-bg:rgba(255,255,255,0.55)] [--nav-sheen:0.26] text-[#0a0a0a]',
-              'before:border-black/[.07] before:bg-[var(--nav-bg)] before:backdrop-blur-[20px] before:backdrop-saturate-[180%] before:shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_8px_26px_rgba(16,24,40,0.07)]',
+              'before:border-black/[.07] before:bg-[var(--nav-bg)] before:backdrop-blur-[20px] before:backdrop-saturate-[180%]',
               !scrolled &&
-                '[--nav-bg:rgba(255,255,255,0.28)] [--nav-sheen:0.16] before:border-black/[.06] before:shadow-[0_2px_10px_rgba(16,24,40,0.05)]'
+                '[--nav-bg:rgba(255,255,255,0.28)] [--nav-sheen:0.16] before:border-black/[.06]'
             )
       )}
     >
@@ -208,8 +208,8 @@ export function Navbar() {
                     className={cn(
                       'flex min-w-[322px] flex-col gap-1 rounded-[14px] border p-2',
                       isDark
-                        ? 'border-white/10 bg-[rgba(26,27,32,0.74)] shadow-[0_24px_60px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-[30px] backdrop-saturate-[180%]'
-                        : 'border-black/[0.07] bg-white/[.88] shadow-[0_14px_34px_rgba(16,24,40,0.13),0_3px_8px_rgba(16,24,40,0.06)] backdrop-blur-[24px] backdrop-saturate-[180%]'
+                        ? 'border-white/10 bg-[rgba(26,27,32,0.74)] backdrop-blur-[30px] backdrop-saturate-[180%]'
+                        : 'border-black/[0.07] bg-white/[.88] backdrop-blur-[24px] backdrop-saturate-[180%]'
                     )}
                   >
                     {item.children.map((child) => (
@@ -238,7 +238,8 @@ export function Navbar() {
                 : {})}
               data-nav-plain-link={action.emphasis ? undefined : ''}
               className={cn(
-                'rounded-[2px] px-[13px] py-[9px] text-[13px] font-medium leading-none transition-colors',
+                'px-[13px] py-[9px] text-[13px] font-medium leading-none transition-colors',
+                action.emphasis ? 'rounded-none' : 'rounded-[2px]',
                 action.emphasis
                   ? isDark
                     ? 'bg-white text-black hover:bg-white/90'
@@ -281,7 +282,7 @@ export function Navbar() {
       {/* Mobile Menu Panel */}
       <div
         className={cn(
-          'absolute right-0 left-0 top-full z-40 overflow-hidden border-b shadow-[0_18px_30px_rgba(0,0,0,0.08)] backdrop-blur-[28px] backdrop-saturate-[180%] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out lg:hidden',
+          'absolute right-0 left-0 top-full z-40 overflow-hidden border-b backdrop-blur-[28px] backdrop-saturate-[180%] motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out lg:hidden',
           isDark
             ? 'border-white/[.12] bg-[rgba(18,19,23,0.93)]'
             : 'border-black/[.07] bg-[rgba(240,240,240,0.93)]',
@@ -413,7 +414,8 @@ export function Navbar() {
                   : {})}
                 onClick={closeMobileMenu}
                 className={cn(
-                  'my-2 flex w-full items-center justify-between rounded-[8px] px-3 py-3 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
+                  'my-2 flex w-full items-center justify-between px-3 py-3 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
+                  action.emphasis ? 'rounded-none' : 'rounded-[8px]',
                   action.emphasis
                     ? isDark
                       ? 'bg-white text-black hover:bg-white/90'
