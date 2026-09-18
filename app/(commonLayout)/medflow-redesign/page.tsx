@@ -1,6 +1,6 @@
 import '@/components/landing/landing-effects.css'
-import '../medflow/medflow.css'
-import { MedFlowExperience } from '../medflow/medflow-experience'
+import './medflow-redesign.css'
+import { MedFlowRedesignExperience } from './medflow-redesign-experience'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
 
 const MedFlowRedesignPage = () => {
   // Authorized preview: intentionally excluded from the sitemap by product approval.
-  // Keep it on the same tested experience as the production MedFlow form.
+  // This authorized preview is intentionally independent from the production /medflow page.
   return (
     <main
       id="top"
       className="medflow-page min-h-screen overflow-hidden bg-[#E9E9E9] text-[#111111]"
     >
-      <MedFlowExperience />
+      <MedFlowRedesignExperience />
     </main>
   )
 }
