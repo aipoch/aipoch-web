@@ -26,6 +26,14 @@ test('keeps bilingual Open-Science branding hyphenated on one line', async () =>
   expect(overview).not.toMatch(/Open(?:<\/span>)?<br>Science/)
 })
 
+test('reserves footer clearance by keeping architecture layer padding compact', async () => {
+  const overview = await readFile(overviewPath, 'utf8')
+  const compactLayers = '.architecture-layer{padding:9px 0;border-top:1px solid #d9d4c8}'
+
+  expect(overview.split(compactLayers)).toHaveLength(3)
+  expect(overview).not.toContain('.architecture-layer{padding:17px 0;')
+})
+
 test('serves the 16-slide v0.30.2 deck with complete Chinese speaker notes', async () => {
   const overview = await readFile(overviewPath, 'utf8')
   const embedded = overview.match(/const documents=(\{zh:[\s\S]*?\});\nconst frames=/)
