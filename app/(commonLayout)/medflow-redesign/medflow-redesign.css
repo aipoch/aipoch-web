@@ -13,7 +13,7 @@
   min-height: 100vh;
   margin: 0 auto;
   padding: 88px 64px 72px;
-  overflow: clip;
+  overflow: visible;
   color: #111;
   font-family: var(--font-inter), sans-serif;
 }
@@ -21,17 +21,25 @@
 .mf-redesign-background {
   position: absolute;
   z-index: -1;
-  top: 210px;
-  left: -120px;
-  width: 860px;
-  height: 500px;
+  top: 330px;
+  left: 50%;
+  width: 1440px;
+  height: 810px;
+  transform: translateX(-50%);
   opacity: 0.42;
-  mask-image: linear-gradient(to bottom, transparent, black 20%, black 74%, transparent);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, black 5.56%, black 94.44%, transparent),
+    linear-gradient(to bottom, transparent, black 7.9%, black 92.1%, transparent);
+  mask-image:
+    linear-gradient(to right, transparent, black 5.56%, black 94.44%, transparent),
+    linear-gradient(to bottom, transparent, black 7.9%, black 92.1%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
   pointer-events: none;
 }
 
 .mf-redesign-background img {
-  object-fit: cover;
+  object-fit: fill;
 }
 
 .mf-redesign-intro {
@@ -63,8 +71,8 @@
 
 .mf-redesign-intro h1 {
   margin: 28px 0;
-  font-family: var(--font-dm-serif-display), serif;
-  font-size: 96px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 78px;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0;
@@ -156,7 +164,7 @@
 
 .mf-redesign-promise {
   margin: 64px 0 24px;
-  font-family: var(--font-dm-serif-display), serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 56px;
   font-weight: 400;
   line-height: 1.12;
@@ -165,7 +173,7 @@
 
 .mf-redesign-promise em {
   color: #626b7a;
-  font-style: normal;
+  font-style: italic;
 }
 
 .mf-redesign-card {
@@ -179,8 +187,8 @@
 
 .mf-redesign-card h2 {
   margin: 20px 0;
-  font-family: var(--font-dm-serif-display), serif;
-  font-size: 32px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: 0;
@@ -455,6 +463,7 @@
     left: -56%;
     width: 156%;
     height: 850px;
+    transform: none;
     opacity: 0.38;
   }
 

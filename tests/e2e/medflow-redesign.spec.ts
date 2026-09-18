@@ -11,6 +11,26 @@ test('renders the MedFlow redesign at its production route', async ({ page }) =>
   await expect(page.getByRole('button', { name: /Request early access/ })).toBeVisible()
 })
 
+test('positions the desktop research background on the preview artboard', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  await page.goto('/medflow-redesign')
+
+  const backgroundBounds = await page.locator('.mf-redesign-background').evaluate((element) => {
+    const bounds = element.getBoundingClientRect()
+    return {
+      height: bounds.height,
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width
+    }
+  })
+
+  expect(backgroundBounds.left).toBeCloseTo(0, 0)
+  expect(backgroundBounds.top).toBeCloseTo(402, 0)
+  expect(backgroundBounds.width).toBeCloseTo(1440, 0)
+  expect(backgroundBounds.height).toBeCloseTo(810, 0)
+})
+
 test('supports the original preview state query parameters', async ({ page }) => {
   test.setTimeout(60_000)
 
