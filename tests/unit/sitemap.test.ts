@@ -153,6 +153,7 @@ describe('sitemap', () => {
     })
     expect((guideDetailRoute?.lastModified as Date).toISOString()).toBe('2026-09-17T00:00:00.000Z')
     expect(routes.some((route) => route.url === `${siteDomain}/community`)).toBe(false)
+    expect(routes.some((route) => route.url === `${siteDomain}/medflow-redesign`)).toBe(false)
   })
   test('updates shared-layout pages while preserving newer content and Wiki dates', async () => {
     const { default: sitemap } = await import('../../app/sitemap')
