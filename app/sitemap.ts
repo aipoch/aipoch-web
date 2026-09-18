@@ -10,7 +10,6 @@ import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-11'
-const MEDFLOW_REDESIGN_LAST_MODIFIED = '2026-09-18'
 
 // Disable cache, regenerate on every request
 export const dynamic = 'force-dynamic'
@@ -104,12 +103,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     withReliableLastModified({
       url: `${SITE_DOMAIN}/medflow`,
-      changeFrequency: 'monthly',
-      priority: 0.8
-    }),
-    withReliableLastModified({
-      url: `${SITE_DOMAIN}/medflow-redesign`,
-      lastModified: MEDFLOW_REDESIGN_LAST_MODIFIED,
       changeFrequency: 'monthly',
       priority: 0.8
     }),

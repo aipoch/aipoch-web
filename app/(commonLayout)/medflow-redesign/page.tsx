@@ -27,7 +27,8 @@ export const metadata: Metadata = {
 }
 
 const MedFlowRedesignPage = () => {
-  // Keep the preview on the same tested experience as the production MedFlow form.
+  // Authorized preview: intentionally excluded from the sitemap by product approval.
+  // Keep it on the same tested experience as the production MedFlow form.
   return (
     <main
       id="top"
