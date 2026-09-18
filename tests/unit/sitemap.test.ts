@@ -95,6 +95,9 @@ describe('sitemap', () => {
       (route) => route.url === `${siteDomain}/open-science/download`
     )
     const medFlowRoute = routes.find((route) => route.url === `${siteDomain}/medflow`)
+    const medFlowRedesignRoute = routes.find(
+      (route) => route.url === `${siteDomain}/medflow-redesign`
+    )
     const agentSkillsRoute = routes.find((route) => route.url === `${siteDomain}/agent-skills`)
     const medSkillAuditRoute = routes.find((route) => route.url === `${siteDomain}/medskillaudit`)
     const skillsListRoute = routes.find((route) => route.url === `${siteDomain}/agent-skills/list`)
@@ -128,6 +131,14 @@ describe('sitemap', () => {
       priority: 0.8
     })
     expect((medFlowRoute?.lastModified as Date).toISOString()).toBe('2026-09-17T00:00:00.000Z')
+
+    expect(medFlowRedesignRoute).toMatchObject({
+      changeFrequency: 'monthly',
+      priority: 0.8
+    })
+    expect((medFlowRedesignRoute?.lastModified as Date).toISOString()).toBe(
+      '2026-09-18T00:00:00.000Z'
+    )
 
     expect(agentSkillsRoute).toMatchObject({
       changeFrequency: 'weekly',
