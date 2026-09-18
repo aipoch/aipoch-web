@@ -6,13 +6,16 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
-  gap: 48px;
+  grid-template-columns: 576px 448px;
+  grid-template-rows: minmax(667px, auto) 213.281px;
+  column-gap: 48px;
+  row-gap: 242.859px;
+  align-content: start;
   width: 100%;
-  max-width: 1240px;
-  min-height: 100vh;
+  max-width: 1440px;
+  min-height: 1352px;
   margin: 0 auto;
-  padding: 88px 64px 72px;
+  padding: 92px 184px 136.86px;
   overflow: visible;
   color: #111;
   font-family: var(--font-inter), sans-serif;
@@ -44,6 +47,7 @@
 
 .mf-redesign-intro {
   min-width: 0;
+  padding-top: 6px;
   align-self: start;
 }
 
@@ -70,7 +74,7 @@
 }
 
 .mf-redesign-intro h1 {
-  margin: 28px 0;
+  margin: 38px 0 33px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 78px;
   font-weight: 400;
@@ -86,25 +90,31 @@
 }
 
 .mf-redesign-lead,
-.mf-redesign-card p,
-.mf-redesign-principles p {
+:where(.mf-redesign-card h2 + p, .mf-redesign-success > p, .mf-redesign-principles p) {
   color: #6b6b66;
   font-size: 14px;
   line-height: 24px;
 }
 
 .mf-redesign-intro > .mf-redesign-lead {
-  max-width: 36ch;
   margin: 0;
   font-size: 16px;
   line-height: 26px;
+}
+
+.mf-redesign-coming + .mf-redesign-lead {
+  max-width: 430px;
+}
+
+.mf-redesign-promise + .mf-redesign-lead {
+  max-width: 576px;
 }
 
 .mf-redesign-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 30px;
 }
 
 .mf-redesign-button {
@@ -163,11 +173,11 @@
 }
 
 .mf-redesign-promise {
-  margin: 64px 0 24px;
+  margin: 64px 0 38px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 56px;
   font-weight: 400;
-  line-height: 1.12;
+  line-height: 1.2857;
   letter-spacing: 0;
 }
 
@@ -178,8 +188,9 @@
 
 .mf-redesign-card {
   min-width: 0;
+  min-height: 667px;
   align-self: start;
-  padding: 32px;
+  padding: 40px 39px 54px;
   background: #fff;
   box-shadow: 0 18px 50px rgb(17 17 17 / 7%);
   scroll-margin-top: calc(var(--nav-h) + 24px);
@@ -194,7 +205,11 @@
   letter-spacing: 0;
 }
 
-.mf-redesign-card > div > p {
+.mf-redesign-card .mf-redesign-eyebrow {
+  line-height: 16px;
+}
+
+:where(.mf-redesign-card > div > p) {
   margin: 0;
 }
 
@@ -204,19 +219,31 @@
 }
 
 .mf-redesign-card form {
+  position: relative;
   display: grid;
-  gap: 16px;
-  margin-top: 28px;
+  gap: 14px;
+  margin-top: 15px;
 }
 
 .mf-redesign-card label:not(.mf-redesign-consent) {
-  display: grid;
-  gap: 8px;
+  display: block;
   min-width: 0;
   font-size: 12px;
   font-weight: 500;
   line-height: 18px;
   letter-spacing: 0;
+}
+
+.mf-redesign-field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .mf-redesign-card input:not([type="checkbox"]) {
@@ -229,7 +256,7 @@
   background: #fff;
   color: #2e2e2b;
   font: inherit;
-  font-size: 16px;
+  font-size: 14px;
   outline: none;
 }
 
@@ -259,7 +286,7 @@
 .mf-redesign-consent input {
   width: 14px;
   height: 14px;
-  margin: 3px 0 0;
+  margin: 1px 0 0;
   accent-color: #171717;
 }
 
@@ -272,7 +299,7 @@
 .mf-redesign-card form > button {
   width: 100%;
   height: 56px;
-  margin-top: 6px;
+  margin-top: 75px;
   border: 0;
   border-radius: 0;
   background: #171717;
@@ -293,8 +320,12 @@
 
 .mf-redesign-error,
 .mf-redesign-progress {
+  position: absolute;
+  top: 125px;
+  right: 0;
+  left: 16px;
   min-height: 17px;
-  margin: -6px 0 0;
+  margin: 0;
   font-size: 11px;
   line-height: 17px;
 }
@@ -395,17 +426,19 @@
   grid-column: 1 / -1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  margin-top: 4px;
+  height: 213.281px;
+  margin-top: 0;
   background: #e5e5e3;
 }
 
 .mf-redesign-principles article {
   min-width: 0;
-  padding: 28px;
+  padding: 36px 30px 28px;
   background: #fff;
 }
 
 .mf-redesign-principles article > span {
+  display: block;
   color: #61615c;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
@@ -416,15 +449,16 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 20px 0 12px;
-  font-size: 16px;
+  margin: 20px 0 16px;
+  font-size: 18px;
   font-weight: 500;
   line-height: 24px;
-  letter-spacing: 0;
+  letter-spacing: 0.928px;
 }
 
 .mf-redesign-principles p {
   margin: 0;
+  line-height: 23px;
 }
 
 .mf-redesign-confetti {
@@ -451,7 +485,7 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1439px) {
   .mf-redesign-shell {
     display: block;
     min-height: auto;
@@ -476,24 +510,82 @@
     margin-left: auto;
   }
 
+  .mf-redesign-intro {
+    padding-top: 0;
+  }
+
   .mf-redesign-intro h1 {
+    margin: 28px 0 30px;
     font-size: 64px;
+    line-height: 1.1;
+  }
+
+  .mf-redesign-coming {
+    margin-bottom: 10px;
+  }
+
+  .mf-redesign-intro > .mf-redesign-lead {
+    max-width: none;
+  }
+
+  .mf-redesign-actions {
+    margin-top: 26px;
   }
 
   .mf-redesign-promise {
-    margin-top: 52px;
+    margin: 52px 0 26px;
     font-size: 44px;
-    line-height: 1.2;
+    line-height: 1.28;
   }
 
   .mf-redesign-card {
+    min-height: 0;
     margin-top: 36px;
     padding: 28px 24px;
   }
 
+  .mf-redesign-card h2 {
+    margin-bottom: 18px;
+  }
+
+  .mf-redesign-card form {
+    position: static;
+    gap: 16px;
+    margin-top: 28px;
+  }
+
+  .mf-redesign-card input:not([type="checkbox"]) {
+    font-size: 16px;
+  }
+
+  .mf-redesign-consent input {
+    margin-top: 3px;
+  }
+
+  .mf-redesign-card form > button {
+    margin-top: 22px;
+  }
+
+  .mf-redesign-error,
+  .mf-redesign-progress {
+    position: static;
+    margin: -8px 0 0;
+  }
+
   .mf-redesign-principles {
+    height: auto;
     grid-template-columns: minmax(0, 1fr);
     margin-top: 40px;
+  }
+
+  .mf-redesign-principles article {
+    padding: 28px 24px;
+  }
+
+  .mf-redesign-principles h2 {
+    margin-bottom: 14px;
+    font-size: 16px;
+    letter-spacing: 0;
   }
 }
 

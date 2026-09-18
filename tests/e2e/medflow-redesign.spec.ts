@@ -11,24 +11,41 @@ test('renders the MedFlow redesign at its production route', async ({ page }) =>
   await expect(page.getByRole('button', { name: /Request early access/ })).toBeVisible()
 })
 
-test('positions the desktop research background on the preview artboard', async ({ page }) => {
+test('matches the original desktop artboard spacing', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 })
   await page.goto('/medflow-redesign')
 
-  const backgroundBounds = await page.locator('.mf-redesign-background').evaluate((element) => {
-    const bounds = element.getBoundingClientRect()
-    return {
-      height: bounds.height,
-      left: bounds.left,
-      top: bounds.top,
-      width: bounds.width
-    }
-  })
+  const boundsFor = (selector: string) =>
+    page.locator(selector).evaluate((element) => {
+      const bounds = element.getBoundingClientRect()
+      return {
+        height: bounds.height,
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width
+      }
+    })
+
+  const [backgroundBounds, cardBounds, principlesBounds, footerBounds] = await Promise.all([
+    boundsFor('.mf-redesign-background'),
+    boundsFor('.mf-redesign-card'),
+    boundsFor('.mf-redesign-principles'),
+    boundsFor('footer')
+  ])
 
   expect(backgroundBounds.left).toBeCloseTo(0, 0)
   expect(backgroundBounds.top).toBeCloseTo(402, 0)
   expect(backgroundBounds.width).toBeCloseTo(1440, 0)
   expect(backgroundBounds.height).toBeCloseTo(810, 0)
+  expect(cardBounds.left).toBeCloseTo(808, 0)
+  expect(cardBounds.top).toBeCloseTo(164, 0)
+  expect(cardBounds.width).toBeCloseTo(448, 0)
+  expect(cardBounds.height).toBeCloseTo(667, 0)
+  expect(principlesBounds.left).toBeCloseTo(184, 0)
+  expect(principlesBounds.top).toBeCloseTo(1074, 0)
+  expect(principlesBounds.width).toBeCloseTo(1072, 0)
+  expect(principlesBounds.height).toBeCloseTo(213, 0)
+  expect(footerBounds.top).toBeCloseTo(1424, 0)
 })
 
 test('supports the original preview state query parameters', async ({ page }) => {

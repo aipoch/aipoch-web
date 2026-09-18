@@ -276,10 +276,11 @@ export const MedFlowRedesignExperience = ({
             </p>
             <form aria-label="MedFlow early access" onSubmit={submit} noValidate>
               <label>
-                Your name
+                <span className="mf-redesign-field-label">Your name</span>
                 <input
                   ref={nameRef}
                   aria-label="Your name"
+                  placeholder="Your name"
                   name="name"
                   value={name}
                   disabled={busy}
@@ -296,9 +297,10 @@ export const MedFlowRedesignExperience = ({
                 />
               </label>
               <label>
-                Email address
+                <span className="mf-redesign-field-label">Email address</span>
                 <input
                   aria-label="Email address"
+                  placeholder="Email address"
                   name="email"
                   type="email"
                   inputMode="email"
