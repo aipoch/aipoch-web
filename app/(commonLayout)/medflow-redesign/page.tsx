@@ -1,7 +1,8 @@
 import '@/components/landing/landing-effects.css'
 import './medflow-redesign.css'
-import { MedFlowRedesignExperience } from './medflow-redesign-experience'
 import type { Metadata } from 'next'
+import { MedFlowRedesignExperience } from './medflow-redesign-experience'
+import { resolveMedFlowRedesignResult, resolveMedFlowRedesignState } from './medflow-redesign-state'
 
 export const metadata: Metadata = {
   title: 'MedFlow redesign — A new signal is coming · AIPOCH',
@@ -26,15 +27,24 @@ export const metadata: Metadata = {
   }
 }
 
-const MedFlowRedesignPage = () => {
+type MedFlowRedesignPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+const MedFlowRedesignPage = async ({ searchParams }: MedFlowRedesignPageProps = {}) => {
+  const parameters = (await searchParams) ?? {}
+
   // Authorized preview: intentionally excluded from the sitemap by product approval.
   // This authorized preview is intentionally independent from the production /medflow page.
   return (
     <main
       id="top"
-      className="medflow-page min-h-screen overflow-hidden bg-[#E9E9E9] text-[#111111]"
+      className="medflow-redesign-page min-h-screen overflow-hidden bg-[#f6f6f4] text-[#111111]"
     >
-      <MedFlowRedesignExperience />
+      <MedFlowRedesignExperience
+        initialState={resolveMedFlowRedesignState(parameters.state)}
+        submissionResult={resolveMedFlowRedesignResult(parameters.result)}
+      />
     </main>
   )
 }
