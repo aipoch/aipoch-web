@@ -15,8 +15,11 @@ import {
   parseStoredBlogListVisibleCount,
   shouldFetchMoreBlogListPages
 } from '@/lib/blog'
+import { staticImage } from '@/lib/staticAsset'
 import { cn } from '@/lib/utils'
 import { type BlogPostsListData, useInfiniteBlogPosts } from '@/service/blog'
+
+const blogHeroBackground = staticImage('blog-hero-background-ef51ee4b.webp')
 
 interface BlogListClientProps {
   /** First-page data prefetched on the server in useInfiniteQuery format. */
@@ -142,7 +145,9 @@ export function BlogListClient({ initialData }: BlogListClientProps) {
               </p>
               {/* biome-ignore lint/performance/noImgElement: Figma hero background asset. */}
               <img
-                src="/blog/hero-background.png"
+                src={blogHeroBackground.src}
+                width={blogHeroBackground.width}
+                height={blogHeroBackground.height}
                 alt=""
                 aria-hidden
                 draggable={false}

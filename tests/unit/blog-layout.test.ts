@@ -47,4 +47,13 @@ describe('blog list layout', () => {
       })
     ).toBe(false)
   })
+
+  test('serves the list hero background from the hashed CDN catalogue', async () => {
+    const source = await Bun.file(
+      new URL('../../components/blog-list-client.tsx', import.meta.url)
+    ).text()
+
+    expect(source).toContain("staticImage('blog-hero-background-ef51ee4b.webp')")
+    expect(source).not.toContain('/blog/hero-background.png')
+  })
 })
