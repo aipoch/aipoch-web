@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { mkdirSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { chromium, devices } from '@playwright/test'
+import { join } from 'node:path'
+import { expect as browserExpect, chromium, devices } from '@playwright/test'
+
+const reviewArtifacts = join(process.cwd(), '.codex/ui-review-2026-09-21')
 
 // Exercise the real launcher and browser/SSR consumers with ephemeral loopback ports.
 const availablePort = async (): Promise<number> => {
@@ -29,6 +33,7 @@ const waitFor = async (url: string) => {
   throw new Error(`Timed out waiting for ${url}`)
 }
 beforeAll(async () => {
+  mkdirSync(reviewArtifacts, { recursive: true })
   const port = await availablePort()
   let mockPort = await availablePort()
   while (mockPort === port) mockPort = await availablePort()
@@ -77,10 +82,147 @@ describe('mock development end to end', () => {
     expect((await fetch(`${web}/community/posts/1`)).status).toBe(404)
     const sitemap = await (await fetch(`${web}/sitemap.xml`)).text()
     expect(sitemap).toContain('/agent-skills/literature-review</loc>')
-    expect(sitemap).toContain('<lastmod>2026-09-01T00:00:00.000Z</lastmod>')
+    for (const [path, date] of [
+      ['', '2026-09-21'],
+      ['/agent-skills/list', '2026-09-20'],
+      ['/blog', '2026-09-21'],
+      ['/blog/release-notes', '2026-09-21']
+    ]) {
+      expect(sitemap).toContain(
+        `<loc>https://aipoch.com${path}</loc>\n<lastmod>${date}T00:00:00.000Z</lastmod>`
+      )
+    }
+    expect(sitemap).toContain(
+      '<loc>https://aipoch.com/open-science/download</loc>\n<lastmod>2026-09-20T00:00:00.000Z</lastmod>'
+    )
     expect(sitemap).not.toContain('/claim/')
     expect(sitemap).not.toContain('/open-science/overview</loc>')
   }, 120000)
+
+  test('blog layout keeps the reading time with the heading and the desktop contents pinned', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+      await page.goto(`${web}/blog/release-notes`)
+      const toc = page.getByRole('navigation', { name: 'On this page', exact: true })
+      await toc.waitFor()
+      const header = page.locator('article header')
+      expect(await header.innerText()).toContain('MIN READ')
+      await browserExpect(header.locator('time')).toHaveText('Sep 1, 2026')
+      const metadata = header.locator('time').locator('..')
+      expect(await metadata.innerText()).toMatch(/Sep 1, 2026[\s\S]+3 MIN READ/)
+      const contentGap = await page
+        .locator('.blog-article-body .markdown-body > :first-child')
+        .evaluate((element) => {
+          const time = document.querySelector('article header time')
+          if (!time) throw new Error('Publication date missing')
+          return element.getBoundingClientRect().top - time.getBoundingClientRect().bottom
+        })
+      expect(contentGap).toBeGreaterThanOrEqual(24)
+      expect(contentGap).toBeLessThanOrEqual(40)
+      expect(await page.locator('aside').innerText()).not.toContain('AIPOCH')
+      const rejectCookies = page.getByRole('button', { name: 'Reject Non-Essential' })
+      if (await rejectCookies.isVisible()) await rejectCookies.click()
+      await page.screenshot({ path: join(reviewArtifacts, 'blog-article.png') })
+      const before = await toc.boundingBox()
+      const heading = await header.boundingBox()
+      if (!before || !heading) throw new Error('Blog heading or contents missing')
+      expect(before.y).toBeLessThan(heading.y + 50)
+      await page.evaluate(() => window.scrollTo(0, 650))
+      await page.waitForTimeout(200)
+      const pinned = await toc.boundingBox()
+      if (!pinned) throw new Error('Sticky contents missing')
+      expect(pinned.y).toBeGreaterThanOrEqual(70)
+      expect(pinned.y).toBeLessThan(160)
+      await page.screenshot({ path: join(reviewArtifacts, 'blog-article-scrolled.png') })
+      await toc.getByRole('link', { name: 'Data validation', exact: true }).click()
+      await page.waitForURL(/#heading-data-validation$/)
+      expect(await page.locator('#heading-data-validation').isVisible()).toBe(true)
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.evaluate(() => window.scrollTo(0, 0))
+      expect(await toc.isVisible()).toBe(false)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true
+      )
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
+  test('centers the blog artwork below the introduction', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+      await page.goto(`${web}/blog`)
+      const cards = page.locator('main a[href^="/blog/"]')
+      await browserExpect(cards).toHaveCount(10)
+      await browserExpect(cards.locator('time')).toHaveCount(10)
+      for (const date of await cards.locator('time').allTextContents())
+        expect(date).toBe('Sep 1, 2026')
+      expect((await cards.allInnerTexts()).join(' ')).not.toContain('MIN READ')
+      const intro = page.getByText('Explore AIPOCH Open-Science product updates', { exact: false })
+      const illustration = page.locator('img[src*="blog-hero-background"]')
+      await illustration.waitFor()
+      const textBox = await intro.boundingBox()
+      const imageBox = await illustration.boundingBox()
+      if (!textBox || !imageBox) throw new Error('Blog introduction or artwork missing')
+      expect(
+        Math.abs(textBox.x + textBox.width / 2 - imageBox.x - imageBox.width / 2)
+      ).toBeLessThan(2)
+      expect(imageBox.y).toBeGreaterThanOrEqual(textBox.y + textBox.height)
+      const rejectCookies = page.getByRole('button', { name: 'Reject Non-Essential' })
+      if (await rejectCookies.isVisible()) await rejectCookies.click()
+      await page.screenshot({ path: join(reviewArtifacts, 'blog-list.png') })
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
+  test('homepage preserves API downloads, autoplay, workflow controls and installer actions', async () => {
+    const browser = await chromium.launch()
+    try {
+      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+      await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+      const page = await context.newPage()
+      const manifestResponse = page.waitForResponse((response) =>
+        response.url().includes('/open-science/app/stable/version.json')
+      )
+      await page.goto(web)
+      expect((await manifestResponse).fromServiceWorker()).toBe(true)
+      await page.getByRole('button', { name: 'Download macOS', exact: true }).click()
+      const menu = page.locator('#home-macos-downloads')
+      await menu.waitFor()
+      await browserExpect(menu.getByRole('link', { name: /Apple Silicon/ })).toHaveAttribute(
+        'href',
+        /mac-arm64/
+      )
+      await browserExpect(menu.getByRole('link', { name: /Intel/ })).toHaveAttribute(
+        'href',
+        /mac-x64/
+      )
+      await page.keyboard.press('Escape')
+      const workbench = page.locator('#open-science')
+      await workbench.getByRole('button', { name: 'Execute', exact: true }).click()
+      await browserExpect(
+        workbench.getByRole('button', { name: 'Execute', exact: true })
+      ).toHaveAttribute('aria-expanded', 'true')
+      await browserExpect(page.getByTestId('workflow-preview').getByRole('img')).toHaveAttribute(
+        'src',
+        '/figma/landing/workflow-execute.png'
+      )
+      await browserExpect(page.getByTestId('skills-count')).toHaveText('30')
+      expect(await page.locator('video').getAttribute('src')).toContain('.mp4')
+      expect(await page.locator('video').getAttribute('preload')).toBe('metadata')
+      for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({ width, height: 900 })
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true
+        )
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 90000)
 
   test('SSR content remains visible with JavaScript disabled', async () => {
     const browser = await chromium.launch()
@@ -135,6 +277,16 @@ describe('mock development end to end', () => {
         const errors: string[] = []
         page.on('pageerror', (error) => errors.push(error.message))
         await page.goto(`${web}/agent-skills/list`)
+        const cards = page.locator('main a[href^="/agent-skills/"]')
+        await browserExpect(cards).toHaveCount(9)
+        const rejectCookies = page.getByRole('button', { name: 'Reject Non-Essential' })
+        if (await rejectCookies.isVisible()) await rejectCookies.click()
+        await page.screenshot({ path: join(reviewArtifacts, `skills-list-${device}.png`) })
+        await cards.last().scrollIntoViewIfNeeded()
+        await browserExpect.poll(() => cards.count()).toBeGreaterThanOrEqual(18)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true
+        )
         await page.getByPlaceholder('Search skills...').fill('Clinical Trials')
         const searchResponse = await page.waitForResponse(
           (response) =>
@@ -161,6 +313,99 @@ describe('mock development end to end', () => {
       }
     }, 120000)
   }
+  for (const device of ['desktop', 'mobile']) {
+    test(`${device}: browser Back restores loaded skills, filters, sorting and scroll after a detail reload`, async () => {
+      const browser = await chromium.launch()
+      try {
+        const context = await browser.newContext(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 900 } }
+        )
+        const page = await context.newPage()
+        await page.goto(`${web}/agent-skills/list`)
+        const reject = page.getByRole('button', { name: 'Reject Non-Essential' })
+        if (await reject.isVisible()) await reject.click()
+        await page.getByRole('button', { name: 'Download', exact: true }).click()
+        const cards = page.locator('main a[href^="/agent-skills/"]')
+        await browserExpect(cards).toHaveCount(9)
+        await cards.last().scrollIntoViewIfNeeded()
+        await browserExpect.poll(() => cards.count()).toBeGreaterThanOrEqual(18)
+        const target = cards.nth(14)
+        const href = await target.getAttribute('href')
+        await target.scrollIntoViewIfNeeded()
+        const y = await page.evaluate(() => window.scrollY)
+        const titles = await cards.allTextContents()
+        await target.click()
+        await browserExpect(page).toHaveURL(`${web}${href}`)
+        await page.reload()
+        await page.goBack()
+        await browserExpect(page).toHaveURL(`${web}/agent-skills/list`)
+        await browserExpect.poll(() => cards.count()).toBeGreaterThanOrEqual(18)
+        await browserExpect
+          .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - y), {
+            timeout: 15000
+          })
+          .toBeLessThan(3)
+        expect((await cards.allTextContents()).slice(0, 18)).toEqual(titles.slice(0, 18))
+        const filteredResponse = page.waitForResponse(
+          (response) => response.url().includes('search=Review') && response.status() === 200
+        )
+        await page.getByPlaceholder('Search skills...').fill('Review')
+        await filteredResponse
+        await browserExpect.poll(() => cards.count()).toBeLessThanOrEqual(10)
+        await browserExpect.poll(() => cards.count()).toBeGreaterThanOrEqual(9)
+        await browserExpect(cards.first()).toContainText('Review')
+        await cards.nth(3).scrollIntoViewIfNeeded()
+        const filteredY = await page.evaluate(() => window.scrollY)
+        const filteredHref = await cards.nth(3).getAttribute('href')
+        await cards.nth(3).click()
+        await browserExpect(page).toHaveURL(`${web}${filteredHref}`)
+        await page.reload()
+        await page.goBack()
+        await browserExpect(page.getByPlaceholder('Search skills...')).toHaveValue('Review')
+        await browserExpect
+          .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - filteredY), {
+            timeout: 15000
+          })
+          .toBeLessThan(3)
+      } finally {
+        await browser.close()
+      }
+    }, 120000)
+
+    test(`${device}: browser Back restores expanded blog rows after a detail reload`, async () => {
+      const browser = await chromium.launch()
+      try {
+        const context = await browser.newContext(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 900 } }
+        )
+        const page = await context.newPage()
+        await page.goto(`${web}/blog`)
+        const reject = page.getByRole('button', { name: 'Reject Non-Essential' })
+        if (await reject.isVisible()) await reject.click()
+        const cards = page.locator('main a[href^="/blog/"]')
+        await browserExpect(cards).toHaveCount(10)
+        await page.getByRole('button', { name: 'Show more' }).click()
+        await browserExpect(cards).toHaveCount(19)
+        await cards.nth(14).scrollIntoViewIfNeeded()
+        const y = await page.evaluate(() => window.scrollY)
+        const articleHref = await cards.nth(14).getAttribute('href')
+        await cards.nth(14).click()
+        await browserExpect(page).toHaveURL(`${web}${articleHref}`)
+        await page.reload()
+        await page.goBack()
+        await browserExpect(page).toHaveURL(`${web}/blog`)
+        await browserExpect(cards).toHaveCount(19)
+        await browserExpect
+          .poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - y), {
+            timeout: 15000
+          })
+          .toBeLessThan(3)
+      } finally {
+        await browser.close()
+      }
+    }, 120000)
+  }
+
   test('stops both ports when the foreground launcher receives SIGTERM', async () => {
     launcher.kill('SIGTERM')
     expect(await launcher.exited).toBe(0)

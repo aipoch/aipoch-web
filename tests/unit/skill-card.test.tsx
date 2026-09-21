@@ -32,4 +32,24 @@ describe('skill card', () => {
     expect(html).toContain('>87</span>')
     expect(html).not.toContain('>86.6</span>')
   })
+
+  test.each([
+    [100, 'bg-[#E6F4ED] text-[#1A6B3C]'],
+    [75, 'bg-[#E6F4ED] text-[#1A6B3C]'],
+    [74.6, 'bg-[#FEF3C7] text-[#92400E]'],
+    [45, 'bg-[#FEF3C7] text-[#92400E]'],
+    [44.6, 'bg-[#FEE2E2] text-[#991B1B]'],
+    [0, 'bg-[#FEE2E2] text-[#991B1B]']
+  ] as const)('uses the existing total-score band for %s before rounding', (score, colors) => {
+    const html = renderToStaticMarkup(<SkillCard skill={{ ...baseSkill, score }} />)
+
+    expect(html).toContain(colors)
+    expect(html).toContain(`>${Math.round(score)}</span>`)
+  })
+
+  test.each([null, undefined])('omits the score badge when the score is %s', (score) => {
+    const html = renderToStaticMarkup(<SkillCard skill={{ ...baseSkill, score }} />)
+
+    expect(html).not.toContain('font-bold')
+  })
 })

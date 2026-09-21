@@ -13,6 +13,7 @@ import { createPageMetadata } from '@/lib/page-metadata'
 import {
   fetchHomepageConfig,
   fetchHomepageReadWatch,
+  fetchHomepageSkillsCount,
   OPEN_SCIENCE_HOMEPAGE_MODULE
 } from '@/service/homepage'
 
@@ -26,24 +27,27 @@ export const metadata: Metadata = createPageMetadata({
 })
 
 export default async function Home() {
-  const [openScienceConfig, readWatch] = await Promise.all([
+  const [openScienceConfig, readWatch, skillsCount] = await Promise.all([
     fetchHomepageConfig(OPEN_SCIENCE_HOMEPAGE_MODULE),
-    fetchHomepageReadWatch(OPEN_SCIENCE_HOMEPAGE_MODULE)
+    fetchHomepageReadWatch(OPEN_SCIENCE_HOMEPAGE_MODULE),
+    fetchHomepageSkillsCount()
   ])
   const spotlight = resolveHomeSpotlightContent(openScienceConfig, readWatch)
   const videoItems = spotlight.media
-    .filter((item) => item.kind === 'video' || item.label.trim().toLowerCase() === 'product tour')
+    .filter((item) => item.kind === 'video')
+    .slice(0, 1)
     .map((item) => ({ name: item.label, url: item.url }))
   const { lastUpdated, schemas } = buildHomepageStructuredData({
     releaseVersion: spotlight.releaseVersion,
     lastModified: spotlight.latestRelease.updateDate,
-    videoItems
+    videoItems,
+    skillsCount
   })
 
   return (
     <>
       <JsonLd data={schemas} />
-      <HomePage spotlightContent={spotlight} lastUpdated={lastUpdated} />
+      <HomePage spotlightContent={spotlight} lastUpdated={lastUpdated} skillsCount={skillsCount} />
     </>
   )
 }

@@ -6,6 +6,7 @@ import { HighlightedText } from '@/components/highlighted-text'
 import { JsonLd } from '@/components/json-ld'
 import { MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
+import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { getAdjacentGuides, getAllGuides, getGuide } from '@/lib/guides'
 import { createPageMetadata } from '@/lib/page-metadata'
@@ -16,10 +17,9 @@ interface GuidePageProps {
   params: Promise<{ slug: string }>
 }
 
-const GUIDE_SEO: Record<string, { title: string; description: string }> = {
+const GUIDE_SEO: Record<string, { title: string; description?: string }> = {
   'get-started-with-skills': {
-    title: 'Get Started with Skills | AIPOCH',
-    description: 'Installation takes less than a minute and requires no technical expertise.'
+    title: 'Get Started with Skills | AIPOCH'
   },
   'what-is-a-skill': {
     title: 'What Are Agent Skills? Reusable AI Packages Explained',
@@ -30,16 +30,6 @@ const GUIDE_SEO: Record<string, { title: string; description: string }> = {
     title: 'Build Your Own Agent Skill — Create and Automate Tasks with AI',
     description:
       'Learn how to create reusable Agent Skills that let AI Agents follow workflows consistently. Step-by-step guidance on designing, testing, and improving skills for task automation, with examples and reference materials.'
-  },
-  'openclaw-local-deployment': {
-    title: 'OpenClaw Local Deployment Guide | AIPOCH',
-    description:
-      'Learn how to deploy OpenClaw locally on Windows. This step-by-step guide covers Node.js installation, OpenClaw setup, configuration, and model API connection.'
-  },
-  'openclaw-cloud-deployment': {
-    title: 'OpenClaw Cloud Deployment Guide (VPS) | AIPOCH',
-    description:
-      'Step-by-step guide to deploying OpenClaw on a VPS. Learn how to set up a cloud server, connect your AI model API, and run OpenClaw continuously online.'
   }
 }
 
@@ -49,13 +39,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const guide = await getGuide(slug)
+  if (!guide) notFound()
+
   const seo = GUIDE_SEO[slug]
-  const guide = seo ? null : await getGuide(slug)
-  const title = seo?.title ?? `${guide?.frontmatter.title ?? 'Guide'} | AIPOCH`
-  const description =
-    seo?.description ??
-    guide?.frontmatter.description ??
-    'Explore practical AIPOCH guides for scientific research workflows.'
+  const title = seo?.title ?? `${guide.frontmatter.title} | AIPOCH`
+  const description = seo?.description ?? guide.frontmatter.description
 
   return createPageMetadata({
     title,
@@ -102,7 +91,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
     },
     url: `${SITE_DOMAIN}/guides/${slug}`,
     datePublished: '2026-02-09T00:00:00Z',
-    dateModified: '2026-02-09T00:00:00Z'
+    dateModified: commonLayoutLastModified(guide.frontmatter.lastModified)
   }
 
   return (

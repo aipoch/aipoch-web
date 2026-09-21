@@ -150,7 +150,20 @@ export const blogs: BlogPostDetail[] = Array.from({ length: 24 }, (_, index) => 
   view_count: 100 - index,
   published_at: fixtureDate,
   content:
-    '# Local research notes\n\nThis sample article is available without the business API.\n\n## Reproducible workflows\n\nKeep sources, analysis, and results together.',
+    '# Local research notes\n\nThis sample article is available without the business API.\n\n## Reproducible workflows\n\nKeep sources, analysis, and results together.' +
+    [
+      'Research planning',
+      'Source collection',
+      'Data validation',
+      'Analysis review',
+      'Artifact inspection',
+      'Sharing results'
+    ]
+      .map(
+        (heading) =>
+          `\n\n## ${heading}\n\n${Array.from({ length: 4 }, () => 'Record each research decision alongside the source material, analysis code, and output artifacts. Review the available evidence before continuing, check assumptions with your collaborators, and retain a reproducible record of the workflow.').join('\n\n')}`
+      )
+      .join(''),
   previous_post: null,
   next_post: null
 }))

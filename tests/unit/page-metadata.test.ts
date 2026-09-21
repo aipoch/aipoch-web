@@ -66,13 +66,14 @@ describe('page metadata contracts', () => {
     })
   })
 
-  test('publishes unique, mirrored metadata for all five guide pages', async () => {
+  test('publishes unique, mirrored metadata for all three guide pages', async () => {
     const { generateMetadata } = await import('../../app/(commonLayout)/guides/[slug]/page')
     const expectedGuides = [
       {
         slug: 'get-started-with-skills',
         title: 'Get Started with Skills | AIPOCH',
-        description: 'Installation takes less than a minute and requires no technical expertise.'
+        description:
+          'Choose and install a research skill, then run your first task and review the results'
       },
       {
         slug: 'what-is-a-skill',
@@ -85,18 +86,6 @@ describe('page metadata contracts', () => {
         title: 'Build Your Own Agent Skill — Create and Automate Tasks with AI',
         description:
           'Learn how to create reusable Agent Skills that let AI Agents follow workflows consistently. Step-by-step guidance on designing, testing, and improving skills for task automation, with examples and reference materials.'
-      },
-      {
-        slug: 'openclaw-local-deployment',
-        title: 'OpenClaw Local Deployment Guide | AIPOCH',
-        description:
-          'Learn how to deploy OpenClaw locally on Windows. This step-by-step guide covers Node.js installation, OpenClaw setup, configuration, and model API connection.'
-      },
-      {
-        slug: 'openclaw-cloud-deployment',
-        title: 'OpenClaw Cloud Deployment Guide (VPS) | AIPOCH',
-        description:
-          'Step-by-step guide to deploying OpenClaw on a VPS. Learn how to set up a cloud server, connect your AI model API, and run OpenClaw continuously online.'
       }
     ]
 

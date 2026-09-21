@@ -5,10 +5,10 @@ import { type HomeSpotlightContent, resolveHomeSpotlightContent } from './home-s
 import { DEFAULT_HOMEPAGE_LAST_UPDATED, type HomepageLastUpdated } from './home-structured-data'
 import { homeMainShell } from './home-styles'
 import { HomeAuditSection } from './sections/audit-section'
-import { HomeClosingSection } from './sections/closing-section'
 import { HomeEcosystemSection } from './sections/ecosystem-section'
 import { HomeSkillsSection } from './sections/skills-section'
 import { HomeSpotlightSection } from './sections/spotlight-section'
+import { HomeTourSection } from './sections/tour-section'
 import { HomeWorkbenchSection } from './sections/workbench-section'
 
 export const HomePage = ({
@@ -32,12 +32,12 @@ export const HomePage = ({
   return (
     <main data-homepage="aipoch-open-science" className={`${homeMainShell} -mt-[var(--nav-h)]`}>
       <HomeHero githubStars={githubStars} />
-      <HomeSpotlightSection content={spotlight} lastUpdated={lastUpdated} />
+      <HomeTourSection media={spotlight.media} />
       <HomeEcosystemSection skillsCount={currentSkillsCount} />
+      <HomeSpotlightSection content={spotlight} lastUpdated={lastUpdated} />
       <HomeWorkbenchSection />
       <HomeSkillsSection skillsCount={currentSkillsCount} />
       <HomeAuditSection />
-      <HomeClosingSection />
     </main>
   )
 }

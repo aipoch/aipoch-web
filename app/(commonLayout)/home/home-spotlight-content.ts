@@ -1,3 +1,4 @@
+import { formatPublishedDate } from '@/lib/format-published-date'
 import type {
   HomepageMediaItem,
   HomepagePublicConfig,
@@ -114,19 +115,6 @@ function pairsFromTitleText(
   })
 }
 
-/** Read & watch dates use local calendar conversion with abbreviated months for compact cards. */
-export function formatReadWatchDate(dateStr: string | null | undefined): string {
-  const trimmed = asTrimmedString(dateStr)
-  if (!trimmed) return ''
-  const date = new Date(trimmed)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
-
 function mapReadWatchItems(
   items: Array<HomepageReadWatchItem | null | undefined> | null | undefined
 ): HomeSpotlightReadWatchItem[] {
@@ -140,7 +128,7 @@ function mapReadWatchItems(
       {
         title,
         meta: asTrimmedString(item.category),
-        date: formatReadWatchDate(item.published_at),
+        date: formatPublishedDate(item.published_at),
         url: `/blog/${encodeURIComponent(slug)}`
       }
     ]
@@ -172,3 +160,5 @@ export function resolveHomeSpotlightContent(
     readWatch: mapReadWatchItems(readWatch?.items)
   }
 }
+
+export { formatPublishedDate as formatReadWatchDate } from '@/lib/format-published-date'

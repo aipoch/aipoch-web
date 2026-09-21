@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Download, Eye, Search, Star, X } from 'lucide-r
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
 import { cn } from '@/lib/utils'
 import type { SkillsOrderBy, SkillsOrderDirection } from '@/service/skills'
 import { useCategories, useInfiniteSkills, useTotalCount } from '@/service/skills'
@@ -26,49 +27,35 @@ const skillToolbarItems = [
 ] as const
 
 const PAGE_SIZE = 9 // Nine items per page fit the three-column layout.
-const SCROLL_STORAGE_KEY = 'skills-list-scroll-position'
 
 export default function SkillsPage() {
   const { data: categoriesData, isLoading: isLoadingCategories } = useCategories()
-  const [selectedCategory, setSelectedCategory] = useState<Category>('ALL')
-  const [searchInput, setSearchInput] = useState('')
-  const [isSortRefreshing, setIsSortRefreshing] = useState(false)
-  const [sortState, setSortState] = useState<{
-    orderBy: SkillsOrderBy
-    orderType: SkillsOrderDirection
-  }>({
-    orderBy: 'view_count',
-    orderType: 'desc'
+  const [view, setView, viewReady] = useNavigationViewState<{
+    selectedCategory: Category
+    searchInput: string
+    sortState: { orderBy: SkillsOrderBy; orderType: SkillsOrderDirection }
+    pageCount: number
+  }>('skills-list', {
+    selectedCategory: 'ALL',
+    searchInput: '',
+    sortState: { orderBy: 'view_count', orderType: 'desc' },
+    pageCount: 1
   })
-
-  // Debounce the search query.
+  const { selectedCategory, searchInput, sortState } = view
+  const setSelectedCategory = (category: Category) =>
+    setView((previous) => ({
+      ...previous,
+      selectedCategory: category,
+      pageCount: 1
+    }))
+  const setSearchInput = (search: string) =>
+    setView((previous) => ({
+      ...previous,
+      searchInput: search,
+      pageCount: 1
+    }))
+  const [isSortRefreshing, setIsSortRefreshing] = useState(false)
   const debouncedSearch = useDebounce(searchInput, { wait: 400 })
-
-  // Disable browser scroll restoration and restore the position immediately ourselves.
-  useEffect(() => {
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual'
-    }
-
-    // Restore the previous scroll position.
-    const savedPosition = sessionStorage.getItem(SCROLL_STORAGE_KEY)
-    if (savedPosition) {
-      window.scrollTo(0, parseInt(savedPosition, 10))
-      sessionStorage.removeItem(SCROLL_STORAGE_KEY)
-    }
-
-    // Save the scroll position when a skill card is clicked.
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      const link = target.closest('a')
-      if (link?.getAttribute('href')?.startsWith('/agent-skills/')) {
-        sessionStorage.setItem(SCROLL_STORAGE_KEY, window.scrollY.toString())
-      }
-    }
-
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [])
 
   // Map category names to IDs.
   const categoryNameToId = useMemo(() => {
@@ -131,39 +118,74 @@ export default function SkillsPage() {
 
   const handleSortTrigger = (orderBy: SkillsOrderBy) => {
     setIsSortRefreshing(true)
-    setSortState((prev) => {
-      if (prev.orderBy === orderBy) {
-        return {
-          orderBy,
-          orderType: prev.orderType === 'asc' ? 'desc' : 'asc'
-        }
-      }
-
-      return {
+    setView((previous) => ({
+      ...previous,
+      pageCount: 1,
+      sortState: {
         orderBy,
-        orderType: 'desc'
+        orderType:
+          previous.sortState.orderBy === orderBy && previous.sortState.orderType === 'desc'
+            ? 'asc'
+            : 'desc'
       }
-    })
+    }))
   }
 
+  const loadedPages = data?.pages.length ?? 0
+  const restoringPages =
+    viewReady &&
+    !isError &&
+    (isLoadingCategories ||
+      searchInput !== debouncedSearch ||
+      (loadedPages < view.pageCount && (isLoading || Boolean(hasNextPage))))
+  useEffect(() => {
+    if (!viewReady || isLoadingCategories || searchInput !== debouncedSearch || isError) return
+    if (loadedPages < view.pageCount && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage()
+    } else if (loadedPages > view.pageCount && !isFetching) {
+      setView((previous) => ({ ...previous, pageCount: loadedPages }))
+    }
+  }, [
+    viewReady,
+    isLoadingCategories,
+    searchInput,
+    debouncedSearch,
+    isError,
+    loadedPages,
+    view.pageCount,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    fetchNextPage,
+    setView
+  ])
+
   return (
-    <main className="min-h-dvh">
+    <main
+      data-scroll-restoration-pending={!viewReady || restoringPages}
+      className="-mt-[var(--nav-h)] min-h-dvh bg-[#f7f7f5] pt-[var(--nav-h)] text-[#111]"
+    >
       {/* Hero Section */}
-      <section
-        className="bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)]
-      bg-size-[60px_60px]"
-      >
-        <div
-          className="relative mx-auto max-w-7xl -mt-px flex flex-col justify-between gap-8
-      px-4 py-12 lg:flex-row lg:items-start lg:px-8 lg:py-24"
-        >
+      <section className="relative overflow-hidden">
+        {/* biome-ignore lint/performance/noImgElement: Exact decorative asset exported from Figma. */}
+        <img
+          src="/figma/landing/skills-network.png"
+          alt=""
+          aria-hidden
+          width={1084}
+          height={405}
+          className="pointer-events-none absolute right-[calc(50%-900px)] top-0 hidden h-[405px] w-[1084px] object-contain opacity-[.41] lg:block"
+        />
+        <div className="relative mx-auto max-w-7xl px-4 py-12 lg:min-h-[419px] lg:px-8 lg:py-24">
           <div className="flex-1">
-            <h1 className="mb-4 text-5xl text-black md:text-6xl lg:text-8xl">Skills</h1>
-            <p className="max-w-xl text-lg italic text-black/60 md:text-xl">
+            <h1 className="mb-4 font-[Georgia] text-5xl leading-[1.03] text-[#111] md:text-6xl lg:text-[78px]">
+              Skills
+            </h1>
+            <p className="max-w-xl text-base leading-[26px] text-[#61615c]">
               {AGENT_SKILLS_LIST_DESCRIPTION}
             </p>
           </div>
-          <div className="flex gap-8 lg:pt-8">
+          <div className="mt-8 flex gap-8">
             <div className="text-center">
               <div
                 className={cn(
@@ -210,14 +232,14 @@ export default function SkillsPage() {
                 variant="outline"
                 value={selectedCategory}
                 onValueChange={(value) => value && setSelectedCategory(value as Category)}
-                className="flex-nowrap justify-start"
+                className="flex-nowrap justify-start gap-0"
               >
                 {categories.map((category) => (
                   <ToggleGroupItem
                     key={category}
                     value={category}
                     className={cn(
-                      'text-[10px] sm:text-xs px-6 cursor-pointer font-medium border-black/50 uppercase tracking-wider shrink-0',
+                      'h-9 rounded-none text-[10px] sm:text-xs px-6 cursor-pointer font-medium border-black/50 uppercase tracking-wider shrink-0',
                       'data-[state=on]:bg-black data-[state=on]:text-white hover:bg-black/10'
                     )}
                   >

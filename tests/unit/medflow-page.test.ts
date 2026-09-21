@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
-import { createElement, type ComponentProps } from 'react'
+import { type ComponentProps, createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MedFlowContent } from '../../app/(commonLayout)/medflow/medflow-content'
 import {
-  medFlowMetadata,
-  MEDFLOW_PAGE_LAST_MODIFIED
+  MEDFLOW_PAGE_LAST_MODIFIED,
+  medFlowMetadata
 } from '../../app/(commonLayout)/medflow/medflow-metadata'
 import MedFlowPage from '../../app/(commonLayout)/medflow/page'
 
@@ -40,12 +40,19 @@ const renderContent = (overrides: Partial<ComponentProps<typeof MedFlowContent>>
 
 describe('MedFlow production page', () => {
   test('keeps the canonical route and consistent metadata without an obsolete launch date', () => {
+    const title = 'MedFlow by AIPOCH | Biomedical Research Workflows'
+    const description =
+      'Explore MedFlow, AIPOCH’s upcoming tool for biomedical research workflows. Join the waitlist to hear when private beta access becomes available.'
+    expect(medFlowMetadata.title).toBe(title)
+    expect(medFlowMetadata.openGraph?.title).toBe(title)
+    expect(medFlowMetadata.twitter?.title).toBe(title)
+    expect(medFlowMetadata.description).toBe(description)
     expect(medFlowMetadata.alternates?.canonical).toBe('https://aipoch.com/medflow')
     expect(medFlowMetadata.openGraph?.url).toBe('https://aipoch.com/medflow')
     expect(medFlowMetadata.openGraph?.description).toBe(medFlowMetadata.description ?? undefined)
     expect(medFlowMetadata.twitter?.description).toBe(medFlowMetadata.description ?? undefined)
     expect(medFlowMetadata.description).not.toContain('July 2026')
-    expect(MEDFLOW_PAGE_LAST_MODIFIED).toBe('2026-09-20')
+    expect(MEDFLOW_PAGE_LAST_MODIFIED).toBe('2026-09-21')
   })
 
   test('renders the replacement directly at the existing route, within the shared shell', () => {

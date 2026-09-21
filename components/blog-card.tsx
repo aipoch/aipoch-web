@@ -1,6 +1,6 @@
-import { Clock } from 'lucide-react'
 import Link from 'next/link'
 import type { BlogPost } from '@/lib/blog'
+import { formatPublishedDate } from '@/lib/format-published-date'
 import { cn } from '@/lib/utils'
 
 interface BlogCardProps {
@@ -13,11 +13,12 @@ function formatCategoryLabel(category: string) {
   return value.replace(/\s+/g, '-').replace(/_/g, '-')
 }
 
-function ReadTime({ readTime, className }: { readTime: string; className?: string }) {
+function PublishedDate({ date, className }: { date: string; className?: string }) {
+  const label = formatPublishedDate(date)
+  if (!label) return null
   return (
-    <span className={cn('inline-flex items-center gap-1.5 uppercase text-[#61615c]', className)}>
-      <Clock className="size-3 shrink-0" strokeWidth={2} />
-      <span>{readTime}</span>
+    <span className={cn('shrink-0 text-[#61615c]', className)}>
+      <time dateTime={date}>{label}</time>
     </span>
   )
 }
@@ -38,11 +39,11 @@ export function BlogCard({ post, variant }: BlogCardProps) {
     >
       {isFeatured ? (
         <div className="flex flex-col gap-4">
-          <div className="flex h-6 items-center justify-between gap-4">
+          <div className="flex min-h-6 flex-wrap items-center justify-between gap-4">
             <span className="bg-[#e8e2d6] px-2.5 py-1 text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#6b6b66]">
               {categoryLabel}
             </span>
-            <ReadTime readTime={post.frontmatter.readTime} className="text-xs font-medium leading-4" />
+            <PublishedDate date={post.frontmatter.date} className="text-xs font-medium leading-4" />
           </div>
 
           <h2 className="line-clamp-4 pt-5 font-[Georgia] text-[36px] leading-[44px] tracking-[-0.028em] text-[#111]">
@@ -96,7 +97,7 @@ export function BlogCard({ post, variant }: BlogCardProps) {
           </p>
 
           <div className="flex justify-end pt-2">
-            <ReadTime readTime={post.frontmatter.readTime} className="text-xs leading-[18px]" />
+            <PublishedDate date={post.frontmatter.date} className="text-xs leading-[18px]" />
           </div>
         </div>
       )}

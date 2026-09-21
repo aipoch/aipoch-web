@@ -1,10 +1,10 @@
 'use client'
 
 import { CheckIcon } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { FormEventHandler } from 'react'
 import type { UseFormRegisterReturn } from 'react-hook-form'
+import { CdnImage as Image } from '@/components/cdn-image'
 import type { SubmitMedFlowMemberResult } from '@/service/medflow-members'
 
 const discordUrl = 'https://discord.gg/zxQAYjReRv'

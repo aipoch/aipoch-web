@@ -1,14 +1,14 @@
 'use client'
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { cn } from '@/lib/utils'
 import copy from 'clipboard-copy'
 import { Bot, Check, Copy, Info, User } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { CdnImage as Image } from '@/components/cdn-image'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { SITE_DOMAIN } from '@/lib/config'
 import { staticAsset } from '@/lib/staticAsset'
+import { cn } from '@/lib/utils'
 
 type Identity = 'human' | 'agent'
 
@@ -145,11 +145,11 @@ const OpenClawInteractionCard = () => {
       {/* Footer */}
       <div className="bg-gray-50 border-t border-black py-4 px-6">
         <Link
-          href="/guides/openclaw-local-deployment"
+          href="/guides/get-started-with-skills"
           type="button"
           className="flex items-center justify-center gap-2 text-[10px] uppercase tracking-wider text-black/50 hover:text-black transition-colors cursor-pointer"
         >
-          <span>Don't have an OpenClaw agent?</span>
+          <span>New to research skills?</span>
           <span className="underline underline-offset-2">Get started</span>
           <span>→</span>
         </Link>

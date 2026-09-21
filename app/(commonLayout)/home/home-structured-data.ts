@@ -15,6 +15,8 @@ export const HOMEPAGE_DESCRIPTION =
 
 // Keep this fallback tied to the visible product snapshot, not deployment or SEO edit dates.
 export const HOMEPAGE_LAST_MODIFIED = '2026-08-18'
+// UI changes must not rewrite product release dates or video upload dates.
+export const HOMEPAGE_LAYOUT_LAST_MODIFIED = '2026-09-21'
 const HOMEPAGE_VIDEO_ASSET_HOST = 'statics.aipoch.com'
 const OPEN_SCIENCE_VIDEO_DURATION = 'PT1M0.48S'
 const DEFAULT_HOMEPAGE_VIDEO_NAME = 'AIPOCH Open-Science product tour'
@@ -159,7 +161,11 @@ export const buildHomepageStructuredData = ({
     description: entityDescription,
     isPartOf: { '@id': AIPOCH_WEBSITE_ID },
     about: { '@id': AIPOCH_ORGANIZATION_ID },
-    dateModified: commonLayoutLastModified(lastUpdated.dateTime),
+    dateModified: commonLayoutLastModified(
+      Date.parse(lastUpdated.dateTime) > Date.parse(HOMEPAGE_LAYOUT_LAST_MODIFIED)
+        ? lastUpdated.dateTime
+        : HOMEPAGE_LAYOUT_LAST_MODIFIED
+    ),
     speakable: {
       '@type': 'SpeakableSpecification',
       cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']

@@ -1,11 +1,11 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { ChevronDown, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LogoIcon } from '@/components/svg-icons'
+import { cn } from '@/lib/utils'
 import type { NavChild } from './navbar-data'
 import {
   badgeClassNames,
@@ -127,7 +127,12 @@ export function Navbar() {
       )}
     >
       <nav
-        className="relative z-[2] mx-auto flex w-full max-w-[1320px] items-center justify-between px-4 py-5 sm:px-[clamp(16px,4vw,40px)]"
+        className={cn(
+          'relative z-[2] mx-auto flex w-full items-center justify-between px-4 py-5',
+          pathname === '/'
+            ? 'max-w-[1440px] sm:px-10 lg:px-16'
+            : 'max-w-[1320px] sm:px-[clamp(16px,4vw,40px)]'
+        )}
         onMouseLeave={() => setOpenDesktopMenu(null)}
       >
         {/* Logo */}

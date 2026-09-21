@@ -10,6 +10,7 @@ export interface GuideFrontmatter {
   highlight: string
   readTime: number
   order?: number
+  lastModified?: string
 }
 
 export interface Guide {

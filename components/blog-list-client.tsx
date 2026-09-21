@@ -1,18 +1,16 @@
 'use client'
 
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { BlogCard } from '@/components/blog-card'
 import { BlogCardSkeleton } from '@/components/blog-card-skeleton'
+import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
 import {
   BLOG_LIST_INITIAL_VISIBLE,
-  BLOG_LIST_SCROLL_STORAGE_KEY,
-  BLOG_LIST_VISIBLE_COUNT_STORAGE_KEY,
   type BlogPost,
   getVisibleBlogListPosts,
   mapListItemToBlogPost,
-  parseStoredBlogListVisibleCount,
   shouldFetchMoreBlogListPages
 } from '@/lib/blog'
 import { staticImage } from '@/lib/staticAsset'
@@ -27,11 +25,11 @@ interface BlogListClientProps {
 }
 
 export function BlogListClient({ initialData }: BlogListClientProps) {
-  const [visibleCount, setVisibleCount] = useState(BLOG_LIST_INITIAL_VISIBLE)
+  const [visibleCount, setVisibleCount, viewReady] = useNavigationViewState(
+    'blog-visible-count',
+    BLOG_LIST_INITIAL_VISIBLE
+  )
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
-  const visibleCountRef = useRef(visibleCount)
-  const restoreRef = useRef<{ scrollY: number; visibleCount: number } | null>(null)
-  visibleCountRef.current = visibleCount
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch } =
     useInfiniteBlogPosts(BLOG_LIST_INITIAL_VISIBLE + 1, initialData)
@@ -54,59 +52,19 @@ export function BlogListClient({ initialData }: BlogListClientProps) {
     Boolean(hasNextPage) ||
     visibleCount > BLOG_LIST_INITIAL_VISIBLE
 
-  // Main used infinite scroll, so cached pages stayed visible. Show more needs the visible count saved too.
+  // Refill expanded rows after a full-document Back navigation loses the query cache.
   useEffect(() => {
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
-
-    const savedVisibleCount = parseStoredBlogListVisibleCount(
-      sessionStorage.getItem(BLOG_LIST_VISIBLE_COUNT_STORAGE_KEY)
-    )
-    const savedPosition = sessionStorage.getItem(BLOG_LIST_SCROLL_STORAGE_KEY)
-    sessionStorage.removeItem(BLOG_LIST_VISIBLE_COUNT_STORAGE_KEY)
-    sessionStorage.removeItem(BLOG_LIST_SCROLL_STORAGE_KEY)
-
-    if (savedPosition || savedVisibleCount > BLOG_LIST_INITIAL_VISIBLE) {
-      restoreRef.current = {
-        scrollY: savedPosition ? Number.parseInt(savedPosition, 10) : 0,
-        visibleCount: savedVisibleCount
-      }
-      if (savedVisibleCount > BLOG_LIST_INITIAL_VISIBLE) {
-        setVisibleCount(savedVisibleCount)
-      }
-    }
-
-    const handleClick = (event: MouseEvent) => {
-      const link = (event.target as HTMLElement).closest('a')
-      const href = link?.getAttribute('href')
-      if (window.location.pathname === '/blog' && href?.startsWith('/blog/') && href !== '/blog') {
-        sessionStorage.setItem(BLOG_LIST_SCROLL_STORAGE_KEY, window.scrollY.toString())
-        sessionStorage.setItem(BLOG_LIST_VISIBLE_COUNT_STORAGE_KEY, String(visibleCountRef.current))
-      }
-    }
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [])
-
-  // After Show more is restored, refill pages then jump to the saved scroll offset.
-  useEffect(() => {
-    const restore = restoreRef.current
-    if (!restore) return
-    if (visibleCount < restore.visibleCount) return
     if (
+      viewReady &&
       shouldFetchMoreBlogListPages({
-        visibleCount: restore.visibleCount,
+        visibleCount,
         loadedListCount: listPosts.length,
         hasNextPage: Boolean(hasNextPage),
         isFetchingNextPage
       })
-    ) {
+    )
       void fetchNextPage()
-      return
-    }
-    if (listPosts.length < restore.visibleCount && (hasNextPage || isFetchingNextPage)) return
-    window.scrollTo(0, restore.scrollY)
-    restoreRef.current = null
-  }, [visibleCount, listPosts.length, hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [viewReady, visibleCount, listPosts.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleLoadControl = async () => {
     if (canCollapse) {
@@ -131,11 +89,17 @@ export function BlogListClient({ initialData }: BlogListClientProps) {
   const featured = posts[0]
 
   return (
-    <div className="relative w-full">
+    <div
+      className="relative w-full"
+      data-scroll-restoration-pending={
+        !viewReady ||
+        (!isError && (isLoading || (visibleCount > listPosts.length && Boolean(hasNextPage))))
+      }
+    >
       {featured && (
-        <section className="relative -ml-[120px] mb-[-20px] overflow-hidden pl-[120px] pt-[calc(var(--nav-h)*2+48px)]">
+        <section className="relative mb-12 pt-[calc(var(--nav-h)*2+48px)]">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,480px)_minmax(0,640px)] lg:items-start lg:gap-20">
-            <div className="flex flex-col gap-6">
+            <div className="flex w-full max-w-[480px] flex-col gap-6">
               <h1 className="font-[Georgia] text-[64px] leading-[1.02] tracking-[-0.055em] text-[#111] sm:text-[78px] sm:leading-[79.6px]">
                 Blog
               </h1>
@@ -151,7 +115,7 @@ export function BlogListClient({ initialData }: BlogListClientProps) {
                 alt=""
                 aria-hidden
                 draggable={false}
-                className="pointer-events-none relative h-auto w-full max-w-[480px] -translate-x-[300px] -translate-y-[50px] select-none opacity-[0.42] mix-blend-darken"
+                className="pointer-events-none mx-auto h-auto w-full max-w-[480px] select-none opacity-[0.42] mix-blend-darken"
               />
             </div>
             <BlogCard post={featured} variant="featured" />

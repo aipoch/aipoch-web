@@ -1,137 +1,116 @@
 'use client'
 
-import { useState } from 'react'
-import { HomeReveal, MotionPulseDot } from '../home-motion'
-import {
-  previewCaption,
-  previewCaptionDot,
-  previewPaneSpacer,
-  previewPaneTop,
-  previewPanelBar,
-  previewPanelShell,
-  previewPulseDot,
-  previewSessionLive,
-  previewTabActive,
-  previewTabBase,
-  previewTabIdle,
-  previewVmeta
-} from '../home-styles'
-import {
-  ViewerPane,
-  previewChrome,
-  previewLabels,
-  previewTabs,
-  type PreviewTab
-} from './preview-viewer-pane'
+import { ArrowRight, ChevronDown, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { useRef, useState } from 'react'
+
+const steps = [
+  {
+    id: 'plan',
+    title: 'Plan',
+    description:
+      'Describe the task in plain language. The agent drafts a step-by-step execution plan for your review — nothing runs until you approve it.'
+  },
+  {
+    id: 'execute',
+    title: 'Execute',
+    description:
+      'Run commands, Python, R, search, and connectors in one persistent workspace. Every action stays visible, approval-gated, and open to review.'
+  },
+  {
+    id: 'produce',
+    title: 'Produce',
+    description:
+      'Turn the work into reports, tables, figures, and structured outputs while preserving the evidence and steps behind every result.'
+  },
+  {
+    id: 'review',
+    title: 'Review',
+    description:
+      'Open every result in place. Inspect data, documents, images, source, structures, and notebook output before you approve or share it.'
+  }
+] as const
 
 export const ResearchWorkbench = () => {
-  const [framework, setFramework] = useState('claude')
-  const [preview, setPreview] = useState<PreviewTab>('docs')
-  const providers: Record<string, string> = {
-    claude: 'Claude Subscription',
-    opencode: 'Custom Gateway',
-    codex: 'Codex Subscription'
-  }
-  const steps: Array<[PreviewTab, string, string]> = [
-    ['docs', 'plan', 'Describe the task in plain language'],
-    ['code', 'execute', 'Commands, Python, R, search, connectors'],
-    ['data', 'produce', 'Reports, tables, figures, structures'],
-    ['img', 'preview', 'Every result opens in place']
-  ]
-
+  const [active, setActive] = useState(0)
+  const buttons = useRef<(HTMLButtonElement | null)[]>([])
   return (
-    <HomeReveal delay={0.09}>
-      <div className="mt-[26px] flex flex-wrap items-center gap-3.5 font-mono text-[11px] uppercase tracking-[0.06em] text-[#7d828d]">
-        <span>Any model, no lock-in →</span>
-        <div className="flex flex-wrap border border-white/15">
-          {[
-            ['claude', 'Claude Code'],
-            ['opencode', 'OpenCode'],
-            ['codex', 'Codex']
-          ].map(([id, label]) => (
+    <div className="mt-12 grid items-start gap-9 lg:grid-cols-[436px_minmax(0,1fr)]">
+      <div>
+        {steps.map((step, index) => (
+          <div
+            key={step.id}
+            className={`border-t ${active === index ? 'border-t-2 border-[#fbdd67]' : 'border-[#dcdcd6]'}`}
+          >
             <button
+              ref={(element) => {
+                buttons.current[index] = element
+              }}
               type="button"
-              key={id}
-              onClick={() => setFramework(id)}
-              className={`border-r border-white/15 px-4 py-[9px] text-xs normal-case transition last:border-r-0 ${framework === id ? 'bg-[#ecd44c] text-black' : 'bg-transparent text-[#c3c7d0] hover:text-white'}`}
+              id={`workflow-${step.id}`}
+              aria-expanded={active === index}
+              aria-controls={`workflow-${step.id}-detail`}
+              onClick={() => setActive(index)}
+              onKeyDown={(event) => {
+                const next =
+                  event.key === 'ArrowDown'
+                    ? (index + 1) % steps.length
+                    : event.key === 'ArrowUp'
+                      ? (index + steps.length - 1) % steps.length
+                      : event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? steps.length - 1
+                          : null
+                if (next === null) return
+                event.preventDefault()
+                setActive(next)
+                buttons.current[next]?.focus()
+              }}
+              className={`flex w-full items-center justify-between py-5 text-left font-[Georgia] text-[22px] leading-[33px] tracking-[-.3px] transition-colors hover:text-[#111] ${active === index ? 'text-[#111]' : 'text-[#6b6b66]'}`}
             >
-              {label}
+              {step.title}
+              {active === index ? (
+                <ChevronDown className="size-4" aria-hidden />
+              ) : (
+                <ChevronRight className="size-4" aria-hidden />
+              )}
             </button>
-          ))}
-        </div>
-        <span>
-          provider: <b className="text-white/75">{providers[framework]}</b>
-        </span>
-      </div>
-      <div className="mt-[clamp(36px,5vw,56px)] grid items-start gap-[clamp(20px,3vw,36px)] lg:grid-cols-[minmax(300px,340px)_1fr]">
-        <div className="min-w-0 lg:max-w-[340px]">
-          <div className="grid gap-0.5 sm:grid-cols-2 lg:grid-cols-1">
-            {steps.map(([id, name, description], index) => (
-              <button
-                type="button"
-                onClick={() => setPreview(id)}
-                key={id}
-                data-testid={`workbench-step-${id}`}
-                className={`rounded-[13px] border px-[18px] py-4 text-left transition ${preview === id ? 'border-[#ecd44c] bg-[#ecd44c] text-[#111]' : 'border-white/10 bg-transparent text-[#c3c7d0] hover:border-white/30'}`}
+            <div id={`workflow-${step.id}-detail`} hidden={active !== index} className="pb-7">
+              <p className="text-[15px] leading-[25px] text-[#3d3d3a]">{step.description}</p>
+              <Link
+                href="/open-science"
+                className="mt-[18px] inline-flex items-center gap-2 text-[13px] font-medium"
               >
-                <span className="font-mono text-[10px] uppercase tracking-[0.1em] opacity-70">
-                  step {String(index + 1).padStart(2, '0')}
-                </span>
-                <span className="block">
-                  <b className="mt-[5px] block font-mono text-[17px] font-semibold">{name}</b>
-                  <span className="mt-1 block text-[11.5px] leading-[1.45] opacity-80">
-                    {description}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="mt-5 text-xs leading-[1.6] text-[#8b909b]">
-            Persistent notebook kernels (Python, R, REPL) and a shared terminal hold state across a
-            session. Every action is visible, <b className="text-white">gated by your approval</b>,
-            and open to review.
-          </p>
-        </div>
-        <div data-testid="open-science-preview" className={previewPanelShell}>
-          <div className={previewPanelBar}>
-            <span>preview panel</span>
-            <span className={previewSessionLive}>
-              <MotionPulseDot className={previewPulseDot} /> session held
-            </span>
-          </div>
-          <div className="flex shrink-0 flex-wrap border-b border-white/[.08]" role="tablist">
-            {previewTabs.map((tab) => (
-              <button
-                role="tab"
-                aria-selected={preview === tab}
-                type="button"
-                onClick={() => setPreview(tab)}
-                key={tab}
-                className={`${previewTabBase} ${preview === tab ? previewTabActive : previewTabIdle}`}
-              >
-                {previewLabels[tab]}
-              </button>
-            ))}
-          </div>
-          <div className="relative min-h-0 flex-1">
-            <div className="flex h-full min-h-0 flex-col p-[18px]">
-              <div className={previewPaneTop}>
-                <div className={previewCaption}>
-                  <i className={previewCaptionDot} />
-                  {previewChrome[preview].caption}
-                </div>
-                <ViewerPane active={preview} />
-                <div className={previewVmeta}>
-                  {previewChrome[preview].metadata.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-              </div>
-              <div aria-hidden className={previewPaneSpacer} />
+                Learn more <ArrowRight className="size-3" aria-hidden />
+              </Link>
             </div>
           </div>
-        </div>
+        ))}
       </div>
-    </HomeReveal>
+      <figure
+        data-testid="workflow-preview"
+        className="relative aspect-[4/3] overflow-hidden bg-[#ddd9d0]"
+        aria-labelledby={`workflow-${steps[active].id}`}
+      >
+        {/* biome-ignore lint/performance/noImgElement: Exact Figma background, with its original crop and no overlay. */}
+        <img
+          src="/figma/landing/workflow-background.png"
+          alt=""
+          loading="lazy"
+          className="absolute left-[-2.73%] top-0 h-full w-[105.47%] max-w-none"
+        />
+        {/* biome-ignore lint/performance/noImgElement: Apply the shadow to the visible bitmap bounds, not a wider letterboxed image element. */}
+        <img
+          key={steps[active].id}
+          src={`/figma/landing/workflow-${steps[active].id}.png`}
+          alt={`Open-Science ${steps[active].title.toLowerCase()} workflow preview`}
+          width={4096}
+          height={3072}
+          loading="lazy"
+          className="absolute left-[9.856%] top-[10.79%] h-[166.67%] w-[166.67%] max-w-none rounded-lg object-contain shadow-[0_24px_70px_rgba(0,0,0,.34)]"
+        />
+      </figure>
+    </div>
   )
 }

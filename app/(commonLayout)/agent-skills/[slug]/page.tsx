@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation'
 import { JsonLd } from '@/components/json-ld'
 import { MarkdownErrorBoundary, MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
-import { ScrollToTop } from '@/components/scroll-to-top'
 import { Badge } from '@/components/ui/badge'
 import { SITE_DOMAIN } from '@/lib/config'
 import { mapScoreDetailToSkillEvaluation } from '@/lib/map-score-detail'
@@ -148,7 +147,6 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
   return (
     <>
       <JsonLd data={softwareApplicationSchema} />
-      <ScrollToTop />
       <main className="flex-1">
         <section className="bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-size-[60px_60px]">
           <div className="mx-auto max-w-7xl px-4 py-12 lg:px-8">

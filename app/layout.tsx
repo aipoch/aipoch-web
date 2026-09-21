@@ -3,7 +3,9 @@ import type { Metadata } from 'next'
 import { DM_Serif_Display, Inter, Roboto_Mono } from 'next/font/google'
 import { PublicEnvScript } from 'next-runtime-env'
 import NextTopLoader from 'nextjs-toploader'
+import { Suspense } from 'react'
 import { CookieConsentBanner, CookieConsentController } from '@/components/cookie-consent'
+import { ScrollRestoration } from '@/components/scroll-restoration'
 import { ApiProvider } from '@/service'
 
 const inter = Inter({
@@ -76,6 +78,9 @@ export default function RootLayout({
           speed={200}
         />
         <ApiProvider>{children}</ApiProvider>
+        <Suspense fallback={null}>
+          <ScrollRestoration />
+        </Suspense>
         {/* Keep the consent controller in the root layout to synchronize third-party scripts and preference dialogs across routes. */}
         <CookieConsentController />
         <CookieConsentBanner />
