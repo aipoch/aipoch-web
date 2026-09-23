@@ -1,30 +1,33 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 /**
  * Client for the overall leaderboard (/leaderboard): filters, search, infinite scrolling, and period tab visibility.
  * page.tsx provides the initial data; React Query loads subsequent pages, and leaderboard-view composes the UI.
  */
 import { useDebounce } from 'ahooks'
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  fetchLeaderboardCategoriesClient,
   type LeaderboardInfiniteFilters,
+  leaderboardCategoriesKeys,
   type OverallLeaderboardData,
   type OverallLeaderboardStatsData,
-  fetchLeaderboardCategoriesClient,
-  leaderboardCategoriesKeys,
   useInfiniteOverallLeaderboard
 } from '@/service/leaderboard-overall'
 import {
+  fetchPeriodLeaderboardVisibility,
+  leaderboardPeriodKeys
+} from '@/service/leaderboard-period'
+import {
+  isAnyFilterActive,
   LeaderboardFiltersPanel,
-  LeaderboardHero,
   LeaderboardList,
   LeaderboardSummaryCards,
   LeaderboardToolbar,
-  isAnyFilterActive,
   skillHref
 } from '..'
-import { fetchPeriodLeaderboardVisibility, leaderboardPeriodKeys } from '@/service/leaderboard-period'
+import { LeaderboardOverviewHero } from './leaderboard-overview-hero'
 
 type LeaderboardClientProps = {
   initialPageData: OverallLeaderboardData
@@ -115,7 +118,7 @@ export function LeaderboardClient({ initialPageData, initialStats }: Leaderboard
 
   useEffect(() => {
     const el = loadMoreRef.current
-    if (!el) return
+    if (!el || items.length === 0) return
     const ob = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -200,12 +203,12 @@ export function LeaderboardClient({ initialPageData, initialStats }: Leaderboard
   )
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#E9E9E9] text-[#111111] antialiased">
+    <main className="flex min-h-0 flex-1 flex-col bg-[#f7f7f5] text-[#111111] antialiased">
       {/* Hero banner with the highest score, average score, and statistics (participants, Top 1, and average). */}
-      <LeaderboardHero headerStats={headerStats} />
+      <LeaderboardOverviewHero headerStats={headerStats} />
 
       {/* Toolbar: Overview and API-controlled Daily/Weekly/Monthly tabs; filters and search appear only on the overall leaderboard. */}
-      <div className="sticky top-[73px] z-40 bg-[#E9E9E9]">
+      <div className="sticky top-[var(--nav-h)] z-40 bg-[#f7f7f5]">
         <LeaderboardToolbar
           active="overview"
           visibility={periodVisibilityQuery.data}
@@ -258,7 +261,7 @@ export function LeaderboardClient({ initialPageData, initialStats }: Leaderboard
         onResetAll={resetFilters}
       />
 
-      <div className="mx-auto w-full max-w-[1200px] flex-1 px-5 py-7 sm:px-8 md:px-10 md:pb-20">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-5 py-7 sm:px-8 md:pb-20">
         {/* Overall leaderboard summary above the list: highest and average scores, Core/Med weights, and score ranges. */}
         <LeaderboardSummaryCards summary={summary} />
 
@@ -274,6 +277,6 @@ export function LeaderboardClient({ initialPageData, initialStats }: Leaderboard
           hrefForItem={skillHref}
         />
       </div>
-    </div>
+    </main>
   )
 }

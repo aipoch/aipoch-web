@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Clock } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarDays, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -7,7 +7,9 @@ import { JsonLd } from '@/components/json-ld'
 import { BlogArticleQuote, MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
 import { extractVideosFromContent, getPost } from '@/lib/blog'
+import { blogArticleLastModified } from '@/lib/blog-page-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
+import { formatPublishedDate } from '@/lib/format-published-date'
 import { staticAsset } from '@/lib/staticAsset'
 import { extractToc } from '@/lib/toc'
 
@@ -72,6 +74,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
   const toc = await extractToc(post.content)
   const prev = post.previousPost
   const next = post.nextPost
+  const publishedDate = formatPublishedDate(post.frontmatter.date)
 
   const baseUrl = `${SITE_DOMAIN}/blog/${slug}`
   const ogImage = staticAsset('og-bfe41bdd.webp')
@@ -124,6 +127,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     name: schemaTitle,
     description: schemaDescription,
     datePublished: post.frontmatter.date,
+    dateModified: blogArticleLastModified(post.frontmatter.date),
     primaryImageOfPage: { '@type': 'ImageObject', url: schemaImage },
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -246,68 +250,71 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
           Back to Blog
         </Link>
 
-        <article>
-          <header className="flex flex-col gap-5 bg-[#f6f6f4]">
-            <div className="flex flex-col gap-4 py-8 pr-0 lg:pr-8">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase leading-4 text-[#61615c]">
-                <Clock className="size-3 shrink-0" strokeWidth={2} />
-                <span>{post.frontmatter.readTime}</span>
-              </div>
-              <h1 className="font-[Georgia] text-[40px] leading-[1.08] tracking-[-0.04em] text-[#111] sm:text-[56px] sm:leading-[56px] sm:tracking-[-0.021em] lg:pl-[352px]">
+        <article className="grid gap-10 lg:grid-cols-[280px_minmax(0,880px)] lg:justify-between">
+          <aside className="hidden lg:block lg:w-[280px] lg:self-stretch">
+            <div className="sticky top-[calc(var(--nav-h)+24px)] max-h-[calc(100dvh-var(--nav-h)-48px)] space-y-7 overflow-y-auto overscroll-contain py-8 pl-3 pr-2">
+              <TableOfContents toc={toc} variant="blog" className="border-0 bg-transparent p-0" />
+              <BlogSidebarCTA />
+            </div>
+          </aside>
+
+          <div className="min-w-0 w-full max-w-[880px]">
+            <header className="flex flex-col gap-5 px-8 pb-8 pt-8">
+              <h1 className="font-[Georgia] text-[40px] leading-[1.08] tracking-[-0.04em] text-[#111] sm:text-[56px] sm:leading-[56px] sm:tracking-[-0.021em]">
                 {post.frontmatter.seo?.h1 ?? post.frontmatter.title}
               </h1>
-              <p className="text-base leading-[26px] text-[#61615c] lg:pl-[352px] lg:pr-4">
+              <p className="text-base leading-[26px] text-[#61615c]">
                 {post.frontmatter.description}
               </p>
-            </div>
-            <div className="flex flex-col gap-1 pt-6 text-[#61615c]">
-              <span className="text-[11px] font-semibold leading-4">{post.frontmatter.author}</span>
-            </div>
-          </header>
-
-          <div className="mt-[50px] grid gap-10 lg:grid-cols-[280px_minmax(0,880px)] lg:justify-between lg:gap-10">
-            <aside className="hidden lg:block lg:w-[280px] lg:shrink-0 lg:self-stretch">
-              <div className="sticky top-[calc(var(--nav-h)+24px)] h-fit w-full space-y-7">
-                <TableOfContents toc={toc} variant="blog" className="border-0 bg-transparent p-0" />
-                <BlogSidebarCTA />
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium leading-4 text-[#61615c]">
+                {publishedDate ? (
+                  <>
+                    <span className="inline-flex items-center gap-2">
+                      <CalendarDays className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+                      <time dateTime={post.frontmatter.date}>{publishedDate}</time>
+                    </span>
+                    <span aria-hidden>·</span>
+                  </>
+                ) : null}
+                <span className="inline-flex items-center gap-2 uppercase">
+                  <Clock className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+                  <span>{post.frontmatter.readTime}</span>
+                </span>
               </div>
-            </aside>
-
-            <div className="min-w-0 w-full max-w-[880px]">
-              <div className="blog-article-body px-8 pb-12 pt-8">
-                <MarkdownRenderer
-                  content={post.content}
-                  mode="md"
-                  components={{ blockquote: BlogArticleQuote }}
-                />
-              </div>
-
-              {/* Rule and cards share the article inset so the pair stays aligned. */}
-              <nav className="mt-12 px-8 pb-8">
-                <div className="grid gap-6 border-t border-[#d1d1cc] pt-8 sm:grid-cols-2">
-                  {prev ? (
-                    <AdjacentArticleCard
-                      href={`/blog/${prev.slug}`}
-                      label="Previous Article"
-                      title={prev.title}
-                      direction="previous"
-                    />
-                  ) : (
-                    <div />
-                  )}
-                  {next ? (
-                    <AdjacentArticleCard
-                      href={`/blog/${next.slug}`}
-                      label="Next Article"
-                      title={next.title}
-                      direction="next"
-                    />
-                  ) : (
-                    <div />
-                  )}
-                </div>
-              </nav>
+            </header>
+            <div className="blog-article-body px-8 pb-12 [&_.markdown-body>:first-child]:mt-0">
+              <MarkdownRenderer
+                content={post.content}
+                mode="md"
+                components={{ blockquote: BlogArticleQuote }}
+              />
             </div>
+
+            {/* Rule and cards share the article inset so the pair stays aligned. */}
+            <nav className="mt-12 px-8 pb-8">
+              <div className="grid gap-6 border-t border-[#d1d1cc] pt-8 sm:grid-cols-2">
+                {prev ? (
+                  <AdjacentArticleCard
+                    href={`/blog/${prev.slug}`}
+                    label="Previous Article"
+                    title={prev.title}
+                    direction="previous"
+                  />
+                ) : (
+                  <div />
+                )}
+                {next ? (
+                  <AdjacentArticleCard
+                    href={`/blog/${next.slug}`}
+                    label="Next Article"
+                    title={next.title}
+                    direction="next"
+                  />
+                ) : (
+                  <div />
+                )}
+              </div>
+            </nav>
           </div>
         </article>
       </div>

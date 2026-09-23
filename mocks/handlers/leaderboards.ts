@@ -9,7 +9,13 @@ const stats = {
   max_score: Math.max(...scores),
   min_score: Math.min(...scores),
   avg_total_score: scores.reduce((a, b) => a + b, 0) / scores.length,
-  max_score_skill: leaderboard[0].skill_name
+  avg_core_score:
+    leaderboard.reduce((total, item) => total + item.core_score, 0) / leaderboard.length,
+  avg_medical_score:
+    leaderboard.reduce((total, item) => total + item.medical_score, 0) / leaderboard.length,
+  max_score_skill: leaderboard.reduce((best, item) =>
+    item.total_score > best.total_score ? item : best
+  ).skill_title
 }
 export const leaderboardHandlers = (origin: string) => [
   http.get(`${origin}/api/v1/leaderboards/visibility`, () =>

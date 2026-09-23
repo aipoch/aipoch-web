@@ -22,7 +22,7 @@ const { Navbar } = await import('../../components/navbar')
 const { navActions, navItems } = await import('../../components/navbar/navbar-data')
 
 describe('navbar', () => {
-  test('marks the current child menu item instead of only the parent group', () => {
+  test('marks the current child for accessibility without retaining a selected background', () => {
     mockPathname = '/agent-skills/list'
 
     const html = renderToStaticMarkup(<Navbar />)
@@ -30,7 +30,9 @@ describe('navbar', () => {
     expect(html).toContain('href="/agent-skills/list"')
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/agent-skills\/list"/)
     expect(html).not.toMatch(/<a[^>]*aria-current="page"[^>]*href="\/agent-skills"/)
-    expect(html).toContain('bg-[#f3f3f3]')
+    const currentLink = html.match(/<a[^>]*aria-current="page"[^>]*href="\/agent-skills\/list"/)
+    expect(currentLink?.[0]).toContain('bg-transparent')
+    expect(currentLink?.[0]).not.toMatch(/\sbg-\[#f3f3f3\]/)
   })
 
   test('renders grouped desktop mega navigation entries', () => {
@@ -102,7 +104,7 @@ describe('navbar', () => {
     expect(primaryAction).not.toContain('uppercase')
   })
 
-  test('uses text-only selected and hover states for plain desktop links and Docs', () => {
+  test('uses text-only hover states for plain desktop links and Docs', () => {
     mockPathname = '/open-science'
 
     const html = renderToStaticMarkup(<Navbar />)
@@ -120,9 +122,7 @@ describe('navbar', () => {
     expect(plainLinks).toHaveLength(3)
     expect(plainLinks.every((link) => !link.includes('bg-'))).toBe(true)
     expect(plainLinks.every((link) => !link.includes('hover:bg-'))).toBe(true)
-    expect(navbarSource).toContain(
-      "[&_a[data-nav-plain-link][aria-current='page']]:!bg-transparent"
-    )
+    expect(navbarSource).not.toContain("[&_a[aria-current='page']]")
     expect(productTrigger).toContain('hover:bg-')
     expect(primaryAction).toContain('bg-black')
   })
@@ -276,8 +276,6 @@ describe('navbar', () => {
     expect(layoutSource).not.toContain("import '@/components/navbar/navbar-adaptive.css'")
     expect(navbarSource).toContain('[--nav-bg:rgba(14,15,19,0.55)]')
     expect(navbarSource).toContain('[--nav-bg:rgba(255,255,255,0.55)]')
-    expect(navbarSource).toContain("[&_a[aria-current='page']]:!bg-white/[.08]")
-    expect(navbarSource).toContain("[&_a[aria-current='page']:hover]:!bg-white/[.12]")
     expect(navbarSource).toContain('before:backdrop-blur-[22px]')
     expect(navbarSource).toContain('before:backdrop-saturate-[170%]')
     // Open-Science must not force a gray underlay that darkens the bar on overscroll.

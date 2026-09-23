@@ -31,6 +31,18 @@ test('desktop mega navigation opens MedSkillAudit from the Benchmark menu', asyn
     'false'
   )
   await expect(page.getByRole('heading', { name: 'What is MedSkillAudit?' })).toBeVisible()
+
+  const benchmarkTrigger = headerNav.getByRole('button', { name: 'Benchmark' })
+  await benchmarkTrigger.hover()
+  await medSkillAuditLink.hover()
+  await expect(medSkillAuditLink).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await expect(benchmarkTrigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await headerNav.getByText('Workflow benchmark suite', { exact: true }).hover()
+  await expect(medSkillAuditLink).toHaveAttribute('aria-current', 'page')
+  await expect(medSkillAuditLink).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await page.mouse.move(0, 500)
+  await expect(benchmarkTrigger).toHaveAttribute('aria-expanded', 'false')
+  await expect(benchmarkTrigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 })
 
 test('MedSkillAudit page presents framework content and assets', async ({ page }) => {

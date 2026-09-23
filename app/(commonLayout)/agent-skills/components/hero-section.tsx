@@ -1,5 +1,5 @@
-import Image from 'next/image'
 import Link from 'next/link'
+import { CdnImage as Image } from '@/components/cdn-image'
 import { staticImage } from '@/lib/staticAsset'
 
 const heroStats = ['597 ACTIVE SKILLS', '3 CONTRIBUTORS', 'OPEN SOURCE', 'AUDITABLE']

@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { AIPOCH_GITHUB_URL } from '@/lib/config'
 import { fetchGithubDownloadUrl } from '@/service/skills'
 
@@ -31,7 +31,7 @@ export function DownloadButton({ skillPath }: DownloadButtonProps) {
     <Button
       onClick={handleDownload}
       disabled={isRedirecting}
-      className="bg-black text-white hover:bg-black/70 py-6 px-6 disabled:opacity-50 rounded-none"
+      className="h-12 rounded-none bg-[#111] px-3 text-sm font-medium text-white transition-colors hover:bg-[#333] disabled:opacity-50"
     >
       <Download className="h-4 w-4 mr-2" />
       Download Skills

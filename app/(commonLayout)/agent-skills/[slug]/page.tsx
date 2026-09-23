@@ -5,8 +5,7 @@ import { notFound } from 'next/navigation'
 import { JsonLd } from '@/components/json-ld'
 import { MarkdownErrorBoundary, MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
-import { ScrollToTop } from '@/components/scroll-to-top'
-import { Badge } from '@/components/ui/badge'
+import { agentSkillPageLastModified } from '@/lib/agent-skill-page-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { mapScoreDetailToSkillEvaluation } from '@/lib/map-score-detail'
 import { createPageMetadata } from '@/lib/page-metadata'
@@ -16,6 +15,7 @@ import { DownloadButton } from '../components/download-button'
 import { EvaluationOverview } from '../components/evaluation-overview'
 import { FileTree, type FileTreeItem } from '../components/file-tree'
 import { SkillDetails } from '../components/skill-details'
+import styles from '../components/skill-documentation.module.css'
 
 interface ManifestFile {
   kind: string
@@ -148,67 +148,52 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
   return (
     <>
       <JsonLd data={softwareApplicationSchema} />
-      <ScrollToTop />
-      <main className="flex-1">
-        <section className="bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-size-[60px_60px]">
-          <div className="mx-auto max-w-7xl px-4 py-12 lg:px-8">
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: `${data.title} | AIPOCH Agent Skill`,
+          url: `${SITE_DOMAIN}/agent-skills/${data.path ?? data.name}`,
+          dateModified: agentSkillPageLastModified(dateModified)
+        }}
+      />
+      <main className="flex-1 bg-[#f7f7f5] text-[#111]">
+        <section>
+          <div className="mx-auto max-w-7xl px-5 pb-12 pt-10 sm:px-8 lg:pt-14">
             {/* Breadcrumb */}
             <Link
               href="/agent-skills/list"
-              className="text-xs mb-8 flex w-fit items-center gap-2 font-light uppercase tracking-wider text-black/40 hover:text-black/80 transition"
+              className="mb-8 flex min-h-6 w-fit items-center gap-2 text-xs uppercase tracking-[0.6px] text-[#111] transition-colors hover:text-[#6b6b66] focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               <ArrowLeft className="size-4" />
               Agent Skills
             </Link>
 
             {/* Main content grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
               {/* Left column - Skill info */}
-              <div>
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="border border-black/20 py-0.5 rounded-none text-black/70 font-normal text-xs"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Title */}
-                <h1 className="mb-4 text-5xl font-light text-black md:text-6xl lg:text-7xl">
+              <div className="min-w-0 lg:pt-6">
+                <h1 className="font-[Georgia] text-[44px] font-normal leading-[1.08] sm:text-[60px] xl:text-[78px] xl:leading-[80px] [overflow-wrap:anywhere]">
                   {data.title}
                 </h1>
 
-                {/* Author info */}
-                <div className="flex items-center gap-2 text-sm text-black/60 mb-6">
-                  <span>{data.author.name}</span>
-                  {data.author.org && (
-                    <>
-                      <span className="text-black/30">·</span>
-                      <span>{data.author.org}</span>
-                    </>
-                  )}
-                </div>
-
                 {/* Description */}
-                <div className="border-l-2 border-primary pl-4 mb-8">
-                  <p className="text-black/70 leading-relaxed">{data.description}</p>
+                <div className="mb-8 mt-8 lg:mt-14">
+                  <p className="text-base leading-[26px] text-[#61615c]">{data.description}</p>
                 </div>
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-4 mb-8">
                   <DownloadButton skillPath={data.path} />
-                  <div className="flex items-center gap-6 text-sm text-black/50 ml-4">
+                  <div className="flex items-center gap-6 text-sm text-[#111] sm:ml-4">
                     <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
+                      <Eye className="size-4 text-[#6b6b66]" aria-hidden />
+                      <span className="sr-only">Views:</span>
                       <span>{data.stats.views}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Download className="h-4 w-4" />
+                      <Download className="size-4 text-[#6b6b66]" aria-hidden />
+                      <span className="sr-only">Downloads:</span>
                       <span>{data.stats.downloads}</span>
                     </div>
                   </div>
@@ -216,7 +201,7 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
               </div>
 
               {/* Right column - File tree */}
-              <div className="lg:pt-4">
+              <div className="min-w-0 lg:pt-4">
                 <FileTree
                   items={[{ name: `${rootName}/`, type: 'folder', items: fileTreeItems }]}
                   title="FILES"
@@ -226,7 +211,7 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
 
             {/* Show the evaluation section when score_detail is available. */}
             {evaluationProps && (
-              <div className="mt-8">
+              <div className="mt-10">
                 <EvaluationOverview evaluation={evaluationProps} />
               </div>
             )}
@@ -234,10 +219,12 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
         </section>
 
         {/* mdx render */}
-        <section className="mx-auto max-w-7xl px-4 pt-6 pb-12 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12">
+        <section className="mx-auto max-w-7xl px-5 pt-5 pb-16 sm:px-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
             {/* Left: MDX Content */}
-            <div className="bg-white/30 border border-black/10 px-10 py-8 min-w-0">
+            <article
+              className={`${styles.documentation} min-w-0 border border-[#111]/10 bg-white/30 px-5 py-8 sm:px-10`}
+            >
               <p
                 className="flex items-center border-b pb-4
               mb-6 gap-2 text-black/40 text-xs"
@@ -248,14 +235,15 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
               <MarkdownErrorBoundary>
                 <MarkdownRenderer content={data.skill_md || ''} mode="md" />
               </MarkdownErrorBoundary>
-            </div>
+            </article>
 
             {/* Right: TOC */}
-            <div className="hidden lg:block sticky top-22 h-fit space-y-4">
-              <div className="bg-white/30 p-4 border border-black/10 rounded-md">
-                <TableOfContents toc={toc} />
+            <aside className="min-w-0 space-y-4 self-start lg:sticky lg:top-[calc(var(--nav-h)+16px)] lg:max-h-[calc(100dvh-var(--nav-h)-32px)] lg:overflow-y-auto scrollbar-light">
+              <div className="hidden border border-[#111]/10 bg-white/30 p-4 lg:block">
+                <TableOfContents toc={toc} variant="skill" />
               </div>
               <SkillDetails
+                tags={tags}
                 author={data.author}
                 license={data.license}
                 contentLanguage={data.content_language}
@@ -263,7 +251,7 @@ export default async function AgentSkillPage({ params }: AgentSkillPageProps) {
                 githubRepoUrl={data.github_repo_url}
                 version={data.version}
               />
-            </div>
+            </aside>
           </div>
         </section>
       </main>

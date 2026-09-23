@@ -1,13 +1,13 @@
 'use client'
 
+import { useForm } from 'react-hook-form'
+import { CdnImage as Image } from '@/components/cdn-image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
-import Image from 'next/image'
-import { useForm } from 'react-hook-form'
 import { SUPPORT_EMAIL } from '@/lib/config'
 import { staticAsset } from '@/lib/staticAsset'
+import { cn } from '@/lib/utils'
 
 type ContactFormValues = {
   name: string

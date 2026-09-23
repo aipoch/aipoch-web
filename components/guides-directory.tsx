@@ -65,7 +65,7 @@ export function GuidesDirectory({ guides, className }: GuidesDirectoryProps) {
                       : 'text-gray-600 dark:text-gray-400'
                   )}
                 >
-                  {num}_{frontmatter.title}
+                  {num} {frontmatter.title}
                 </span>
               </Link>
             </li>

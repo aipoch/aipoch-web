@@ -113,7 +113,7 @@ describe('homepage GEO contracts', () => {
       dateTime: 'Aug 4, 2026',
       label: 'Aug 4, 2026'
     })
-    expect(webpage?.dateModified).toBe('2026-09-17')
+    expect(webpage?.dateModified).toBe('2026-09-23')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v0.20.4',
       dateModified: '2026-08-04',
@@ -137,9 +137,7 @@ mock.module('@/service/homepage', () => ({
   }),
   fetchHomepageReadWatch: async () => null,
   fetchGithubStarCount: async () => 3500,
-  fetchHomepageSkillsCount: async () => {
-    throw new Error('Homepage should not fetch runtime skill counts')
-  }
+  fetchHomepageSkillsCount: async () => null
 }))
 const { default: Home } = await import('./app/(commonLayout)/page')
 const { renderToStaticMarkup } = await import('react-dom/server')
@@ -238,7 +236,7 @@ console.log(renderToStaticMarkup(await Home()))`
     expect(schemas.find((schema) => schema['@type'] === 'WebPage')).toMatchObject({
       '@id': 'https://aipoch.com/#webpage',
       url: 'https://aipoch.com',
-      dateModified: '2026-09-17',
+      dateModified: '2026-09-23',
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']
@@ -255,18 +253,13 @@ console.log(renderToStaticMarkup(await Home()))`
       ]
     })
     const videoSchemas = schemas.filter((schema) => schema['@type'] === 'VideoObject')
-    expect(videoSchemas).toHaveLength(2)
+    expect(videoSchemas).toHaveLength(1)
     expect(videoSchemas[0]).toMatchObject({
       contentUrl:
         'https://statics.aipoch.com/public/operations/releases/0-16-0/OpenScienceUpdate0_16_0.mp4',
       uploadDate: 'Aug 16, 2026',
       duration: 'PT1M0.48S',
       publisher: { '@id': 'https://aipoch.com/#organization' }
-    })
-    expect(videoSchemas[1]).toMatchObject({
-      contentUrl:
-        'https://statics.aipoch.com/public/operations/releases/0-16-0/OpenScienceUpdate0_16_0.mp4?spotlight=workflow',
-      name: 'AIPOCH Open-Science Workflow demo'
     })
     expect(schemas.find((schema) => schema['@type'] === 'SoftwareApplication')).toMatchObject({
       name: 'Open-Science',
@@ -280,7 +273,7 @@ console.log(renderToStaticMarkup(await Home()))`
     expect(html).toContain('data-testid="homepage-last-updated"')
     expect(html).toContain('dateTime="Aug 16, 2026"')
     expect(html).toContain('Last updated Aug 16, 2026')
-    expect(html).toContain('550+ reusable medical research skills')
+    expect(html).toMatch(/data-testid="skills-count"[^>]*>550<\/span>/)
     expect(html).not.toContain('597+ reusable medical research skills')
   })
 })

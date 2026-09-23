@@ -41,12 +41,54 @@ export const skills: SkillDetail[] = Array.from({ length: 30 }, (_, index) => {
     version: '1.0.0-mock',
     published_at: fixtureDate,
     changelog: 'Initial local demo.',
-    skill_md: `# ${title}\n\nA local mock skill for development.\n\n## Usage\n\nProvide a sample research question.\n`,
+    skill_md: `# ${title}
+
+A local mock skill for development.
+
+## Usage
+
+Provide a sample research question. This workflow organizes the available evidence and returns a structured research summary.
+
+## Workflow
+
+1. Validate the research question and source material.
+2. Extract the relevant evidence and retain source references.
+3. Review the summary before sharing it.
+
+## Example
+
+\`\`\`bash
+python scripts/main.py --input sample.md
+\`\`\`
+
+## Requirements
+
+| Input | Description | Required |
+| --- | --- | --- |
+| Research question | A clearly defined research objective | Yes |
+| Sources | The documents to review | Yes |
+| Output format | A preferred summary structure | No |
+
+> [!WARNING]
+> Provide the required source material before running this workflow. Do not fabricate citations or research results.
+
+## Limitations
+
+This is deterministic sample data for local development. Review the source evidence and validate the output before using a research summary.
+
+## Output
+
+The workflow returns a structured summary with source references and a list of items that need further review.
+`,
     manifest: {
       root: path,
       name: path,
       version: '1.0.0-mock',
-      files: [{ path: `${path}/SKILL.md`, size: 120 }]
+      files: [
+        { path: `${path}/SKILL.md`, size: 120 },
+        { path: `${path}/scripts/main.py`, size: 240 },
+        { path: `${path}/references/research-checklist.md`, size: 180 }
+      ]
     },
     storage_provider: 'mock',
     zip_uri: '',
@@ -63,6 +105,42 @@ export const skills: SkillDetail[] = Array.from({ length: 30 }, (_, index) => {
       deployable: true,
       static_score_total: score,
       static_score_max: 100,
+      static_categories: [
+        ['functional_suitability', 'Functional Suitability', 12],
+        ['reliability', 'Reliability', 12],
+        ['performance_context', 'Performance & Context', 8],
+        ['agent_usability', 'Agent Usability', 16],
+        ['human_usability', 'Human Usability', 8],
+        ['security', 'Security', 12],
+        ['maintainability', 'Maintainability', 12],
+        ['agent_specific', 'Agent-Specific', 20]
+      ].map(([key, label, max]) => ({
+        key: String(key),
+        label: String(label),
+        max: Number(max),
+        score: Number(((Number(max) * score) / 100).toFixed(2))
+      })),
+      dynamic_score: {
+        execution_avg: score,
+        max: 100,
+        assertion_pass_rate: { passed: 18, total: 20 },
+        inputs: [
+          'Summarize the supplied evidence with traceable references.',
+          'Handle a research question with missing or incomplete source material.',
+          'Preserve statistical findings and relevant methodological limitations.',
+          'Run the packaged workflow using scripts/main.py.',
+          'Identify unsupported conclusions and flag them for further review.'
+        ].map((label, task) => ({
+          index: task + 1,
+          label,
+          score: score + 4 - task * 2,
+          assertions_passed: task === 4 ? 2 : 4,
+          assertions_total: 4,
+          assertions: Array.from({ length: 4 }, (_, assertion) => ({
+            result: task === 4 && assertion >= 2 ? 'FAIL' : 'PASS'
+          }))
+        }))
+      },
       leaderboard_slug: `${path}-result`
     }
   }
@@ -150,7 +228,20 @@ export const blogs: BlogPostDetail[] = Array.from({ length: 24 }, (_, index) => 
   view_count: 100 - index,
   published_at: fixtureDate,
   content:
-    '# Local research notes\n\nThis sample article is available without the business API.\n\n## Reproducible workflows\n\nKeep sources, analysis, and results together.',
+    '# Local research notes\n\nThis sample article is available without the business API.\n\n## Reproducible workflows\n\nKeep sources, analysis, and results together.' +
+    [
+      'Research planning',
+      'Source collection',
+      'Data validation',
+      'Analysis review',
+      'Artifact inspection',
+      'Sharing results'
+    ]
+      .map(
+        (heading) =>
+          `\n\n## ${heading}\n\n${Array.from({ length: 4 }, () => 'Record each research decision alongside the source material, analysis code, and output artifacts. Review the available evidence before continuing, check assumptions with your collaborators, and retain a reproducible record of the workflow.').join('\n\n')}`
+      )
+      .join(''),
   previous_post: null,
   next_post: null
 }))

@@ -23,8 +23,7 @@ export const contentHandlers = (origin: string) => [
           release_version: 'v1.0.0-mock',
           latest_release_update: 'Sep 1, 2026',
           latest_release_title: 'Local mock release',
-          latest_release_desc: 'Sample release data for local development.',
-          media: []
+          latest_release_desc: 'Sample release data for local development.'
         })
       : missing()
   ),

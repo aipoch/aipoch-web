@@ -1,8 +1,12 @@
 'use client'
 
-import { cn } from '@/lib/utils'
-import { medicalScoreBadgeClass, medicalScoreSummarySquareClass } from '@/lib/evaluation-styles'
+import {
+  medicalScoreBadgeClass,
+  medicalScoreSummarySquareClass,
+  medicalToneFromScore
+} from '@/lib/evaluation-styles'
 import { coreCapabilityBarStyle, scoreRatioBandFromParts } from '@/lib/score-ratio-bands'
+import { cn } from '@/lib/utils'
 import type { SkillEvaluation } from '@/types/skill-evaluation'
 import { ScoreHero } from './score-hero'
 
@@ -12,6 +16,23 @@ const staticHeaderFillClass = {
   green: 'bg-[#22C55E]',
   orange: 'bg-[#F59E0B]',
   red: 'bg-[#EF4444]'
+} as const
+
+// The skill page opts into Figma colors; shared leaderboard report widgets keep their defaults.
+const editorialColors = {
+  green: { fill: '#afd670', text: '#607a32' },
+  orange: { fill: '#edb732', text: '#915600' },
+  red: { fill: '#b42318', text: '#b42318' }
+} as const
+const editorialFills = {
+  green: 'bg-[#afd670]',
+  orange: 'bg-[#edb732]',
+  red: 'bg-[#b42318]'
+} as const
+const editorialBadges = {
+  green: 'bg-[#afd670] text-[#607a32]',
+  orange: 'bg-[#edb732]/25 text-[#915600]',
+  red: 'bg-[#b42318]/10 text-[#b42318]'
 } as const
 
 /** A single Medical Task assertion: green for PASS, red otherwise. */
@@ -88,14 +109,16 @@ function buildEvaluationPanels(evaluation: SkillEvaluation): EvaluationPanels {
 
 function CoreCapabilityPanel({
   p,
+  editorial = false,
   className
 }: {
   p: EvaluationPanels
+  editorial?: boolean
   className?: string
 }) {
   return (
     <div className={className}>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className={cn('mb-3 flex items-center justify-between gap-2', editorial && 'flex-wrap')}>
         <div className="text-[13px] font-bold text-[#111111]">Core Capability</div>
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="whitespace-nowrap text-[12.5px] font-bold text-[#111111]">
@@ -104,26 +127,46 @@ function CoreCapabilityPanel({
           </span>
           <div className="h-1.5 w-[110px] shrink-0 overflow-hidden rounded-full bg-[#EEEEEE]">
             <div
-              className={cn('h-full rounded-full', staticHeaderFillClass[p.staticHeaderTone])}
+              className={cn(
+                'h-full rounded-full',
+                editorial
+                  ? editorialFills[p.staticHeaderTone]
+                  : staticHeaderFillClass[p.staticHeaderTone]
+              )}
               style={{ width: `${Math.min(100, p.staticPct)}%` }}
             />
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-[7px]">
+      <div className={cn('grid grid-cols-2 gap-[7px]', editorial && 'flex-1')}>
         {p.coreRows.map((row) => (
           <div
             key={row.rowKey}
-            className="rounded-[3px] border border-[#E2E2E2] bg-white px-[11px] py-[9px]"
+            className={cn(
+              'rounded-[3px] border border-[#E2E2E2] bg-white px-[11px] py-[9px]',
+              editorial && 'border-[#e7e5de] px-3 py-3'
+            )}
           >
             <div className="mb-1.5 text-[10px] font-semibold text-[#555555]">{row.label}</div>
             <div className="mb-[5px] h-1 overflow-hidden rounded-[3px] bg-[#EEEEEE]">
               <div
                 className="h-full rounded-[3px]"
-                style={{ width: `${row.widthPct}%`, background: row.fill }}
+                style={{
+                  width: `${row.widthPct}%`,
+                  background: editorial
+                    ? editorialColors[scoreRatioBandFromParts(row.score, row.max)].fill
+                    : row.fill
+                }}
               />
             </div>
-            <div className="text-[11px] font-bold" style={{ color: row.text }}>
+            <div
+              className="text-[11px] font-bold"
+              style={{
+                color: editorial
+                  ? editorialColors[scoreRatioBandFromParts(row.score, row.max)].text
+                  : row.text
+              }}
+            >
               {row.score} / {row.max}
             </div>
           </div>
@@ -133,7 +176,15 @@ function CoreCapabilityPanel({
   )
 }
 
-function MedicalTaskPanel({ p, className }: { p: EvaluationPanels; className?: string }) {
+function MedicalTaskPanel({
+  p,
+  editorial = false,
+  className
+}: {
+  p: EvaluationPanels
+  editorial?: boolean
+  className?: string
+}) {
   return (
     <div className={className}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -148,7 +199,9 @@ function MedicalTaskPanel({ p, className }: { p: EvaluationPanels; className?: s
                 key={i}
                 className={cn(
                   'h-[15px] w-[15px] shrink-0 rounded-[2px]',
-                  medicalScoreSummarySquareClass(row.score)
+                  editorial
+                    ? editorialFills[medicalToneFromScore(row.score)]
+                    : medicalScoreSummarySquareClass(row.score)
                 )}
               />
             ))}
@@ -156,26 +209,37 @@ function MedicalTaskPanel({ p, className }: { p: EvaluationPanels; className?: s
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col rounded-[3px] border border-black/[0.07] bg-black/3 p-1.5">
+      <div
+        className={cn(
+          'flex flex-1 flex-col rounded-[3px] border border-black/[0.07] bg-black/3 p-1.5',
+          editorial && 'rounded-none bg-[#f7f7f7] p-2.5'
+        )}
+      >
         {p.medicalRows.map((row, idx) => (
           <div
             key={`${row.label}-${idx}`}
             className={cn(
               'flex min-h-0 flex-1 items-center justify-between gap-3 px-1 py-0',
-              idx < p.medicalRows.length - 1 && 'border-b border-black/6'
+              idx < p.medicalRows.length - 1 && 'border-b border-black/6',
+              editorial && 'py-3'
             )}
           >
             <div className="flex min-w-0 flex-1 items-center gap-[7px]">
               <span
                 className={cn(
                   'flex h-[19px] w-7 shrink-0 items-center justify-center rounded-[3px] text-[10px] font-bold',
-                  medicalScoreBadgeClass(row.score)
+                  editorial
+                    ? editorialBadges[medicalToneFromScore(row.score)]
+                    : medicalScoreBadgeClass(row.score)
                 )}
               >
                 {row.score}
               </span>
               <span
-                className="min-w-0 flex-1 truncate text-[10.5px] text-[#555555]"
+                className={cn(
+                  'min-w-0 flex-1 truncate text-[10.5px] text-[#555555]',
+                  editorial && 'leading-4 text-[#6b6b66]'
+                )}
                 title={row.label}
               >
                 {row.label}
@@ -192,7 +256,13 @@ function MedicalTaskPanel({ p, className }: { p: EvaluationPanels; className?: s
                   key={i}
                   className={cn(
                     'inline-block size-3 rounded-full transition-transform hover:scale-[1.3]',
-                    isMedicalAssertionPass(item.result) ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
+                    isMedicalAssertionPass(item.result)
+                      ? editorial
+                        ? 'bg-[#afd670]'
+                        : 'bg-[#22C55E]'
+                      : editorial
+                        ? 'bg-[#b42318]'
+                        : 'bg-[#EF4444]'
                   )}
                 />
               ))}
@@ -250,29 +320,35 @@ export interface EvaluationOverviewProps {
 
 export function EvaluationOverview({ evaluation, className }: EvaluationOverviewProps) {
   const { overallScore, overallTotal, evaluationReportUrl } = evaluation
+  const panels = buildEvaluationPanels(evaluation)
 
   return (
-    <div
+    <section
+      aria-label="Skill evaluation summary"
       className={cn(
-        'flex w-full min-w-0 flex-col overflow-hidden rounded-[3px] border border-[#E2E2E2] bg-white lg:flex-row lg:items-stretch',
+        'grid w-full min-w-0 border border-[#e7e5de] bg-white lg:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)]',
         className
       )}
     >
-      <div
-        className={cn(
-          'flex shrink-0 flex-col items-center justify-center border-b border-[#E2E2E2] px-5 py-6',
-          'lg:w-[min(240px,22%)] lg:min-w-[200px] lg:border-b-0 lg:border-r'
-        )}
-      >
+      <div className="flex items-center justify-center px-5 py-8">
         <ScoreHero
           score={overallScore}
           total={overallTotal}
           evaluationReportUrl={evaluationReportUrl}
+          appearance="skill"
           className="justify-center"
         />
       </div>
-      <EvaluationScoreWidget evaluation={evaluation} segment="core" />
-      <EvaluationScoreWidget evaluation={evaluation} segment="medical" />
-    </div>
+      <CoreCapabilityPanel
+        p={panels}
+        editorial
+        className="flex min-w-0 flex-col border-t border-[#e7e5de] p-5 lg:border-r lg:border-t-0 lg:px-6 lg:py-6"
+      />
+      <MedicalTaskPanel
+        p={panels}
+        editorial
+        className="flex min-w-0 flex-col border-t border-[#e7e5de] p-5 lg:border-t-0 lg:px-6 lg:py-6"
+      />
+    </section>
   )
 }

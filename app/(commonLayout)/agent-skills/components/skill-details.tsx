@@ -1,6 +1,7 @@
 import { Github } from 'lucide-react'
 
 interface SkillDetailsProps {
+  tags?: string[]
   author: {
     name: string
     avatar_url: string
@@ -19,6 +20,7 @@ function formatDate(dateString: string): string {
 }
 
 export function SkillDetails({
+  tags = [],
   author,
   license,
   contentLanguage,
@@ -26,48 +28,63 @@ export function SkillDetails({
   githubRepoUrl,
   version
 }: SkillDetailsProps) {
-  const displayAuthor = author.org || author.name
+  const displayAuthor = author.name || author.org
 
   return (
-    <div className="bg-white/30 p-4 border border-black/10 rounded-md">
-      <h3 className="text-xs font-medium uppercase tracking-wider text-black/60 mb-4 border-b border-black/10 pb-2">
+    <div className="bg-white/30 p-4 border border-[#111]/10">
+      <h3 className="text-xs font-medium uppercase tracking-wider text-[#111] mb-4 border-b border-black/10 pb-2">
         Details
       </h3>
 
+      {tags.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span key={tag} className="bg-[#e7e5de] px-2 py-1 text-xs text-[#6b6b66]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="space-y-3">
         <div className="flex justify-between items-center text-sm">
-          <span className="text-black/50">Author</span>
-          <span className="text-black/80">{displayAuthor}</span>
+          <span className="text-[#6b6b66]">Author</span>
+          <span className="text-[#111]">{displayAuthor}</span>
+        </div>
+
+        {author.org && author.org !== displayAuthor && (
+          <div className="flex justify-between items-center gap-4 text-sm">
+            <span className="text-[#6b6b66]">Organization</span>
+            <span className="text-right text-[#111]">{author.org}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-[#6b6b66]">License</span>
+          <span className="text-[#111]">{license}</span>
         </div>
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-black/50">License</span>
-          <span className="text-black/80">{license}</span>
+          <span className="text-[#6b6b66]">Language</span>
+          <span className="text-[#111]">{contentLanguage}</span>
         </div>
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-black/50">Language</span>
-          <span className="text-black/80">{contentLanguage}</span>
+          <span className="text-[#6b6b66]">Updated</span>
+          <span className="text-[#111]">{formatDate(updatedAt)}</span>
         </div>
 
         <div className="flex justify-between items-center text-sm">
-          <span className="text-black/50">Updated</span>
-          <span className="text-black/80">{formatDate(updatedAt)}</span>
-        </div>
-
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-black/50">Version</span>
-          <span className="text-black/80">{version}</span>
+          <span className="text-[#6b6b66]">Version</span>
+          <span className="text-[#111]">{version}</span>
         </div>
 
         {githubRepoUrl && (
           <div className="flex justify-between items-center text-sm pt-2 border-t border-black/10">
-            <span className="text-black/50">Source</span>
+            <span className="text-[#6b6b66]">Source</span>
             <a
               href={githubRepoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-black/80 hover:text-black transition-colors"
+              className="flex items-center gap-1.5 text-[#111] hover:text-black transition-colors"
             >
               <Github className="size-3.5" />
               <span>GitHub</span>

@@ -1,8 +1,8 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
+import { CdnImage as Image } from '@/components/cdn-image'
 import { Navbar } from '@/components/navbar'
 import { AIPOCH_GITHUB_URL } from '@/lib/config'
 import { staticAsset } from '@/lib/staticAsset'

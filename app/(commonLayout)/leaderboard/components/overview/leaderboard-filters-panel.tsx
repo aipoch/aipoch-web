@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import type { LeaderboardCategoryItem } from '@/service/leaderboard-overall'
 
 const filterRangeNumClass =
-  'min-w-[62px] w-[62px] rounded-none border border-[#DCDCDC] bg-[#E9E9E9] px-1 py-1 text-center text-xs text-[#111111] outline-none transition-colors focus:border-[#AEAEAE] [appearance:auto]'
+  'min-w-[62px] w-[62px] rounded-none border border-[#e7e5de] bg-[#f7f7f5] h-9 px-1 py-1 text-center text-xs text-[#111111] outline-none transition-colors focus:border-[#111] focus:ring-1 focus:ring-[#111] [appearance:auto]'
 
 type LeaderboardFiltersPanelProps = {
   filterOpen: boolean
@@ -59,12 +59,11 @@ export function LeaderboardFiltersPanel({
 }: LeaderboardFiltersPanelProps) {
   return (
     <div
-      className={cn(
-        'overflow-hidden border-b border-[#DCDCDC] bg-white transition-[max-height,padding] duration-[220ms] ease-out',
-        filterOpen ? 'max-h-[320px]' : 'max-h-0'
-      )}
+      id="leaderboard-filters"
+      hidden={!filterOpen}
+      className="border-b border-[#e7e5de] bg-[#f7f7f5]"
     >
-      <div className="mx-auto max-w-[1200px] px-5 py-4 sm:px-8 md:px-10">
+      <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
         <div className="mb-3 flex flex-wrap items-center gap-2.5 gap-y-2">
           <span className="min-w-[66px] shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#909090]">
             Category
@@ -73,6 +72,7 @@ export function LeaderboardFiltersPanel({
             <button
               type="button"
               onClick={() => onActiveCategoryId(null)}
+              aria-pressed={activeCategoryId == null}
               className={cn(
                 'whitespace-nowrap rounded-none border px-2.5 py-1 text-[11px] font-semibold tracking-[0.04em] transition-colors',
                 activeCategoryId == null
@@ -83,7 +83,10 @@ export function LeaderboardFiltersPanel({
               All
             </button>
             {categoriesLoading && filterOpen && !categoryItems?.length ? (
-              <LoaderCircle className="size-4 shrink-0 animate-spin text-[#909090]" aria-label="Loading categories" />
+              <LoaderCircle
+                className="size-4 shrink-0 animate-spin text-[#909090]"
+                aria-label="Loading categories"
+              />
             ) : null}
             {(categoryItems ?? []).map((cat) => {
               const selected = activeCategoryId === cat.id
@@ -92,6 +95,7 @@ export function LeaderboardFiltersPanel({
                   key={cat.id}
                   type="button"
                   onClick={() => onActiveCategoryId(cat.id)}
+                  aria-pressed={selected}
                   className={cn(
                     'max-w-[220px] truncate whitespace-nowrap rounded-none border px-2.5 py-1 text-[11px] font-semibold tracking-[0.04em] transition-colors',
                     selected
@@ -120,6 +124,7 @@ export function LeaderboardFiltersPanel({
               step={1}
               className={filterRangeNumClass}
               placeholder="1"
+              aria-label="Minimum rank"
               value={rankMin}
               onChange={(e) => onRankMin(e.target.value)}
             />
@@ -130,11 +135,14 @@ export function LeaderboardFiltersPanel({
               step={1}
               className={filterRangeNumClass}
               placeholder="∞"
+              aria-label="Maximum rank"
               value={rankMax}
               onChange={(e) => onRankMax(e.target.value)}
             />
           </div>
-          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">Total Score</span>
+          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">
+            Total Score
+          </span>
           <div className="flex items-center gap-1.5">
             <input
               type="number"
@@ -143,6 +151,7 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="0"
+              aria-label="Minimum total score"
               value={scoreMin}
               onChange={(e) => onScoreMin(e.target.value)}
             />
@@ -154,11 +163,14 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="100"
+              aria-label="Maximum total score"
               value={scoreMax}
               onChange={(e) => onScoreMax(e.target.value)}
             />
           </div>
-          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">Core Cap.</span>
+          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">
+            Core Cap.
+          </span>
           <div className="flex items-center gap-1.5">
             <input
               type="number"
@@ -167,6 +179,7 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="0"
+              aria-label="Minimum core capability"
               value={coreMin}
               onChange={(e) => onCoreMin(e.target.value)}
             />
@@ -178,11 +191,14 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="100"
+              aria-label="Maximum core capability"
               value={coreMax}
               onChange={(e) => onCoreMax(e.target.value)}
             />
           </div>
-          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">Med. Task</span>
+          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#909090]">
+            Med. Task
+          </span>
           <div className="flex items-center gap-1.5">
             <input
               type="number"
@@ -191,6 +207,7 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="0"
+              aria-label="Minimum medical task score"
               value={medMin}
               onChange={(e) => onMedMin(e.target.value)}
             />
@@ -202,6 +219,7 @@ export function LeaderboardFiltersPanel({
               step={0.1}
               className={filterRangeNumClass}
               placeholder="100"
+              aria-label="Maximum medical task score"
               value={medMax}
               onChange={(e) => onMedMax(e.target.value)}
             />

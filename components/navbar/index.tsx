@@ -1,18 +1,18 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { ChevronDown, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LogoIcon } from '@/components/svg-icons'
+import { usesContentPageDesign } from '@/lib/content-page-design'
+import { cn } from '@/lib/utils'
 import type { NavChild } from './navbar-data'
 import {
   badgeClassNames,
   getActiveChildHref,
   getActiveGroupIds,
   isExternalNavHref,
-  isGroupActive,
   isLinkActive,
   navActions,
   navItems
@@ -21,6 +21,7 @@ import { alignNavbarPanels, useAdaptiveNavbar } from './use-adaptive-navbar'
 
 export function Navbar() {
   const pathname = usePathname()
+  const isContentPage = usesContentPageDesign(pathname)
   const activeGroupIds = useMemo(() => getActiveGroupIds(pathname), [pathname])
   const [isOpen, setIsOpen] = useState(false)
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null)
@@ -113,8 +114,6 @@ export function Navbar() {
           ? cn(
               '[--nav-bg:rgba(14,15,19,0.55)] [--nav-sheen:0.07] text-white',
               'before:border-white/[.12] before:bg-[var(--nav-bg)] before:backdrop-blur-[22px] before:backdrop-saturate-[170%] before:backdrop-brightness-[.85]',
-              "[&_a[aria-current='page']]:!bg-white/[.08] [&_a[aria-current='page']:hover]:!bg-white/[.12]",
-              "[&_a[data-nav-plain-link][aria-current='page']]:!bg-transparent [&_a[data-nav-plain-link][aria-current='page']:hover]:!bg-transparent",
               !scrolled &&
                 '[--nav-bg:rgba(255,255,255,0.02)] [--nav-sheen:0.02] before:border-white/[.08] before:backdrop-blur-none before:backdrop-saturate-100 before:backdrop-brightness-100'
             )
@@ -123,11 +122,17 @@ export function Navbar() {
               'before:border-black/[.07] before:bg-[var(--nav-bg)] before:backdrop-blur-[20px] before:backdrop-saturate-[180%]',
               !scrolled &&
                 '[--nav-bg:rgba(255,255,255,0.28)] [--nav-sheen:0.16] before:border-black/[.06]'
-            )
+            ),
+        isContentPage && !scrolled && 'bg-[#f7f7f5] before:bg-[#f7f7f5] after:hidden'
       )}
     >
       <nav
-        className="relative z-[2] mx-auto flex w-full max-w-[1320px] items-center justify-between px-4 py-5 sm:px-[clamp(16px,4vw,40px)]"
+        className={cn(
+          'relative z-[2] mx-auto flex w-full items-center justify-between px-4 py-5',
+          pathname === '/' || isContentPage
+            ? 'max-w-[1440px] sm:px-10 lg:px-16'
+            : 'max-w-[1320px] sm:px-[clamp(16px,4vw,40px)]'
+        )}
         onMouseLeave={() => setOpenDesktopMenu(null)}
       >
         {/* Logo */}
@@ -151,13 +156,7 @@ export function Navbar() {
                   onMouseEnter={() => setOpenDesktopMenu(null)}
                   className={cn(
                     'rounded-[8px] px-[13px] py-[9px] text-[13px] font-semibold leading-none transition-colors',
-                    isActive
-                      ? isDark
-                        ? 'text-white'
-                        : 'text-black'
-                      : isDark
-                        ? 'text-white/65 hover:text-white'
-                        : 'text-black/60 hover:text-black'
+                    isDark ? 'text-white/65 hover:text-white' : 'text-black/60 hover:text-black'
                   )}
                 >
                   {item.label}
@@ -166,7 +165,6 @@ export function Navbar() {
             }
 
             const isOpenDesktop = openDesktopMenu === item.id
-            const isActive = isGroupActive(pathname, item)
             const activeChildHref = getActiveChildHref(pathname, item.children)
 
             return (
@@ -176,17 +174,9 @@ export function Navbar() {
                   data-testid={`desktop-nav-trigger-${item.id}`}
                   className={cn(
                     'inline-flex items-center rounded-[8px] px-[13px] py-[9px] text-[13px] font-medium leading-none transition-colors',
-                    isOpenDesktop
-                      ? isDark
-                        ? 'bg-white/[.12] text-white'
-                        : 'bg-black/[0.06] text-black'
-                      : isActive
-                        ? isDark
-                          ? 'text-white hover:bg-white/[.12]'
-                          : 'text-black hover:bg-black/[0.06]'
-                        : isDark
-                          ? 'text-white/65 hover:bg-white/[.12] hover:text-white'
-                          : 'text-black/60 hover:bg-black/[0.06] hover:text-black'
+                    isDark
+                      ? 'text-white/65 hover:bg-white/[.12] hover:text-white'
+                      : 'text-black/60 hover:bg-black/[0.06] hover:text-black'
                   )}
                   aria-haspopup="true"
                   aria-expanded={isOpenDesktop}
@@ -318,13 +308,7 @@ export function Navbar() {
                     onClick={closeMobileMenu}
                     className={cn(
                       'flex w-full items-center justify-between gap-2 py-4 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
-                      isDark
-                        ? isActive
-                          ? 'text-white'
-                          : 'text-white/70 hover:text-white'
-                        : isActive
-                          ? 'text-black'
-                          : 'text-black/70 hover:text-black'
+                      isDark ? 'text-white/70 hover:text-white' : 'text-black/70 hover:text-black'
                     )}
                   >
                     {item.label}
@@ -334,7 +318,6 @@ export function Navbar() {
             }
 
             const isSectionOpen = openMobileSections.includes(item.id)
-            const isActive = isGroupActive(pathname, item)
             const activeChildHref = getActiveChildHref(pathname, item.children)
             const sectionId = `mobile-nav-${item.id}`
 
@@ -351,10 +334,10 @@ export function Navbar() {
                   className={cn(
                     'flex w-full items-center justify-between gap-2 py-4 text-xs font-semibold uppercase tracking-[0.08em] transition-colors',
                     isDark
-                      ? isActive || isSectionOpen
+                      ? isSectionOpen
                         ? 'text-white'
                         : 'text-white/70 hover:text-white'
-                      : isActive || isSectionOpen
+                      : isSectionOpen
                         ? 'text-black'
                         : 'text-black/70 hover:text-black'
                   )}
@@ -388,7 +371,6 @@ export function Navbar() {
                         key={`${item.id}-${child.label}-mobile`}
                         child={child}
                         compact
-                        activeStyle="inline"
                         isActive={Boolean(child.href && activeChildHref === child.href)}
                         theme={theme}
                         onClick={closeMobileMenu}
@@ -439,7 +421,6 @@ type MegaNavLinkProps = {
   child: NavChild
   compact?: boolean
   isActive?: boolean
-  activeStyle?: 'card' | 'inline'
   theme?: 'light' | 'dark'
   onClick?: () => void
 }
@@ -448,20 +429,17 @@ function MegaNavLink({
   child,
   compact = false,
   isActive = false,
-  activeStyle = 'card',
   theme = 'light',
   onClick
 }: MegaNavLinkProps) {
   const Icon = child.icon
-  const usesCardActive = activeStyle === 'card'
   const isDark = theme === 'dark'
   const hasBrandIcon = Boolean(child.iconClassName)
   const className = cn(
     'group flex w-full appearance-none items-center gap-[13px] rounded-[10px] border-0 bg-transparent text-left no-underline transition-colors',
     isDark ? 'text-white hover:bg-white/[.08]' : 'text-black hover:bg-[#f3f3f3]',
     child.disabled && 'cursor-default',
-    compact ? 'py-[11px] pl-2.5 pr-2.5' : 'px-3 py-2.5',
-    isActive && (isDark ? 'bg-white/[.08]' : usesCardActive ? 'bg-[#f3f3f3]' : 'bg-black/[0.04]')
+    compact ? 'py-[11px] pl-2.5 pr-2.5' : 'px-3 py-2.5'
   )
   const content = (
     <>
@@ -472,7 +450,6 @@ function MegaNavLink({
             ? 'border-white/[.15] bg-white/[.08] text-white/90 group-hover:bg-white/[.15] group-hover:text-white'
             : 'border-[#e4e4e4] bg-[#efefef] text-[#555] group-hover:bg-[#e7e7e7] group-hover:text-[#1a1a1a]',
           compact ? 'size-[34px]' : 'size-[38px]',
-          isActive && usesCardActive && !isDark && 'bg-[#e7e7e7] text-[#1a1a1a]',
           child.iconClassName
         )}
       >

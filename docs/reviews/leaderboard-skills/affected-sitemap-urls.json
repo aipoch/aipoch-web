@@ -1,0 +1,2866 @@
+[
+  {
+    "url": "https://aipoch.com",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/open-science/download",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/medflow",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/list",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/medskillaudit",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gsea",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/unmet-clinical-need-extractor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/topic-evidence-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/study-design-identifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/result-reliability-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/preprint-surveillance-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/population-gap-detector",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/paper-to-claim-verifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/novelty-vs-feasibility-assessor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/multi-database-literature-collector",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/methods-reverse-engineer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/method-gap-detector",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-topic-saturation-and-whitespace-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-research-gap-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/litbase",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/high-value-paper-screener",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/figure-first-paper-reader",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/evidence-level-ranker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/drug-target-evidence-landscape",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/disease-mechanism-evidence-map",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/contradictory-findings-resolver",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-question-clarifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biomedical-search-strategy-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biomarker-landscape-scanner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bioinformatics-translational-opportunity-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/basic-discovery-translational-opportunity-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/validation-strategy-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/two-sample-mr-exposure-screening-reference-grounded",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/tumor-immune-infiltration-diagnostic-ml-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/treatment-response-predictor-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/translational-study-blueprint",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/study-objective-refiner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-gene-oncology-reference-grounded-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-drug-faers-safety-profile-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-drug-adverse-effect-pathway-anchored-network-pharmacology",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-drug-adverse-effect-hub-first-network-pharmacology",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-compound-network-toxicology-disease-link-reference-grounded",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-cell-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sample-size-and-power-planning-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/real-world-evidence-study-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/qtl-colocalization-study-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/prognostic-biomarker-protocol-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/process-related-diagnostic-biomarker-nomogram-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/primary-plan-recommender",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pcd-immune-oncology-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/non-tumor-mechanism-guided-diagnostic-ml-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/nhanes-clinical-retrospective-biomarker-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/multi-omics-clinical-integration-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mendelian-randomization-protocol-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-research-gap-to-study-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-research-algorithm-matcher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mechanism-to-validation-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/inclusion-exclusion-criteria-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/generic-phenotype-scoring-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/feasibility-aware-study-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/faers-pharmacovigilance-disproportionality-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/endpoint-definition-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dual-disease-shared-transcriptome-biomarker-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/drug-repurposing-study-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cross-disease-shared-biomarker-network-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conventional-oncology-hub-gene-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conventional-non-oncology-hub-gene-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/confounder-and-bias-control-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/comparative-network-toxicology-shared-mechanism-reference-grounded",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/comorbidity-common-immune-biomarker-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-cohort-protocol-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/case-control-study-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bulk-omics-integrative-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bidirectional-multi-phenotype-mr-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/animal-and-cell-validation-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/aim-and-hypothesis-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/active-comparator-single-soc-faers-safety-comparison",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/xgboost-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/wgcna-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/univariate-multivariable-cox-regression",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/umap-tsne-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/time-dependent-roc",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/tf-target-gene-regulatory-network",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/svm-model-importance-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ssgsea-immune-infiltration-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sample-group-sankey-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sample-correlation-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/roc-diagnostic-performance",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rf-model-importance-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ppi-network-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pca-dimensionality-reduction",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/nomogram-construction",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/model-calibration-curve",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lncrna-regulatory-network-construction-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lightgbm-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lasso-logistics-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/knn-imputation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/km-survival-curve",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/immune-pathway-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hierarchical-clustering-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gsva-analysis-and-visualization",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gokegg",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gene-protein-expression-matrix-normalization",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/external-model-validation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/estimate-immune-score-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/elastic-net-feature-selection",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/differential-expression-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/deg-screening-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/decision-tree-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/decision-curve-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/consensus-clustering-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cibersort-immune-infiltration-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cerna-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/batch-effect-correction",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/title-and-abstract-optimizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/target-journal-matcher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/table-narrative-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/slide-deck-for-lab-meeting",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/revision-strategy-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/results-section-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/results-section-structurer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reporting-guideline-compliance-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reference-integrity-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/poster-storyline-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/paper-sprint-review",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/methods-section-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-english-precision-editor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/limitation-and-risk-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lay-summary-for-cross-disciplinary-teams",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/latex-manuscript-format-converter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/introduction-section-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/introduction-logic-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/graphical-abstract-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-specific-aims-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/figure-legend-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/discussion-composer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cover-letter-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/consistency-checker-across-manuscript",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conference-abstract-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/claim-strength-calibrator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/author-response-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/arxiv-preflight",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mendel",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bianque",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/tumor-immune-infiltration-diagnostic-ml",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-gene-oncology-reference-grounded",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-drug-faers-safety-profile",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-cell",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/process-related-diagnostic-biomarker-nomogram",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pcd-immune-oncology",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/non-tumor-mechanism-guided-diagnostic-ml",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/nhanes-clinical-retrospective-biomarker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mr-scrna",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/generic-phenotype-scoring",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/faers-pharmacovigilance-disproportionality",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dual-disease-shared-transcriptome-biomarker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cross-disease-shared-biomarker-network",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conventional-oncology-hub-gene",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conventional-non-oncology-hub-gene",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/comorbidity-common-immune-biomarker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bidirectional-multi-phenotype-mr",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-proposal-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-grants",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/protocol-standardization",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/prospero-registration-helper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-protocol-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/INPLASY-registration-helper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hypothesis-generation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hypogenic",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/esm",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinic-research-design",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/basic-research-design",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/western-blot-quantifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/volcano-plot-script",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/volcano-plot-labeler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/variant-pathogenicity-predictor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/upset-plot-converter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/toxicity-structure-alert",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/table-1-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/survival-curve-risk-table",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/survival-analysis-km",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/study-design-scale-selector",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/statistical-analysis-advisor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/statistical-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/spatial-transcriptomics-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/smiles-de-salter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/singlecell-portal",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sequence-alignment",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/seaborn",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scvi-tools",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scrna-cell-type-annotator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scikit-survival",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scikit-bio",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scanpy",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sanger-chromatogram-qa",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rowan",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rct-bias-assessment-rob2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/quality-assessment",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pysam",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pyopenms-skill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pydicom",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pydeseq2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pseudotime-trajectory-viz",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/protocol-deviation-classifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/preclinical-pkpd-analyst",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/phylogenetic-tree-styler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pathology-roi-selector",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pathml",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/outlier-detection-handler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/neuropixels-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/neurokit2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/neoantigen-predictor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/motif-logo-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/metagenomic-krona-chart",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/metabolomics-workbench-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-title-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-sensitivity-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-screening-fulltext",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-rob2-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-radial-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-picos-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-funnel-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-forest-model-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-forest-continuous-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-forest-binary-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-feasibility-analyzer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-criteria-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-baujat-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-abstract-screener",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mechanism-flowchart",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/matplotlib",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/matchms",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lipinski-rule-filter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lamindb",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lab-budget-forecaster",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/histolab",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/heatmap-beautifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gtars",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/graphical-abstract-wizard",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/geopandas",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/geniml",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gene-structure-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/forest-plot-styler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/flowio",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/fastqc-report-interpreter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/facs-gating-viz-style",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/experimental-data-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/etetoolkit",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dnanexus-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/diagnostic-study-quality-assessment-quadas-2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/crispr-screen-analyzer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cohort-study-quality-assessment-nos",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/code-refactor-for-reproducibility",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cobrapy",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cnv-caller-plotter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-data-cleaner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/circos-plot-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bioservices",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-structure",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-sequence-io",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-phylo",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-alignment",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-advanced",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/anndata",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/adme-property-predictor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/3d-molecule-ray-tracer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/visual-content-desc",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/usmle-case-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/tone-adjuster",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/study-limitations-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/semantic-consistency-auditor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sample-size-power-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/response-tone-polisher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/response-letter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/residency-interview-prep",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/referral-letter-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reference-style-sync",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/recommendation-letter-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rebuttal-letter-strategist",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/radiology-image-quiz",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/q-and-a-prep-partner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/prior-auth-letter-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/presentation-hook",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/poster-layout-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/personal-statement",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/peer-review-response-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/peer-review",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/patient-recruitment-ad-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/patent-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/nih-biosketch-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/networking-email-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/moa-explainer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/microbiome-diversity-reporter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/method-writing",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-results-sensitivity-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-results-risk-of-bias",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-results-funnel-plot-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-results-forest-plot-analyzer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-manuscript-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-baseline-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meeting-minutes",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medication-adherence-message-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-translation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-scribe-dictation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-email-polisher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-device-mdr-auditor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-cv-resume-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/market-access-value",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/linkedin-optimizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lay-summary-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lay-press-release-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/latex-posters",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/labarchive-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-cover-prompter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-club-presenter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/irb-application-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/iacuc-protocol-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hipaa-compliance-auditor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/graph-interpretation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-mock-reviewer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-budget-justification",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/figure-reference-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/figure-legend-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/faq-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ehr-semantic-compressor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ectd-xml-compiler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/discussion-section-architect",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/discharge-summary-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/digital-twin-discharge-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dei-statement-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cover-letter-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conference-poster-pitch",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conference-abstract-adaptor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/citation-formatter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/blind-review-sanitizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biotech-pitch-deck-narrative",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biomed-outline-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/automated-soap-note-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/authorship-credit-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/anki-card-creator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/anatomy-quiz-master",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/adverse-event-narrative",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/academic-highlight-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/academic-abstract-refiner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/abstract-trimmer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/abstract-summarizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/word-read-write",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/waste-disposal-guide",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/virtual-patient-roleplay",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/vector-text-fixer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/uspto-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/treatment-plans",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/time-zone-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/text-to-technical-roadmap",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/text-format-organizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/task-reminder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/symptom-checker-triage",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/spreadsheet-ops",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/soft-article-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/slide-deck-images",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/shift-handover-summarizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-schematics",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sci-paper-reviewer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/schedule-management",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/result-figure-consistencycheck",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/resubmission-deadline-tracker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reproducibility-check",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reagent-expiry-alert",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pptx-posters",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ppt",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/poster-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/postdoc-fellowship-matcher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/plotly",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/plan-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pdf-processor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pdf-ppt",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pdf-extract",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/patient-consent-simplifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/paper-tweet-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/note-summarizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/multi-source-news-writer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/multi-panel-figure-assembler",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mindmap-helper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mindmap",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/microscopy-scale-bar-adder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-search-builder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meeting-minutes-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meeting-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medication-reconciliation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-unit-converter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-case-report-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medical-case-interpreter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/markitdown",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/market-research-report-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literatureimages-interpretation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-statistics",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-management",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/learning-tutoring",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lab-result-interpretation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/lab-inventory-predictor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/kv-design",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/knowledge-base-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-recommender",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/iso-13485-certification",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/imagegenskill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/image-processing",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/image-ocr",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/id-photo-tool",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/html-to-pdf",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/fulltext-fetcher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/file-security-toolkit",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/file-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/file-management",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/expert-interview-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/experiment-detail-comparator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/equipment-maintenance-log",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ebm-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dpi-upscaler-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/docx-feedback-tracker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dicom-anonymizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/date-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/datamol",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/content-proofreading",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conflict-of-interest-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/conference-tweet-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cold-chain-risk-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/co2-tank-monitor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-reports",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/chemical-structure-converter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/chemical-storage-sorter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/chart-style-unifier",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/buffer-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/brainstorming",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bmi-bsa-calculator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biodbnet-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bibliography",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bib-formatter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/benchling-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/article-format-adjustment",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/api-design-principles",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/adaptyv",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/academic-poster-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/academic-norm-review",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/academic-cv-generator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/zinc-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/venue-templates",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/variant-annotation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/unstructured-medical-text-miner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/uniprot-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/translational-gap-analyzer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/target-novelty-scorer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/systematic-review-screener",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/string-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/smart-journal-monitor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/semantic-scholar-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/sds-msds-risk-scanner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scite-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-podcast-summary",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scholar-evaluation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/retraction-watcher",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-paper-downloader",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-hotspot-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-article-weekly",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reference-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reference-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reagent-substitute-scout",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reactome-skill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rare-disease-hpo-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pytdc",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pubmed-topic-recommend",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pubmed-search-specialist",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pubchem-database-skill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pdf-extract-experimental-materials",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pdb-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pathway-introduction-expert",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/patent-landscape",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/patent-claim-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/openalex-db",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/open-targets-db",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/open-source-license-check",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/open-access-scout",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/methodology-extractor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/medchem",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-filtering",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-extensive-read",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-experiment-extract",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-close-read",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/keyword-velocity-tracker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/key-takeaways",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/kegg-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/kegg-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-skills",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-matchmaker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-latest-issue",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/journal-impact-factor-trend",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/jaspar-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ib-summarizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hmdb-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hgnc-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gwas-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-gantt-chart-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-funding-scout",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gget",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/geo-search-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/gene-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/funding-trend-forecaster",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/fda-guideline-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/fda-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ensembl-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/encode-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/ena-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/emerging-topic-scout",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/drugbank-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/drug-interaction-checker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/diffdock-molecular-docking",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/crossref-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cross-disciplinary-bridge-finder",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cosmic-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/concept-explainer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/competitor-trial-monitor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/comparison-table-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinvar-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinpgx-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinicaltrials-gov-parser",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinicaltrials-db",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-study-info-extractor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/citation-network",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/citation-management",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/citation-chasing-mapping",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/chembl-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/chea-api",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/cellxgene-census",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/brenda-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/blockbuster-therapy-predictor",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biorxiv-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/biopython-entrez",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/bio-ontology-mapper",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/arxiv-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/arboreto",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/alphafold-db",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/acronym-unpacker",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/hippocrates",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/flow-cytometry-gating-strategist",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dual-disease-transcriptomic-ml-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/two-sample-mr-research-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/protein-struct-viz",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mentorship-meeting-agenda",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/eln-template-creator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/dashboard-design-for-trials",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/data-management-plan-creator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/multi-omics-integration-strategist",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-brainstorming",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/aeon",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/meta-analysis-forest-plotter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/arrive-guideline-architect",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/randomization-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinicaltrials-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pyopenms",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/in-silico-perturbation-oracle",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/statsmodels",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/literature-review",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/torchdrug",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/table-1-generator-advanced",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/go-kegg-enrichment",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-visualization",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pubmed-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scikit-learn",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pyhealth",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/clinical-decision-support",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/protocolsio-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/protein-docking-configurator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/crispr-grna-designer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/single-cell-rnaseq-pipeline",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/exploratory-data-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/opentargets-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/openalex-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/molfeat",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/networkx",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/omero-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/perplexity-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/mouse-colony-planner",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/rdkit",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/inclusion-criteria-gen",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pymc",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-critical-thinking",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/adaptive-trial-simulator",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pubchem-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/matlab",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/deeptools",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/scientific-writing",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/pylabrobot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/datacommons-client",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/denario",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/latchbio-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/grant-proposal-assistant",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/shap",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/geo-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/reactome-database",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/paper-2-web",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/opentrons-integration",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/agent-skills/research-lookup",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/aipoch-open-science-research-packages",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/jev-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-31-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-31-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/openai-prism-vs-aipoch-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-30-2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/extract-figures-tables-from-pdf",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/how-aipoch-open-science-memory-work",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-30-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/aipoch-open-science-v-0-29-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-science-alternative",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/what-is-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/aipoch-open-science-v-0-28-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-for-life-sciences-and-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/aipoch-open-science-v-0-27-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-science-vs-aipoch-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-26-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-25-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-25-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-pdf-reading-context-evidence",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-24-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-biomnibench-da",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-23-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-21-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-session-references",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-20-2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-stale-notebook-output-tracking",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-20-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-20-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-19-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ai-agent-vs-mcp-server",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-remote-ssh-compute",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-18-2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-specialist-ai-agent",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-18-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/model-agnostic-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-18-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/message-branches-new-sessions-side-conversations",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-17-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/deepseek-harness-scientific-agents",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-16-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/organize-project-in-open-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-skills-connectors-extend-agent",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-14-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-reviewer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-14-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-runs-python-r",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-13-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-13-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/agent-permissions",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-data-flow",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-12-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-artifact-version-provenance",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-plan-execute-artifact",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-11-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-10-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-10-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/scientific-agent-verification",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-9-2",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-0-8-1",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-8-0",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v0-7-3",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-ai-reviewer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/model-agnostic-research-infrastructure",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-7-2-release",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-v-0-6-1-release",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/kimi-k3-scientific-workbench-test",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/kimi-k3-test",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/gpt-sol-test",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/open-science-first-three-steps",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-science-reproducibility",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-science-review-bioinformatics-paper-reproduction",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ai-research-workflow-infrastructure",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ai-workbenches-claude-science",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/how-to-evaluates-medical-research-agent-skills",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/medical-research-data-analysis-deserves-higher-standard",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/prognostic-nomogram-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/detect-population-gaps-biomedical-research",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/decision-curve-analysis-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/identify-methodological-gaps-in-research",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/claude-fable-5-day-one",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/gsva-pathway-enrichment-analysis-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/design-mendelian-randomization-study",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/translational-study-blueprint-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/estimate-immune-score-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/model-calibration-curves",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ssgsea-immune-infiltration-analysis-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ai-immune-pathway-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/find-medical-research-gap",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/arxiv-preflight",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/fastqc-report-tnterpretation",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/what-is-hermes-agent",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/biomarker-landscape-map",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/clinical-question-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/cibersort-immune-infiltration-analysis",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/differential-expression-analysis-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/ai-pubmed-search",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/identify-study-design-with-ai",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/design-single-cell-research-plan",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/cover-letter-drafter",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/medical-research-gap-finder-comparison",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/literature-search-agent-skills-comparison-medskillaudit",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/methods-analysis-agent-skills-comparison",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/disease-mechanism-agent-skill-comparison",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/peer-review-agent-skill-comparison",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/how-to-generate-forest-plot",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/agent-skills-guides",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/blog/blind-review-sanitizer",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/guides/what-is-a-skill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/guides/get-started-with-skills",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  },
+  {
+    "url": "https://aipoch.com/guides/build-your-own-skill",
+    "lastModified": "2026-09-23T00:00:00.000Z"
+  }
+]

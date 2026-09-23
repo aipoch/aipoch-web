@@ -2,8 +2,8 @@
 
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
 import { scoreRatioBandFromParts } from '@/lib/score-ratio-bands'
+import { cn } from '@/lib/utils'
 
 export interface ScoreHeroProps {
   score: number
@@ -11,6 +11,7 @@ export interface ScoreHeroProps {
   evaluationReportUrl?: string | null
   showReportLink?: boolean
   className?: string
+  appearance?: 'default' | 'skill'
   scoreTooltip?: string
 }
 
@@ -61,11 +62,24 @@ export function ScoreHero({
   evaluationReportUrl,
   showReportLink = true,
   className,
+  appearance = 'default',
   scoreTooltip
 }: ScoreHeroProps) {
   const rounded = Math.round(score)
   const band = scoreRatioBandFromParts(score, total)
-  const b = bandStyles[band]
+  const b =
+    appearance === 'skill'
+      ? {
+          ring: 'border-transparent bg-[#f7f7f5]',
+          text:
+            band === 'green'
+              ? 'text-[#607a32]'
+              : band === 'orange'
+                ? 'text-[#915600]'
+                : 'text-[#b42318]',
+          line: 'bg-[#111]'
+        }
+      : bandStyles[band]
 
   return (
     <div className={cn('flex flex-col items-center gap-1.5', className)}>
@@ -80,11 +94,32 @@ export function ScoreHero({
           {rounded}
         </span>
         <span className={cn('my-0.5 h-[2px] w-[22px]', b.line)} />
-        <span className={cn('text-[11px] font-semibold leading-none', b.text)}>{total}</span>
-        <span className={cn('mt-1 text-[11px] font-bold', b.text)}>Total Score</span>
+        <span
+          className={cn(
+            'text-[11px] font-semibold leading-none',
+            appearance === 'skill' ? 'text-[#111]' : b.text
+          )}
+        >
+          {total}
+        </span>
+        <span
+          className={cn(
+            'mt-1 text-[11px]',
+            appearance === 'skill' ? 'font-normal text-[#6b6b66]' : cn('font-bold', b.text)
+          )}
+        >
+          Total Score
+        </span>
       </div>
       {showReportLink ? (
-        <EvaluationReportLink evaluationReportUrl={evaluationReportUrl} className="mt-0.5" />
+        <EvaluationReportLink
+          evaluationReportUrl={evaluationReportUrl}
+          className={cn(
+            'mt-0.5',
+            appearance === 'skill' &&
+              'mt-1.5 min-h-8 font-normal text-[#6b6b66] hover:text-[#111] hover:underline'
+          )}
+        />
       ) : null}
     </div>
   )

@@ -13,12 +13,13 @@ interface TocItem {
 interface TableOfContentsProps {
   toc: TocItem[]
   className?: string
-  variant?: 'default' | 'blog'
+  variant?: 'default' | 'blog' | 'skill'
 }
 
 export function TableOfContents({ toc, className, variant = 'default' }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('')
   const isBlogVariant = variant === 'blog'
+  const isSkillVariant = variant === 'skill'
 
   const filteredToc = toc.filter((item) => item.depth <= 2)
 
@@ -60,7 +61,10 @@ export function TableOfContents({ toc, className, variant = 'default' }: TableOf
         className={cn(
           isBlogVariant
             ? 'pb-4'
-            : 'mb-4 flex h-8 items-center gap-2 text-xs font-medium uppercase tracking-wider text-amber-600'
+            : cn(
+                'mb-4 flex h-8 items-center gap-2 text-xs font-medium uppercase tracking-wider',
+                isSkillVariant ? 'text-[#915600]' : 'text-amber-600'
+              )
         )}
       >
         {!isBlogVariant && <List className="size-4" />}
@@ -102,13 +106,23 @@ export function TableOfContents({ toc, className, variant = 'default' }: TableOf
                 item.depth === 1 && 'font-medium',
                 item.depth === 2 && 'pl-4',
                 isActive
-                  ? 'text-amber-600'
+                  ? isSkillVariant
+                    ? 'text-[#915600]'
+                    : 'text-amber-600'
                   : item.depth === 1
                     ? 'text-gray-900'
-                    : 'text-gray-600'
+                    : isSkillVariant
+                      ? 'text-[#6b6b66]'
+                      : 'text-gray-600'
               )}
             >
-              <a href={item.href} className="block py-1 transition-colors hover:text-amber-600">
+              <a
+                href={item.href}
+                className={cn(
+                  'block py-1 transition-colors',
+                  isSkillVariant ? 'hover:text-[#915600]' : 'hover:text-amber-600'
+                )}
+              >
                 {item.value}
               </a>
             </li>

@@ -9,6 +9,7 @@ import {
   resolveHomepageDownloadHref
 } from '@/app/(commonLayout)/open-science/open-science-download-data'
 import { platformLogo } from '@/components/platform-logos'
+import { waitForBrowserMock } from '@/mocks/ready'
 import { fetchOpenScienceDownloadManifest } from '@/service/open-science-download'
 
 type Platform = { label: string; key: DownloadKey; icon: 'apple' | 'windows' | 'linux' }
@@ -23,10 +24,12 @@ let homepageManifestPromise: Promise<DownloadManifest> | null = null
 
 const loadHomepageManifest = () => {
   if (!homepageManifestPromise) {
-    homepageManifestPromise = fetchOpenScienceDownloadManifest().catch((error) => {
-      homepageManifestPromise = null
-      throw error
-    })
+    homepageManifestPromise = waitForBrowserMock()
+      .then(() => fetchOpenScienceDownloadManifest())
+      .catch((error) => {
+        homepageManifestPromise = null
+        throw error
+      })
   }
   return homepageManifestPromise
 }
@@ -80,7 +83,7 @@ export const HomeDownload = () => {
   return (
     <div
       data-testid="home-platform-downloads"
-      className="mt-6 grid max-w-[870px] grid-cols-1 gap-2 sm:mt-8 sm:grid-cols-3 md:gap-3"
+      className="mt-6 grid max-w-[807px] grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-3"
     >
       {platforms.map((platform) => {
         const isMac = platform.key === 'mac-arm64'
@@ -119,15 +122,13 @@ export const HomeDownload = () => {
                   closeTimerRef.current = null
                   setOpen(true)
                 }}
-                className={`flex min-h-[72px] w-full flex-row items-center justify-center gap-3 border border-black/10 px-3 text-left transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:bg-[#f4f4f1] hover:shadow-[0_12px_28px_rgba(17,17,17,.10)] md:min-h-[86px] ${open ? '-translate-y-px bg-[#f4f4f1] shadow-[0_12px_28px_rgba(17,17,17,.10)]' : 'bg-white'}`}
+                className={`flex h-[80px] w-full flex-row items-center justify-center gap-2 border border-black/10 px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890]  ${open ? 'bg-[#f4f4f1] shadow-[0_12px_28px_rgba(17,17,17,.10)]' : 'bg-white'}`}
               >
                 <span className="flex size-10 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
                   {platformLogo(platform.icon, 'size-6')}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <b className="block text-sm font-semibold text-[#111] md:text-base">
-                    {platform.label}
-                  </b>
+                  <b className="block text-sm font-semibold text-[#111]">{platform.label}</b>
                   <span className="block whitespace-nowrap text-[10px] text-[#aaa] sm:hidden md:block">
                     Apple Silicon / Intel
                   </span>
@@ -179,17 +180,15 @@ export const HomeDownload = () => {
             key={platform.label}
             href={href}
             aria-label={`Download ${platform.label}`}
-            className="flex min-h-[72px] flex-row items-center justify-center gap-3 border border-black/10 bg-white px-3 text-left transition-[background-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:bg-[#f4f4f1] hover:shadow-[0_12px_28px_rgba(17,17,17,.10)] md:min-h-[86px]"
+            className="flex h-[80px] flex-row items-center justify-center gap-2 border border-black/10 bg-white px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890] "
           >
             <span className="flex size-10 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
               {platformLogo(platform.icon, 'size-6')}
             </span>
             <span className="min-w-0 flex-1">
-              <b className="block text-sm font-semibold text-[#111] md:text-base">
-                {platform.label}
-              </b>
+              <b className="block text-sm font-semibold text-[#111]">{platform.label}</b>
               <span className="block whitespace-nowrap text-[10px] text-[#aaa] sm:hidden md:block">
-                {platform.label === 'Windows' ? 'x64' : 'x64 · .deb'}
+                x64
               </span>
             </span>
             <span className="flex items-center gap-1.5 text-[9px] font-medium tracking-[0.03em] text-[#aaa] sm:hidden md:flex">

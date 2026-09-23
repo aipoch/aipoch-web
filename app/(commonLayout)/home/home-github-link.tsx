@@ -3,8 +3,8 @@
 import { ArrowUpRight, Star } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { waitForBrowserMock } from '@/mocks/ready'
 import { GithubIcon } from '@/components/svg-icons/github-icon'
+import { waitForBrowserMock } from '@/mocks/ready'
 import { DEFAULT_GITHUB_STAR_COUNT, formatCompactGithubCount } from './home-data'
 
 const GITHUB_REPOSITORY_API_URL = 'https://api.github.com/repos/aipoch/open-science'
@@ -74,7 +74,7 @@ export const HomeGithubLink = ({
       rel="noopener noreferrer"
       data-testid="home-github-link"
       aria-label={`Open-Science on GitHub, ${formattedGithubStars} stars`}
-      className="mt-12 inline-flex max-w-full items-center gap-3.5 bg-[#222] px-6 py-3 font-mono text-[12px] font-semibold tracking-[0.1em] text-white transition-opacity hover:opacity-90 sm:text-[14px]"
+      className="inline-flex min-h-[42px] w-[507px] max-w-full items-center gap-3 bg-[#212121] px-5 py-2.5 font-mono text-[11px] font-semibold tracking-[.03em] text-white transition-opacity hover:opacity-80 sm:text-[13px]"
     >
       <GithubIcon className="size-[18px] shrink-0" aria-hidden="true" />
       <span
@@ -85,7 +85,7 @@ export const HomeGithubLink = ({
         {formattedGithubStars}
       </span>
       <span className="min-w-0 break-all">github.com/aipoch/open-science</span>
-      <ArrowUpRight className="ml-20 size-4 shrink-0" />
+      <ArrowUpRight className="ml-auto size-4 shrink-0 " />
     </Link>
   )
 }

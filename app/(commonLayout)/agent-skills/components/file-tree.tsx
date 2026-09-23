@@ -1,12 +1,8 @@
 'use client'
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from '@/components/ui/collapsible'
 import { ChevronRight, FileText, Folder } from 'lucide-react'
 import * as React from 'react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 type FileTreeItem =
   | { name: string; type: 'file' }
@@ -35,8 +31,9 @@ function FileTreeNode({ item, depth = 0 }: { item: FileTreeItem; depth?: number 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger asChild>
-        <div
-          className={`flex items-center gap-2 py-1.5 px-2 text-sm hover:bg-white/5 rounded-sm transition-colors cursor-pointer select-none ${
+        <button
+          type="button"
+          className={`flex w-full items-center text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#ffbd2e] gap-2 py-1.5 px-2 text-sm hover:bg-white/5 rounded-sm transition-colors cursor-pointer select-none ${
             depth === 0 ? 'text-[#ffbd2e] font-bold' : 'text-white/90'
           }`}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
@@ -48,7 +45,7 @@ function FileTreeNode({ item, depth = 0 }: { item: FileTreeItem; depth?: number 
           />
           <Folder className="h-4 w-4 text-[#ffbd2e] flex-shrink-0" />
           <span className="truncate">{item.name}</span>
-        </div>
+        </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
         {item.items.map((child, index) => (
@@ -61,9 +58,9 @@ function FileTreeNode({ item, depth = 0 }: { item: FileTreeItem; depth?: number 
 
 export function FileTree({ items, title }: FileTreeProps) {
   return (
-    <div className="rounded-lg overflow-hidden bg-[#1e1e1e] border border-white/10">
+    <div className="rounded-[10px] overflow-hidden bg-[#1e1e1e] border border-white/10">
       {/* Title bar with window controls */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#252526] border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#111] border-b border-white/5">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
           <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -73,7 +70,7 @@ export function FileTree({ items, title }: FileTreeProps) {
       </div>
 
       {/* File tree content */}
-      <div className="py-4 px-2 max-h-125 overflow-y-scroll scrollbar-dark">
+      <div className="py-4 px-2 max-h-125 overflow-y-auto scrollbar-dark">
         {items.map((item, index) => (
           <FileTreeNode key={index} item={item} />
         ))}
