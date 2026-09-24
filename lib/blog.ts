@@ -97,11 +97,17 @@ function mapDetailToBlogPost(detail: BlogPostDetail): BlogPost {
 
 /** Extract a YouTube or Vimeo URL from article content for the VideoObject schema. */
 export function extractVideosFromContent(content: string): Array<{
-  contentUrl: string
+  contentUrl?: string
+  embedUrl?: string
   thumbnailUrl?: string
   name?: string
 }> {
-  const videos: Array<{ contentUrl: string; thumbnailUrl?: string; name?: string }> = []
+  const videos: Array<{
+    contentUrl?: string
+    embedUrl?: string
+    thumbnailUrl?: string
+    name?: string
+  }> = []
   const seen = new Set<string>()
 
   // YouTube: embed, watch, youtu.be
@@ -116,7 +122,7 @@ export function extractVideosFromContent(content: string): Array<{
       if (seen.has(id)) continue
       seen.add(id)
       videos.push({
-        contentUrl: `https://www.youtube.com/watch?v=${id}`,
+        embedUrl: `https://www.youtube.com/embed/${id}`,
         thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`
       })
     }
@@ -130,7 +136,7 @@ export function extractVideosFromContent(content: string): Array<{
       if (seen.has(`vimeo-${id}`)) continue
       seen.add(`vimeo-${id}`)
       videos.push({
-        contentUrl: `https://vimeo.com/${id}`
+        embedUrl: `https://player.vimeo.com/video/${id}`
       })
     }
   }

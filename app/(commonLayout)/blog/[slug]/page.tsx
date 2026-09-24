@@ -17,6 +17,61 @@ interface BlogPageProps {
   params: Promise<{ slug: string }>
 }
 
+const normalizeArticleDate = (value?: string | null): string | null => {
+  const raw = value?.trim()
+  if (!raw || !/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(raw)) return null
+  const normalized = raw.slice(0, 10)
+  const date = new Date(`${normalized}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalized
+    ? null
+    : normalized
+}
+
+const formatVisibleDate = (value: string): string | null => {
+  const normalized = normalizeArticleDate(value)
+  if (!normalized) return null
+  const date = new Date(normalized)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(date)
+}
+
+const resolveVideoReference = (value?: string | null):
+  | { contentUrl: string }
+  | { embedUrl: string }
+  | null => {
+  if (!value?.trim()) return null
+  try {
+    const url = new URL(value.trim())
+    const host = url.hostname.toLowerCase()
+    if (host === 'youtu.be') {
+      const id = url.pathname.slice(1)
+      return id ? { embedUrl: `https://www.youtube.com/embed/${id}` } : null
+    }
+    if (host === 'youtube.com' || host === 'www.youtube.com') {
+      const id = url.pathname.startsWith('/embed/')
+        ? url.pathname.slice('/embed/'.length)
+        : url.searchParams.get('v')
+      return id ? { embedUrl: `https://www.youtube.com/embed/${id}` } : null
+    }
+    if (host === 'vimeo.com' || host === 'www.vimeo.com') {
+      const id = url.pathname.split('/').filter(Boolean).at(-1)
+      return id ? { embedUrl: `https://player.vimeo.com/video/${id}` } : null
+    }
+    if (host === 'player.vimeo.com' && url.pathname.startsWith('/video/')) {
+      const id = url.pathname.slice('/video/'.length)
+      return id ? { embedUrl: `https://player.vimeo.com/video/${id}` } : null
+    }
+    return url.protocol === 'https:' ? { contentUrl: url.href } : null
+  } catch {
+    return null
+  }
+}
+
 export async function generateMetadata({
   params
 }: {
@@ -78,6 +133,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
   const schemaTitle = post.frontmatter.seo?.title ?? post.frontmatter.title
   const schemaDescription = post.frontmatter.seo?.description ?? post.frontmatter.description
   const schemaImage = post.frontmatter.imagePath
+  const publishedDate = normalizeArticleDate(post.frontmatter.date)
 
   const blogPostingSchema = {
     '@context': 'https://schema.org',
@@ -93,8 +149,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
       logo: { '@type': 'ImageObject', url: ogImage }
     },
     url: baseUrl,
-    datePublished: post.frontmatter.date,
-    dateModified: post.frontmatter.date,
+    ...(publishedDate ? { datePublished: publishedDate } : {}),
     articleSection: post.frontmatter.category,
     wordCount: post.content.split(/\s+/).length
   }
@@ -111,8 +166,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
       name: 'AIPOCH',
       logo: { '@type': 'ImageObject', url: ogImage }
     },
-    datePublished: post.frontmatter.date,
-    dateModified: post.frontmatter.date,
+    ...(publishedDate ? { datePublished: publishedDate } : {}),
     mainEntityOfPage: { '@type': 'WebPage', '@id': baseUrl }
   }
 
@@ -123,7 +177,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     url: baseUrl,
     name: schemaTitle,
     description: schemaDescription,
-    datePublished: post.frontmatter.date,
+    ...(publishedDate ? { datePublished: publishedDate } : {}),
     primaryImageOfPage: { '@type': 'ImageObject', url: schemaImage },
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -183,30 +237,34 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
 
   const videoSources = post.frontmatter.videos?.length
     ? post.frontmatter.videos.map((v) => ({
-        contentUrl: v.contentUrl ?? '',
+        reference: resolveVideoReference(v.contentUrl),
         thumbnailUrl: v.thumbnailUrl ?? ogImage,
         name: v.name,
         description: v.description ?? post.frontmatter.description,
-        uploadDate: v.uploadDate ?? post.frontmatter.date
+        uploadDate: normalizeArticleDate(v.uploadDate ?? post.frontmatter.date)
       }))
     : extractVideosFromContent(post.content).map((v) => ({
-        contentUrl: v.contentUrl,
+        reference: v.contentUrl
+          ? resolveVideoReference(v.contentUrl)
+          : v.embedUrl
+            ? resolveVideoReference(v.embedUrl)
+            : null,
         thumbnailUrl: v.thumbnailUrl ?? ogImage,
         name: v.name ?? post.frontmatter.title,
         description: post.frontmatter.description,
-        uploadDate: post.frontmatter.date
+        uploadDate: publishedDate
       }))
 
   for (const video of videoSources) {
-    if (video.contentUrl) {
+    if (video.reference) {
       schemas.push({
         '@context': 'https://schema.org',
         '@type': 'VideoObject',
         name: video.name,
         description: video.description,
         thumbnailUrl: video.thumbnailUrl,
-        uploadDate: video.uploadDate,
-        contentUrl: video.contentUrl
+        ...(video.uploadDate ? { uploadDate: video.uploadDate } : {}),
+        ...video.reference
       })
     }
   }
@@ -253,6 +311,14 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
                 <Clock className="size-3 shrink-0" strokeWidth={2} />
                 <span>{post.frontmatter.readTime}</span>
               </div>
+              {formatVisibleDate(post.frontmatter.date) ? (
+                <time
+                  dateTime={post.frontmatter.date}
+                  className="text-xs leading-4 text-[#61615c]"
+                >
+                  Published {formatVisibleDate(post.frontmatter.date)}
+                </time>
+              ) : null}
               <h1 className="font-[Georgia] text-[40px] leading-[1.08] tracking-[-0.04em] text-[#111] sm:text-[56px] sm:leading-[56px] sm:tracking-[-0.021em] lg:pl-[352px]">
                 {post.frontmatter.seo?.h1 ?? post.frontmatter.title}
               </h1>

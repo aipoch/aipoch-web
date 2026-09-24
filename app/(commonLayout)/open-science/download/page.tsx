@@ -1,6 +1,11 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { JsonLd } from '@/components/json-ld'
+import {
+  AIPOCH_ORGANIZATION_ID,
+  AIPOCH_WEBSITE_ID,
+  buildAipochOrganizationSchema
+} from '@/lib/aipoch-organization'
 import { SITE_DOMAIN } from '@/lib/config'
 import { staticImage } from '@/lib/staticAsset'
 import { fetchOpenScienceDownloadManifest } from '@/service/open-science-download'
@@ -11,6 +16,12 @@ import {
   OPEN_SCIENCE_ALL_RELEASES_URL,
   OPEN_SCIENCE_RELEASES_URL
 } from '../open-science-download-data'
+import {
+  OPEN_SCIENCE_GITHUB_URL,
+  OPEN_SCIENCE_PRODUCT_ID,
+  buildOpenScienceSoftwareApplicationSchema,
+  toSchemaDate
+} from '../open-science-structured-data'
 import { DownloadCards } from './download-cards'
 
 const downloadPageKeys = [
@@ -57,6 +68,9 @@ const pageTitle = 'Download Open-Science for macOS, Windows and Linux | AIPOCH'
 const pageDescription =
   'Download the latest stable Open-Science desktop app for Apple Silicon, Intel Mac, Windows x64, or Linux. Check system requirements and installation guidance.'
 const pageUrl = `${SITE_DOMAIN}/open-science/download`
+const downloadPageId = `${pageUrl}#webpage`
+const downloadBreadcrumbId = `${pageUrl}#breadcrumb`
+const downloadFaqId = `${pageUrl}#faq`
 const heroBackgroundImage = staticImage('aipoch-system-map-7511f128.png')
 const socialImage = staticImage('og-open-science-download-56121c38.png')
 const releaseDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -121,41 +135,66 @@ export default async function OpenScienceDownloadPage() {
     const asset = manifest?.downloads[key]
     return asset ? [asset] : []
   })
+  const softwareApplication = {
+    ...buildOpenScienceSoftwareApplicationSchema({
+      releaseVersion: manifest ? formatDownloadVersionLabel(manifest) : null,
+      dateModified: manifest?.releaseDate ? toSchemaDate(manifest.releaseDate, '') : null,
+      downloadUrl: downloadAssets.length ? downloadAssets.map((asset) => asset.url) : null
+    }),
+    codeRepository: OPEN_SCIENCE_GITHUB_URL,
+    operatingSystem: 'macOS 12+, Windows 10/11 x64, Linux x64'
+  }
+
   const schemas: Record<string, unknown>[] = [
     {
       '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: 'AIPOCH Open-Science',
-      applicationCategory: 'ScienceApplication',
-      operatingSystem: 'macOS 12+, Windows 10/11 x64, Linux x64',
-      ...(manifest ? { softwareVersion: manifest.version } : {}),
-      ...(releaseDate && manifest?.releaseDate ? { datePublished: manifest.releaseDate } : {}),
-      ...(downloadAssets.length
-        ? {
-            downloadUrl: downloadAssets.map((asset) => asset.url),
-            fileFormat: downloadAssets.map((asset) => asset.url.split('/').at(-1))
-          }
-        : {}),
-      url: pageUrl,
-      license: 'https://www.apache.org/licenses/LICENSE-2.0',
-      codeRepository: 'https://github.com/aipoch/open-science',
-      publisher: {
-        '@type': 'Organization',
-        name: 'AIPOCH',
-        url: SITE_DOMAIN
-      }
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: faqItems.map((item) => ({
-        '@type': 'Question',
-        name: item.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.answer
+      '@graph': [
+        { '@context': 'https://schema.org', ...buildAipochOrganizationSchema() },
+        {
+          '@type': 'WebSite',
+          '@id': AIPOCH_WEBSITE_ID,
+          url: SITE_DOMAIN,
+          name: 'AIPOCH',
+          publisher: { '@id': AIPOCH_ORGANIZATION_ID }
+        },
+        {
+          '@type': 'WebPage',
+          '@id': downloadPageId,
+          url: pageUrl,
+          name: pageTitle,
+          description: pageDescription,
+          isPartOf: { '@id': AIPOCH_WEBSITE_ID },
+          mainEntity: { '@id': OPEN_SCIENCE_PRODUCT_ID },
+          breadcrumb: { '@id': downloadBreadcrumbId }
+        },
+        softwareApplication,
+        {
+          '@type': 'BreadcrumbList',
+          '@id': downloadBreadcrumbId,
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'AIPOCH', item: SITE_DOMAIN },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: 'AIPOCH Open-Science',
+              item: `${SITE_DOMAIN}/open-science`
+            },
+            { '@type': 'ListItem', position: 3, name: 'Download', item: pageUrl }
+          ]
+        },
+        {
+          '@type': 'FAQPage',
+          '@id': downloadFaqId,
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: item.answer
+            }
+          }))
         }
-      }))
+      ]
     }
   ]
 
@@ -234,7 +273,7 @@ export default async function OpenScienceDownloadPage() {
         <div className="mt-8 flex flex-col items-start gap-4 text-left text-sm font-[650] sm:flex-row sm:items-center sm:justify-between sm:gap-8">
           <a
             className="underline decoration-[#10110f] underline-offset-4"
-            href="https://aipoch.com/docs/getting-started/installation"
+            href="https://aipoch.com/docs/guides/installation/"
           >
             Read the Installation Docs ↗
           </a>

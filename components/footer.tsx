@@ -5,7 +5,8 @@ import { AIPOCH_DESIGN_SYSTEM_URL, AIPOCH_GITHUB_URL } from '@/lib/config'
 
 const footerLinks = {
   resource: [
-    { label: 'Github', href: AIPOCH_GITHUB_URL },
+    { label: 'Open-Science', href: 'https://github.com/aipoch/open-science' },
+    { label: 'Agent Skills', href: AIPOCH_GITHUB_URL },
     { label: 'Design System', href: AIPOCH_DESIGN_SYSTEM_URL }
   ],
   explore: [

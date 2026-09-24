@@ -94,15 +94,23 @@ describe('Open-Science download page', () => {
     expect(jsonLdMatch).not.toBeNull()
     if (!jsonLdMatch) return
 
-    const schemas = JSON.parse(jsonLdMatch[1] ?? '[]') as Record<string, unknown>[]
+    const parsed = JSON.parse(jsonLdMatch[1] ?? '[]') as Record<string, unknown>
+    const schemas = (parsed['@graph'] ?? []) as Record<string, unknown>[]
     const software = schemas.find((schema) => schema['@type'] === 'SoftwareApplication')
     const faq = schemas.find((schema) => schema['@type'] === 'FAQPage')
+    const webpage = schemas.find((schema) => schema['@type'] === 'WebPage')
 
     expect(software).toMatchObject({
+      '@id': 'https://aipoch.com/#open-science',
       name: 'AIPOCH Open-Science',
-      softwareVersion: '1.2.3',
-      datePublished: '2026-09-07T01:13:01Z',
-      url: 'https://aipoch.com/open-science/download'
+      softwareVersion: 'v1.2.3',
+      dateModified: '2026-09-07',
+      url: 'https://aipoch.com/open-science',
+      publisher: { '@id': 'https://aipoch.com/#organization' }
+    })
+    expect(webpage).toMatchObject({
+      '@id': 'https://aipoch.com/open-science/download#webpage',
+      mainEntity: { '@id': 'https://aipoch.com/#open-science' }
     })
     expect(software?.downloadUrl).toEqual([
       'https://cdn.example.com/aipoch-open-science-1.2.3-mac-x64.dmg',

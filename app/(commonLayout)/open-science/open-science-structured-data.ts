@@ -74,7 +74,8 @@ export const buildOpenScienceSoftwareApplicationSchema = ({
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   '@id': OPEN_SCIENCE_PRODUCT_ID,
-  name: 'Open-Science',
+  name: 'AIPOCH Open-Science',
+  alternateName: 'Open-Science',
   description:
     'An open-source, local-first, model-agnostic AI research workbench for reproducible scientific discovery.',
   url: `${SITE_DOMAIN}/open-science`,

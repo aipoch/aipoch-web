@@ -2,6 +2,7 @@ export const OPEN_SCIENCE_DOWNLOAD_MANIFEST_URL =
   'https://statics.aipoch.com/open-science/app/stable/version.json'
 export const OPEN_SCIENCE_RELEASES_URL = 'https://github.com/aipoch/open-science/releases/latest'
 export const OPEN_SCIENCE_ALL_RELEASES_URL = 'https://github.com/aipoch/open-science/releases'
+export const OPEN_SCIENCE_DOWNLOAD_PAGE_URL = 'https://aipoch.com/open-science/download'
 
 export type DownloadKey =
   | 'mac-x64'

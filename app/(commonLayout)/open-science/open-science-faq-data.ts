@@ -1,4 +1,4 @@
-import { OPEN_SCIENCE_RELEASES_URL } from './open-science-download-data'
+import { OPEN_SCIENCE_DOWNLOAD_PAGE_URL } from './open-science-download-data'
 
 /** Share the visible FAQ content with FAQPage JSON-LD to keep the copy consistent. */
 export const openScienceFaqItems = [
@@ -25,8 +25,8 @@ export const openScienceFaqItems = [
   {
     question: 'Where can I download the latest release?',
     answer:
-      'Visit the latest Open-Science release page for current installers, compatibility information, release notes and known limitations.',
-    answerLinkLabel: 'latest Open-Science release page',
-    answerHref: OPEN_SCIENCE_RELEASES_URL
+      'Visit the official Open-Science download page for current installers, compatibility information, release notes and known limitations.',
+    answerLinkLabel: 'official Open-Science download page',
+    answerHref: OPEN_SCIENCE_DOWNLOAD_PAGE_URL
   }
 ] as const
