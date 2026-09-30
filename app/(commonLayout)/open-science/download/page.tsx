@@ -145,10 +145,9 @@ export default async function OpenScienceDownloadPage() {
     operatingSystem: 'macOS 12+, Windows 10/11 x64, Linux x64'
   }
 
-  const schemas: Record<string, unknown>[] = [
-    {
-      '@context': 'https://schema.org',
-      '@graph': [
+  const schemas: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@graph': [
         { '@context': 'https://schema.org', ...buildAipochOrganizationSchema() },
         {
           '@type': 'WebSite',
@@ -194,9 +193,8 @@ export default async function OpenScienceDownloadPage() {
             }
           }))
         }
-      ]
-    }
-  ]
+    ]
+  }
 
   return (
     <main
