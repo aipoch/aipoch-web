@@ -28,3 +28,9 @@ Thumbs.db
 .worktrees/
 .playwright-mcp/
 CLAUDE.md
+
+# Session-package sources (imported via scripts/import-session-package.ts)
+session-packages/*.science
+
+# Generated use-case mock data (regenerate locally via scripts/import-session-package.ts)
+public/use-cases/

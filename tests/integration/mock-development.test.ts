@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { createServer } from 'node:net'
 import { chromium, devices } from '@playwright/test'
+import { COMMON_LAYOUT_LAST_MODIFIED } from '../../lib/common-layout-metadata'
 
 // Exercise the real launcher and browser/SSR consumers with ephemeral loopback ports.
 const availablePort = async (): Promise<number> => {
@@ -77,7 +78,9 @@ describe('mock development end to end', () => {
     expect((await fetch(`${web}/community/posts/1`)).status).toBe(404)
     const sitemap = await (await fetch(`${web}/sitemap.xml`)).text()
     expect(sitemap).toContain('/agent-skills/literature-review</loc>')
-    expect(sitemap).toContain('<lastmod>2026-09-01T00:00:00.000Z</lastmod>')
+    // Entries max their content date with the shared-layout date; assert
+    // against the constant so layout date bumps do not break the test.
+    expect(sitemap).toContain(`<lastmod>${COMMON_LAYOUT_LAST_MODIFIED}T00:00:00.000Z</lastmod>`)
     expect(sitemap).not.toContain('/claim/')
     expect(sitemap).not.toContain('/open-science/overview</loc>')
   }, 120000)
