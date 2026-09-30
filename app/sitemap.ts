@@ -10,7 +10,7 @@ import { fetchOpenScienceDownloadManifest } from '@/service/open-science-downloa
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
-const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-11'
+const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
 const BLOG_PAGE_LAST_MODIFIED = '2026-09-18'
 
 // Disable cache, regenerate on every request
