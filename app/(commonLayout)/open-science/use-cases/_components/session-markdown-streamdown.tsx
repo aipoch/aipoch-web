@@ -6,6 +6,7 @@ import { createMathPlugin } from '@streamdown/math'
 import { useEffect, useMemo, useState } from 'react'
 import { type Components, defaultRehypePlugins, Streamdown } from 'streamdown'
 import type { PluggableList, Plugin } from 'unified'
+import { AssetImage } from './asset-image'
 import { FileDownloadLink } from './file-download-link'
 import { type PreviewFile, previewKindFor, useFilePreview } from './file-preview'
 import 'katex/dist/katex.min.css'
@@ -87,6 +88,8 @@ export const resolveAssetLinkTarget = (href: string, label: string): PreviewFile
   return null
 }
 
+const imageComponent: Components['img'] = ({ node: _node, ...props }) => <AssetImage {...props} />
+
 const linkComponent: Components['a'] = ({ node: _node, href, children, ...props }) => {
   const openPreview = useFilePreview()
   // Intercept internal asset links only when a preview provider is mounted
@@ -162,7 +165,7 @@ const SessionMarkdownStreamdown = ({ content }: { content: string }) => {
         plugins={plugins}
         rehypePlugins={rehypePlugins}
         controls={controls}
-        components={{ a: linkComponent }}
+        components={{ a: linkComponent, img: imageComponent }}
         dir="auto"
         mode="static"
         isAnimating={false}

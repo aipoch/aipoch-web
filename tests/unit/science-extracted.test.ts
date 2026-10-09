@@ -163,7 +163,7 @@ for (const status of [403, 404]) {
     )
     const result = await loadReplayPackage(info, 'sample', () => {})
     expect(result.session.title).toBe('Extracted sample')
-    expect(Object.keys(result.session.assets)).toHaveLength(8)
+    expect(Object.keys(result.session.assets)).toHaveLength(9)
     expect(requests).not.toContain(info.url)
   })
 }

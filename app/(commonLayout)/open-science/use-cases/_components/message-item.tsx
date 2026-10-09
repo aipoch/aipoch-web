@@ -3,6 +3,7 @@
 import { Download, Eye, FileText } from 'lucide-react'
 import { useState } from 'react'
 import type { MessageArtifact, TranscriptItem } from '@/lib/use-case-types'
+import { AssetImage } from './asset-image'
 import { CopyButton } from './copy-button'
 import { ExtensionPreservingFileName } from './extension-preserving-file-name'
 import { FileDownloadLink } from './file-download-link'
@@ -71,8 +72,9 @@ const ArtifactCard = ({ artifact }: { artifact: MessageArtifact }) => {
     <>
       <div className="flex h-[56px] w-full items-center justify-center overflow-hidden bg-bg-200">
         {isImage && artifact.url ? (
-          // biome-ignore lint/performance/noImgElement: exported object URLs should render without Next image rewriting.
-          <img
+          <AssetImage
+            filename={artifact.name}
+            mimeType={artifact.mimeType}
             src={artifact.url}
             alt={artifact.name}
             className="size-full object-cover"

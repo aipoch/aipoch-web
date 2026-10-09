@@ -159,7 +159,10 @@ for full execution output. Missing notebook metadata does not block the session.
 
 Images and linked files load on demand. Text/PDF previews and downloads fetch a
 file only when requested; PDF previews recover their MIME type, and downloads
-preserve original filenames across origins, including inline Markdown links.
+preserve original filenames across origins, including inline Markdown links. SVG
+images returned as generic binary objects recover their image MIME type after a
+failed image load, including thumbnails, inline images and previews. They remain
+image-only blobs; SVG markup is never injected or offered as a new-tab document.
 
 A 403 or 404 for the initial extracted session falls back to the original
 size- and SHA-256-verified `.science` download, whose internal manifest validation

@@ -24,6 +24,7 @@ import {
   useState
 } from 'react'
 import { waitForBrowserMock } from '@/mocks/ready'
+import { AssetImage } from './asset-image'
 import { ExtensionPreservingFileName } from './extension-preserving-file-name'
 import { FileDownloadLink } from './file-download-link'
 import { SessionMarkdown } from './session-markdown'
@@ -234,8 +235,9 @@ const ImageContent = ({ file }: { file: PreviewFile }) => {
         ref={containerRef}
         className="flex min-h-[240px] max-h-[70vh] items-center justify-center overflow-hidden rounded-md bg-bg-100"
       >
-        {/* biome-ignore lint/performance/noImgElement: exported object URLs should render without Next image rewriting. */}
-        <img
+        <AssetImage
+          filename={file.name}
+          mimeType={file.mimeType}
           ref={imageRef}
           src={file.url}
           alt={file.name}

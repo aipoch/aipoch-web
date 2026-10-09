@@ -23,10 +23,17 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
         ? new Uint8Array(3 * 1024 ** 2)
         : artifact.mimeType === 'application/pdf'
           ? pdf
-          : artifact.mimeType === 'image/png'
-            ? Buffer.from(png, 'base64')
-            : new TextEncoder().encode(`Sample ${artifact.name}`)
-      const storageKey = `files/${artifact.name}`
+          : artifact.mimeType === 'image/svg+xml'
+            ? new TextEncoder().encode(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="90" height="40"><rect width="90" height="40" fill="blue"/><script>window.svgExecuted=true</script></svg>'
+              )
+            : artifact.mimeType === 'image/png'
+              ? Buffer.from(png, 'base64')
+              : new TextEncoder().encode(`Sample ${artifact.name}`)
+      const storageKey =
+        artifact.mimeType === 'image/svg+xml'
+          ? 'artifacts/mock-project/mock-session/.provenance/vector/versions/v1/content'
+          : `files/${artifact.name}`
       objects[`objects/${digest(new TextEncoder().encode(storageKey))}`] = { bytes, storageKey }
       artifacts.push({
         ...artifact,

@@ -200,8 +200,8 @@ export async function verifyReplayCoverage(page: Page, url: string) {
 
   // -- artifact gallery: 4 states -----------------------------------------------------
   // content-visibility renders offscreen rows lazily — bring the gallery into view first.
-  await page.getByText('GENERATED · 8').scrollIntoViewIfNeeded()
-  await expect(page.getByText('GENERATED · 8')).toBeVisible()
+  await page.getByText('GENERATED · 9').scrollIntoViewIfNeeded()
+  await expect(page.getByText('GENERATED · 9')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_chart.png')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_report.md')).toBeVisible()
   await expect(page.getByTitle(/Download coverage_dataset\.zip/)).toBeVisible()
@@ -210,6 +210,29 @@ export async function verifyReplayCoverage(page: Page, url: string) {
     'href',
     /\/extracted\/files\//
   )
+
+  // S3 preserves extensionless objects with a generic MIME type; SVG must still render.
+  await page.getByRole('button', { name: 'Expand generated files' }).click()
+  const vectorCard = page.getByTitle('Preview coverage_vector.svg')
+  await vectorCard.scrollIntoViewIfNeeded()
+  await expect
+    .poll(() => vectorCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(90)
+  await expect
+    .poll(() =>
+      page.getByAltText('Inline vector chart').evaluate((img: HTMLImageElement) => img.naturalWidth)
+    )
+    .toBe(90)
+  await vectorCard.click()
+  const vectorPreview = page.getByRole('dialog', { name: 'coverage_vector.svg', exact: true })
+  await expect
+    .poll(() => vectorPreview.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(90)
+  await expect(vectorPreview.getByRole('link', { name: /open in.*tab/i })).toHaveCount(0)
+  expect(
+    await page.evaluate(() => (window as typeof window & { svgExecuted?: boolean }).svgExecuted)
+  ).toBeUndefined()
+  await page.keyboard.press('Escape')
 
   // -- inline asset link in message content ---------------------------------------------
   await expect(page.getByRole('link', { name: 'coverage_report.md' }).first()).toHaveAttribute(
