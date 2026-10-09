@@ -27,14 +27,8 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
             ? Buffer.from(png, 'base64')
             : new TextEncoder().encode(`Sample ${artifact.name}`)
       const storageKey = `files/${artifact.name}`
-      objects[`objects/${digest(new TextEncoder().encode(storageKey))}`] = { bytes, storageKey }
-      artifacts.push({
-        ...artifact,
-        id,
-        path: storageKey,
-        sha256: digest(bytes),
-        size: bytes.length
-      })
+      objects[`objects/${digest(bytes)}`] = { bytes, storageKey }
+      artifacts.push({ ...artifact, id, path: storageKey, size: bytes.length })
       records.push({ contentStorageKey: storageKey, filename: artifact.name })
       return id
     })
@@ -74,11 +68,7 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
     })
   })
   const runBytes = new TextEncoder().encode(JSON.stringify({ runs }))
-  const runKey = 'notebooks/mock-project/mock-session/run.json'
-  objects[`objects/${digest(new TextEncoder().encode(runKey))}`] = {
-    bytes: runBytes,
-    storageKey: runKey
-  }
+  objects[`objects/${digest(runBytes)}`] = { bytes: runBytes, storageKey: 'notebook/run.json' }
   return buildSciencePackage(
     title,
     { messages, artifacts, conversationGraph: { activities } },
