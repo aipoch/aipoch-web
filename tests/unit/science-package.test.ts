@@ -125,7 +125,144 @@ test('large assets are available in the default session without another download
   const message = result.session.items[0]
   expect(message.type === 'message' && message.artifacts?.[0].url).toBe('science-asset:0')
   expect(Object.keys(result.session.assets)).toHaveLength(1)
+  // The rewritten link carries the real filename as a fragment so the markdown
+  // link interceptor can recover it even when the label has no extension.
   expect(result.session.items[0].type === 'message' && result.session.items[0].content).toContain(
-    'science-asset:0'
+    '[file](science-asset:0#large.txt)'
   )
+})
+
+test('message asset links encode special characters in the filename fragment', async () => {
+  const bytes = new TextEncoder().encode('a,b\n1,2\n')
+  const path = `objects/${digest(bytes)}`
+  const sample = buildSciencePackage(
+    'Link names',
+    {
+      messages: [
+        {
+          id: 'm',
+          role: 'assistant',
+          content: '[点这里看结果](data%20set.csv)',
+          createdAt: 1,
+          artifactIds: ['f']
+        }
+      ],
+      artifacts: [{ id: 'f', name: 'data set.csv', path: '$DATA/data set.csv', size: bytes.length }]
+    },
+    { [path]: { bytes, storageKey: 'data set.csv' } }
+  )
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'link-names')
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.content).toContain(
+    '[点这里看结果](science-asset:0#data%20set.csv)'
+  )
+})
+
+test('keeps SVG as an image for <img> previews while detyping HTML', async () => {
+  const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"/>')
+  const html = new TextEncoder().encode('<!doctype html><p>report</p>')
+  const sample = buildSciencePackage(
+    'Mime sample',
+    {},
+    {
+      [`objects/${digest(svg)}`]: { bytes: svg, storageKey: 'files/plot.svg' },
+      [`objects/${digest(html)}`]: { bytes: html, storageKey: 'files/page.html' }
+    }
+  )
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'mime')
+  const blobFor = (storageKey: string) => {
+    const asset = result.session.assets[storageKey]
+    return result.resources[Number(asset.url.split(':')[1])].blob
+  }
+  expect(blobFor('files/plot.svg').type).toBe('image/svg+xml')
+  // Bun normalizes text/* blob types by appending a charset; browsers keep it bare.
+  expect(blobFor('files/page.html').type.split(';')[0]).toBe('text/plain')
+})
+
+const PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6ZQAAAABJRU5ErkJggg=='
+const JPEG_BASE64 = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 0xff, 0xd9]).toString('base64')
+
+const buildRunPackage = (runs: Record<string, unknown>[], runExtra: Record<string, unknown> = {}) =>
+  (() => {
+    const runBytes = new TextEncoder().encode(JSON.stringify({ ...runExtra, runs }))
+    return buildSciencePackage(
+      'Figures',
+      {
+        conversationGraph: {
+          activities: [
+            { id: 'a1', title: 'Run cell', createdAt: 1, executionInvocationId: 'inv-1' }
+          ]
+        }
+      },
+      { [`objects/${digest(runBytes)}`]: { bytes: runBytes, storageKey: 'notebook/run.json' } }
+    )
+  })()
+
+test('extracts base64 png and jpeg notebook figures as image resources', async () => {
+  const sample = buildRunPackage([
+    {
+      executionInvocationId: 'inv-1',
+      status: 'completed',
+      outputs: [
+        { type: 'execute_result', data: { 'image/png': PNG_BASE64 } },
+        { type: 'display_data', data: { 'image/jpeg': JPEG_BASE64 } }
+      ]
+    }
+  ])
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'figures')
+  const group = result.session.items.find((item) => item.type === 'activity-group')
+  const run = group?.type === 'activity-group' ? group.activities[0].run : undefined
+  expect(run?.outputs[0].data?.['image/png']).toBe('science-asset:0')
+  expect(run?.outputs[1].data?.['image/jpeg']).toBe('science-asset:1')
+  expect(result.resources[0].blob.type).toBe('image/png')
+  expect(result.resources[1].blob.type).toBe('image/jpeg')
+})
+
+test('degrades non-base64 notebook figure values instead of aborting the parse', async () => {
+  // The sanitizer rewrites workspace paths to $DATA/…, which is not base64;
+  // atob on it would throw and fail the whole package.
+  const sample = buildRunPackage(
+    [
+      {
+        executionInvocationId: 'inv-1',
+        outputs: [
+          {
+            type: 'execute_result',
+            data: { 'image/png': '/home/user/data/plot.png', 'text/plain': 'Figure 1' }
+          },
+          { type: 'execute_result', data: { 'image/png': PNG_BASE64 } }
+        ]
+      }
+    ],
+    { dataRoot: '/home/user/data' }
+  )
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'sanitized-figure')
+  const group = result.session.items.find((item) => item.type === 'activity-group')
+  const run = group?.type === 'activity-group' ? group.activities[0].run : undefined
+  // No figure resource for the path value; the rest of the output survives.
+  expect(run?.outputs[0].data?.['image/png']).toBe('$DATA/plot.png')
+  expect(run?.outputs[0].data?.['text/plain']).toBe('Figure 1')
+  expect(run?.outputs[1].data?.['image/png']).toBe('science-asset:0')
+  expect(result.resources).toHaveLength(1)
+})
+
+test('degrades multi-line array image payloads instead of throwing', async () => {
+  // nbformat allows image payloads as string[]; a bare replace() on the array
+  // would throw TypeError and abort the whole package parse.
+  const sample = buildRunPackage([
+    {
+      executionInvocationId: 'inv-1',
+      outputs: [
+        { type: 'execute_result', data: { 'image/png': [PNG_BASE64, PNG_BASE64] } },
+        { type: 'execute_result', data: { 'image/png': PNG_BASE64 } }
+      ]
+    }
+  ])
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'array-figure')
+  const group = result.session.items.find((item) => item.type === 'activity-group')
+  const run = group?.type === 'activity-group' ? group.activities[0].run : undefined
+  expect(Array.isArray(run?.outputs[0].data?.['image/png'])).toBe(true)
+  expect(run?.outputs[1].data?.['image/png']).toBe('science-asset:0')
+  expect(result.resources).toHaveLength(1)
 })

@@ -165,14 +165,19 @@ describe('mock development end to end', () => {
         'Read-only replay of the Open-Science session'
       )
       const download = page.getByRole('link', { name: 'Download research package' })
-      const downloadUrl = await download.getAttribute('href')
+      expect(await download.count()).toBe(2)
+      const downloadUrl = await download.first().getAttribute('href')
+      expect(await download.last().getAttribute('href')).toBe(downloadUrl)
       expect(downloadUrl).toBe(
         `${api}/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.science`
       )
       if (!downloadUrl) throw new Error('Missing research package URL')
       expect((await fetch(downloadUrl)).status).toBe(200)
       expect(
-        await page.getByRole('link', { name: 'View the research session' }).getAttribute('href')
+        await page
+          .getByRole('link', { name: 'View the research session' })
+          .last()
+          .getAttribute('href')
       ).toBe(`/open-science/use-cases/${manifestSample[0].name}/replay`)
       expect(await page.locator('main').innerText()).not.toContain('1970')
       // Shared "AI" keywords promote the later data-center case before the first fallback.
@@ -197,7 +202,7 @@ describe('mock development end to end', () => {
       expect(
         await page.getByRole('heading', { name: manifestSample[3].title, exact: true }).count()
       ).toBe(1)
-      expect(await page.getByRole('link', { name: 'Download research package' }).count()).toBe(1)
+      expect(await page.getByRole('link', { name: 'Download research package' }).count()).toBe(2)
       const sitemap = (await (await fetch(`${web}/sitemap.xml`)).text()).replace(/>\s+</g, '><')
       for (const item of manifestSample) {
         expect(sitemap).toContain(
@@ -252,7 +257,10 @@ describe('mock development end to end', () => {
       expect(replayHtml).toContain(info.sha256)
       expect(replayHtml).toContain(encodeURIComponent(info.filename))
       expect(replayHtml).not.toContain(`Local sample replay for ${item.title}.`)
-      await page.getByRole('link', { name: 'View the research session', exact: true }).click()
+      await page
+        .getByRole('link', { name: 'View the research session', exact: true })
+        .first()
+        .click()
       expect(info.filename).toBe(item.case.file_name)
       expect(info.sha256).toMatch(/^[a-f0-9]{64}$/)
       await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()

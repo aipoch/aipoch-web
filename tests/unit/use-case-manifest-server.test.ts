@@ -108,3 +108,12 @@ test('reports a cold manifest failure without falling back to a different catalo
     'https://assets.example.test/open-science/usecases/manifest.json'
   )
 })
+
+test('detail degrades to null on a manifest failure instead of throwing', async () => {
+  delete process.env.NEXT_PUBLIC_API_MOCKING
+  globalThis.fetch = mock(
+    async (_input: unknown) => new Response(null, { status: 503 })
+  ) as unknown as typeof fetch
+  const { fetchUseCaseDetail } = await import('../../service/open-science-use-cases.server')
+  expect(await fetchUseCaseDetail(manifest[0].name)).toBeNull()
+})

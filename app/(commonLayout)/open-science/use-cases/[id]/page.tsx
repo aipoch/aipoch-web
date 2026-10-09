@@ -9,6 +9,7 @@ import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 import { fetchUseCaseAssetText } from '@/service/open-science-use-case-assets'
 import { fetchUseCaseDetail, fetchUseCaseList } from '@/service/open-science-use-cases.server'
 import { ShareRow } from '../_components/share-row'
+import { UseCaseActions } from '../_components/use-case-actions'
 
 // Markdown styles come from app/globals.css → session-transcript.css; do not
 // re-import that file here — Turbopack panics compiling it as a page CSS entry.
@@ -198,20 +199,7 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
                 Read the full report
               </a>
             ) : null}
-            {useCase.package ? (
-              <a
-                href={useCase.package.url}
-                className="inline-flex min-h-11 items-center border border-[#10110f] bg-white px-5 text-[13px] font-semibold text-[#10110f] transition-colors hover:bg-[#10110f] hover:text-white"
-              >
-                Download research package
-              </a>
-            ) : null}
-            <Link
-              href={`/open-science/use-cases/${useCase.slug}/replay`}
-              className="inline-flex min-h-11 items-center border border-[#10110f] bg-white px-5 text-[13px] font-semibold text-[#10110f] transition-colors hover:bg-[#10110f] hover:text-white active:bg-white active:text-[#10110f]"
-            >
-              View the research session
-            </Link>
+            <UseCaseActions slug={useCase.slug} packageUrl={useCase.package?.url} />
           </div>
 
           {heroImageUrl ? (
@@ -229,19 +217,16 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
         </div>
       </section>
 
-      {reportMarkdown ? (
-        <section className="pb-14">
-          {/* osp-session brings markdown tokens; kill its default #fafaf8 fill so this
-              block shares the page surface (#f7f7f5) with Related research below. */}
+      <section className="pb-14">
+        {/* Keep the article actions outside the Markdown typography scope. */}
+        {reportMarkdown ? (
           <div className={`${shellClass} osp-session ![background:transparent]`}>
             <h2 className={`${headingClass} mb-6 text-[28px] leading-[1.2]`}>
               What this research found
             </h2>
             {markdownBody}
           </div>
-        </section>
-      ) : useCase.description ? (
-        <section className="pb-14">
+        ) : useCase.description ? (
           <div className={shellClass}>
             <h2 className={`${headingClass} text-[28px] leading-[1.2]`}>
               What this research found
@@ -250,8 +235,11 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
               {useCase.description}
             </p>
           </div>
-        </section>
-      ) : null}
+        ) : null}
+        <div className={`${shellClass} mt-8 flex flex-wrap items-center gap-3`}>
+          <UseCaseActions slug={useCase.slug} packageUrl={useCase.package?.url} />
+        </div>
+      </section>
 
       {/* How this research was produced + share row (per the V2 design). */}
       <section className="border-t border-[#e4e4df] py-12">

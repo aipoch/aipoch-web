@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { type Components, defaultRehypePlugins, Streamdown } from 'streamdown'
 import type { PluggableList, Plugin } from 'unified'
 import { FileDownloadLink } from './file-download-link'
-import { previewKindFor, useFilePreview } from './file-preview'
+import { type PreviewFile, previewKindFor, useFilePreview } from './file-preview'
 import 'katex/dist/katex.min.css'
 
 // Static-mode Streamdown tuned like the app's AgentMarkdown: same plugins, controls, and
@@ -56,42 +56,72 @@ const controls = {
   }
 } as const
 
+/** Real file name carried in an asset URL fragment, else the label/URL tail. */
+const assetLinkFileName = (href: string, label: string): { name: string; url: string } => {
+  const hashIndex = href.indexOf('#')
+  const url = hashIndex === -1 ? href : href.slice(0, hashIndex)
+  let fragmentName = ''
+  if (hashIndex !== -1) {
+    const raw = href.slice(hashIndex + 1)
+    try {
+      fragmentName = decodeURIComponent(raw)
+    } catch {
+      fragmentName = raw
+    }
+  }
+  const urlName = url.split('/').pop() ?? ''
+  return { name: fragmentName || label || urlName || href, url }
+}
+
+/**
+ * Resolve an internal asset link to a preview target, or null when no in-site
+ * preview exists for the type. The package parser appends `#<filename>` to
+ * blob asset URLs (img/fetch ignore the fragment) so the real name survives
+ * even when the link label has no extension; strip it before fetching.
+ */
+export const resolveAssetLinkTarget = (href: string, label: string): PreviewFile | null => {
+  const { name, url } = assetLinkFileName(href, label)
+  const urlName = url.split('/').pop() ?? ''
+  if (previewKindFor(name)) return { name, url }
+  if (urlName && urlName !== name && previewKindFor(urlName)) return { name: urlName, url }
+  return null
+}
+
 const linkComponent: Components['a'] = ({ node: _node, href, children, ...props }) => {
   const openPreview = useFilePreview()
   // Intercept internal asset links only when a preview provider is mounted
-  // (the transcript); without one, fall through to a plain link so the click
-  // still opens the file instead of dying on preventDefault + no-op.
-  // Extracted objects have hash-only paths; the loader preserves the real filename in the fragment.
+  // (the transcript) and the type is previewable; otherwise fall through to a
+  // plain link so the click still opens the file instead of dying on
+  // preventDefault + "cannot preview".
+  // Extracted objects have hash-only paths; the loader carries the filename in the fragment.
   const extracted = href && /^https?:\/\/[^/]+\/.*\/extracted\/objects\/[a-f0-9]{64}#/.test(href)
-  let filename: string | undefined
-  if (extracted) {
-    try {
-      filename = decodeURIComponent(href.slice(href.indexOf('#') + 1))
-    } catch {
-      /* Use the link label. */
+  if (
+    href &&
+    (href.startsWith('/use-cases/') || href.startsWith('blob:') || extracted) &&
+    openPreview
+  ) {
+    const target = resolveAssetLinkTarget(href, typeof children === 'string' ? children : '')
+    if (target) {
+      return (
+        <a
+          {...props}
+          href={href}
+          onClick={(event) => {
+            event.preventDefault()
+            openPreview(target)
+          }}
+        >
+          {children}
+        </a>
+      )
     }
   }
-  const name =
-    filename ?? (typeof children === 'string' ? children : (href?.split('/').pop() ?? 'file'))
-  if (
-    (href?.startsWith('/use-cases/') || href?.startsWith('blob:') || extracted) &&
-    openPreview &&
-    previewKindFor(name)
-  ) {
-    return (
-      <a
-        {...props}
-        href={href}
-        onClick={(event) => {
-          event.preventDefault()
-          openPreview({ name, url: href })
-        }}
-      >
-        {children}
-      </a>
-    )
-  }
-  if (extracted && href && !previewKindFor(name)) {
+  if (href && (href.startsWith('blob:') || extracted)) {
+    // A blob's served type is whatever the file really is — an svg would run
+    // scripts if opened as a top-level document — so non-previewable package
+    // links download instead of navigating. Remote objects also need a blob download
+    // to preserve the original filename across origins.
+    const { name } = assetLinkFileName(href, typeof children === 'string' ? children : '')
     return (
       <FileDownloadLink {...props} href={href} download={name}>
         {children}

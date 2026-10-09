@@ -103,16 +103,23 @@ test('rejects unsafe inventory references before fetching them', async () => {
   expect(requests).toHaveLength(2)
 })
 
-for (const [filename, fragment] of [
-  ['report).md', 'report%29.md'],
-  ['report(.md', 'report%28.md']
-]) {
-  test(`encodes Markdown delimiters in the extracted URL for ${filename}`, async () => {
-    await setup()
-    const { session } = await loadReplayPackage(info, 'sample', () => {})
-    const asset = session.assets[`files/${filename}`]
-    expect(asset.url.split('#')[1]).toBe(fragment)
-    const message = session.items.find((item) => item.type === 'message' && item.artifacts?.length)
-    expect(message?.type === 'message' && message.content).toContain(`](${asset.url})`)
-  })
+for (const extracted of [true, false]) {
+  for (const [filename, fragment] of [
+    ['report).md', 'report%29.md'],
+    ['report(.md', 'report%28.md']
+  ]) {
+    test(`preserves one Markdown-safe filename fragment for ${filename} (${extracted ? 'extracted' : 'archive'})`, async () => {
+      await setup((path) =>
+        !extracted && path === 'session.json' ? new Response(null, { status: 404 }) : undefined
+      )
+      const { session } = await loadReplayPackage(info, 'sample', () => {})
+      const asset = session.assets[`files/${filename}`]
+      if (extracted) expect(asset.url.split('#')[1]).toBe(fragment)
+      const message = session.items.find(
+        (item) => item.type === 'message' && item.artifacts?.length
+      )
+      const url = extracted ? asset.url : `${asset.url}#${fragment}`
+      expect(message?.type === 'message' && message.content).toContain(`](${url})`)
+    })
+  }
 }

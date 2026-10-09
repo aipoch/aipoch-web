@@ -68,6 +68,7 @@ export const parseUseCaseManifest = (
     const archive = resource(item.case)
     const releaseUrl = record(item.case).release_url
     if (typeof releaseUrl !== 'string') throw new Error('Invalid release URL')
+
     return {
       slug: item.name,
       title: item.title,

@@ -4,6 +4,7 @@ import { Download, Eye, FileText } from 'lucide-react'
 import { useState } from 'react'
 import type { MessageArtifact, TranscriptItem } from '@/lib/use-case-types'
 import { CopyButton } from './copy-button'
+import { ExtensionPreservingFileName } from './extension-preserving-file-name'
 import { FileDownloadLink } from './file-download-link'
 import { previewKindFor, useFilePreview } from './file-preview'
 import { SessionMarkdown } from './session-markdown'
@@ -82,7 +83,11 @@ const ArtifactCard = ({ artifact }: { artifact: MessageArtifact }) => {
           <FileText className="size-5 text-text-300" strokeWidth={1.75} aria-hidden="true" />
         )}
       </div>
-      <div className="truncate px-2 pt-1 text-[11px] leading-4 text-text-100">{artifact.name}</div>
+      <ExtensionPreservingFileName
+        name={artifact.name}
+        compact
+        className="w-full px-2 pt-1 text-[11px] leading-4 text-text-100"
+      />
       {artifact.url ? badge : null}
     </>
   )

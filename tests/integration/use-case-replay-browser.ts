@@ -6,10 +6,38 @@ export async function verifyReplayDownload(page: Page, url: string) {
     name: 'Download research package',
     exact: true
   })
-  const packageUrl = await overviewDownload.getAttribute('href')
+  await expect(overviewDownload).toHaveCount(2)
+  const packageUrl = await overviewDownload.first().getAttribute('href')
   if (!packageUrl) throw new Error('Missing overview package URL')
+  await expect(overviewDownload.last()).toHaveAttribute('href', packageUrl)
 
-  await page.getByRole('link', { name: 'View the research session', exact: true }).click()
+  const overviewSession = page.getByRole('link', { name: 'View the research session', exact: true })
+  await expect(overviewSession).toHaveCount(2)
+  await expect(overviewSession.last()).toHaveAttribute('href', new URL(url).pathname)
+  // Both placements must retain the same styles outside the article's Markdown scope.
+  const actionStyle = (element: HTMLElement | SVGElement) => {
+    const style = getComputedStyle(element)
+    return [
+      style.color,
+      style.backgroundColor,
+      style.fontSize,
+      style.fontWeight,
+      style.border,
+      style.padding
+    ]
+  }
+  for (const links of [overviewDownload, overviewSession]) {
+    expect(await links.last().evaluate(actionStyle)).toEqual(
+      await links.first().evaluate(actionStyle)
+    )
+  }
+  const [overviewFile] = await Promise.all([
+    page.waitForEvent('download'),
+    overviewDownload.last().click()
+  ])
+  expect(overviewFile.url()).toBe(packageUrl)
+  expect(await overviewFile.failure()).toBeNull()
+  await overviewSession.last().click()
   await expect(page).toHaveURL(url)
   const downloadLink = page.getByRole('link', { name: 'Download research package', exact: true })
   await expect(downloadLink).toBeVisible()

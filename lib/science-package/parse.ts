@@ -100,6 +100,30 @@ const SKIP_BLOB = [
   /^execution-file-evidence\//
 ]
 
+// Notebook image outputs accepted as base64 payloads (image/svg+xml is not:
+// it would need sanitization before becoming a same-origin blob).
+const NOTEBOOK_IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg'
+}
+
+// Strict base64 shape check before atob so malformed values degrade instead
+// of throwing. Whitespace is tolerated, matching atob's own line handling.
+const decodeBase64 = (value: string) => {
+  const compact = value.replace(/\s+/g, '')
+  if (compact.length === 0 || compact.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(compact))
+    return undefined
+  try {
+    return Uint8Array.from(atob(compact), (char) => char.charCodeAt(0))
+  } catch {
+    return undefined
+  }
+}
+
+// Encode Markdown destination delimiters as well as URL characters.
+const encodeAssetFilename = (filename: string) =>
+  encodeURIComponent(filename).replace(/\(/g, '%28').replace(/\)/g, '%29')
+
 export const validateManifest = (manifest: Manifest) => {
   if (manifest.format !== 'open-science-session' || manifest.schemaVersion !== 1)
     throw new Error('Unsupported .science manifest format or schema version.')
@@ -177,8 +201,15 @@ export async function parsePackageObjects(
   const resource = (blob: Blob, filename: string) => {
     const id = `science-asset:${resources.length}`
     const extension = filename.split('.').pop()?.toLowerCase() ?? ''
-    // HTML and SVG must not become executable same-origin blob documents.
-    const type = extension === 'svg' ? 'text/plain' : (MIME_BY_EXT[extension] ?? 'text/plain')
+    // HTML must not become an executable same-origin blob document, so it is
+    // detyped to text/plain. SVG keeps image/svg+xml so <img> can render it:
+    // scripts inside an SVG only run when it is loaded as a top-level document,
+    // and the UI exposes SVG solely through <img> or as a download — the
+    // preview dialog deliberately offers no "open in a new tab" for it.
+    const type =
+      extension === 'html' || extension === 'htm'
+        ? 'text/plain'
+        : (MIME_BY_EXT[extension] ?? 'text/plain')
     resources.push({ id, blob: blob.slice(0, blob.size, type) })
     return id
   }
@@ -206,7 +237,7 @@ export async function parsePackageObjects(
     const filename =
       filenameByStorageKey.get(storageKey) ?? storageKey.split('/').pop() ?? entry.path
     const url = assetBaseUrl
-      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeURIComponent(filename).replace(/\(/g, '%28').replace(/\)/g, '%29')}`
+      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeAssetFilename(filename)}`
       : bytes
         ? resource(bytes.blob, filename)
         : undefined
@@ -235,14 +266,23 @@ export async function parsePackageObjects(
     const outputs: NormalizedOutput[] = []
     for (const output of (run.outputs as JsonObject[] | undefined) ?? []) {
       const normalized = { ...(deep(output) as NormalizedOutput) }
-      const image = normalized.data?.['image/png']
-      if (image && !image.startsWith('/')) {
+      for (const [mime, extension] of Object.entries(NOTEBOOK_IMAGE_EXTENSIONS)) {
+        const image = normalized.data?.[mime]
+        // nbformat allows image payloads as string[] (multi-line base64); only
+        // plain strings reach the decoder, anything else stays untouched.
+        if (typeof image !== 'string' || !image) continue
+        // Only decode values that are actually base64: absolute paths, sanitized
+        // $DATA/… values, and anything malformed stay untouched. A throw from
+        // atob would abort the whole package parse, so a bad figure degrades
+        // instead of failing the replay. (JPEG base64 always starts with
+        // "/9j/", so a startsWith('/') path check would misclassify it.)
+        const bytes = decodeBase64(image)
+        if (!bytes) continue
         figureIndex += 1
-        const filename = `figure-${String(figureIndex).padStart(2, '0')}.png`
-        const bytes = Uint8Array.from(atob(image), (char) => char.charCodeAt(0))
+        const filename = `figure-${String(figureIndex).padStart(2, '0')}.${extension}`
         normalized.data = {
           ...normalized.data,
-          'image/png': resource(new Blob([bytes]), filename)
+          [mime]: resource(new Blob([bytes]), filename)
         }
       }
       outputs.push(normalized)
@@ -352,7 +392,13 @@ export async function parsePackageObjects(
         // keep the raw href when it is not valid percent-encoding
       }
       const url = assetUrlByFilename.get(filename)
-      return url ? `[${label}](${url})` : match
+      // Append the real filename as a URL fragment: <img> and fetch ignore it,
+      // and the markdown link interceptor recovers the name from it because the
+      // link label often carries no extension. The worker only replaces the
+      // science-asset token, so the fragment survives blob URL substitution.
+      return url
+        ? `[${label}](${url.includes('#') ? url : `${url}#${encodeAssetFilename(filename)}`})`
+        : match
     })
   const messageItems: { ts: number; item: TranscriptItem }[] = session.messages.map((message) => {
     const artifactIds = Array.isArray(message.artifactIds)

@@ -45,6 +45,11 @@ test('renders introductions through the shared Markdown typography and GFM rende
   expect(html).toContain('<li>First result</li>')
   expect(html).toContain('<td>2</td>')
   expect(html).toContain('Literal {1 + 1}.')
+  expect(html.match(/>Download research package<\/a>/g)).toHaveLength(2)
+  expect(html.match(/>View the research session<\/a>/g)).toHaveLength(2)
+  const articleDownload = html.lastIndexOf('Download research package')
+  expect(articleDownload).toBeGreaterThan(html.indexOf('Literal {1 + 1}.'))
+  expect(articleDownload).toBeLessThan(html.indexOf('How this research was produced'))
 })
 
 test('keeps the case and download available when the optional introduction body fails', async () => {
@@ -63,6 +68,7 @@ test('keeps the case and download available when the optional introduction body 
   expect(html).toContain('View the research session')
   expect(html).toContain('href="/open-science/use-cases/sample-case/replay"')
   expect(html).not.toContain('What this research found')
+  expect(html.match(/>Download research package<\/a>/g)).toHaveLength(2)
 })
 
 test('describes every detail and replay page as an inspectable session', async () => {
