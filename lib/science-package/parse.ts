@@ -8,8 +8,9 @@ import type {
   UseCaseSession
 } from '../use-case-types'
 import { type ArchiveEntry, readArchive, readJson } from './archive'
+import { Sha256 } from './sha256'
 
-export interface ManifestInventoryEntry {
+interface ManifestInventoryEntry {
   path: string
   sizeBytes: number
   checksum: string
@@ -17,7 +18,7 @@ export interface ManifestInventoryEntry {
   kind: string
 }
 
-export interface Manifest {
+interface Manifest {
   format: string
   schemaVersion: number
   requiredFeatures?: string[]
@@ -124,7 +125,7 @@ const decodeBase64 = (value: string) => {
 const encodeAssetFilename = (filename: string) =>
   encodeURIComponent(filename).replace(/\(/g, '%28').replace(/\)/g, '%29')
 
-export const validateManifest = (manifest: Manifest) => {
+const validateManifest = (manifest: Manifest) => {
   if (manifest.format !== 'open-science-session' || manifest.schemaVersion !== 1)
     throw new Error('Unsupported .science manifest format or schema version.')
   if (
@@ -158,23 +159,35 @@ export const validateManifest = (manifest: Manifest) => {
   if (!paths.has('session.json')) throw new Error('Package inventory is missing session.json.')
 }
 
-export async function parsePackage(archive: Blob, slug: string) {
-  return parsePackageObjects(await readArchive(archive), slug)
+/** Objects in the export are addressed by the storage key hash, not the content checksum. */
+export const objectPathFor = (storageKey: string) => {
+  const hash = new Sha256()
+  hash.update(new TextEncoder().encode(storageKey))
+  return `objects/${hash.hex()}`
 }
 
-/** Normalize both archive-backed and remote resources with the same transcript rules. */
-export async function parsePackageObjects(
-  objects: Map<string, ArchiveEntry>,
-  slug: string,
-  assetBaseUrl?: string
-) {
+export const sessionRecordFrom = (value: unknown): SessionRecord => {
+  const file = value as { version?: number; session?: SessionRecord } | null
+  if (
+    !file ||
+    file.version !== 2 ||
+    !file.session ||
+    typeof file.session.title !== 'string' ||
+    !Array.isArray(file.session.messages) ||
+    (file.session.artifacts !== undefined && !Array.isArray(file.session.artifacts))
+  )
+    throw new Error('Unsupported or invalid session.json.')
+  return file.session
+}
+
+export async function parsePackage(archive: Blob, slug: string) {
+  const objects = await readArchive(archive)
   const manifest = await readJson<Manifest>(objects.get('manifest.json'), 'manifest.json')
   validateManifest(manifest)
   const inventoried = new Set<string>()
   for (const entry of manifest.inventory) {
     inventoried.add(entry.path)
     const file = objects.get(entry.path)
-    if (!file && assetBaseUrl) continue
     if (!file || file.blob.size !== entry.sizeBytes || file.checksum !== entry.checksum)
       throw new Error(`Package inventory verification failed: ${entry.path}`)
   }
@@ -182,21 +195,40 @@ export async function parsePackageObjects(
     if (path !== 'manifest.json' && !inventoried.has(path))
       throw new Error(`Unverified archive entry: ${path}`)
   }
-  const sessionFile = await readJson<{ version: number; session: SessionRecord }>(
-    objects.get('session.json'),
-    'session.json'
+  const session = sessionRecordFrom(
+    await readJson<unknown>(objects.get('session.json'), 'session.json')
   )
-  if (
-    sessionFile.version !== 2 ||
-    !sessionFile.session ||
-    !Array.isArray(sessionFile.session.messages)
-  )
-    throw new Error('Unsupported or invalid session.json.')
   const records = objects.has('records.json')
     ? await readJson<RecordsFile>(objects.get('records.json'), 'records.json')
     : undefined
-  const pkg = { manifest, sessionFile, records, objects }
-  const session = sessionFile.session
+  const runEntry = manifest.inventory.find((entry) => entry.storageKey?.endsWith('/run.json'))
+  const runDocument = runEntry
+    ? await readJson<JsonObject>(objects.get(runEntry.path), runEntry.path)
+    : undefined
+  return normalizeSession(session, slug, { archive: { manifest, objects, records }, runDocument })
+}
+
+/** Normalize session JSON directly; the extracted endpoint has no archive manifest. */
+export const parseExtractedSession = (
+  session: SessionRecord,
+  slug: string,
+  assetBaseUrl: string,
+  runDocument?: JsonObject
+) => normalizeSession(session, slug, { assetBaseUrl, runDocument })
+
+function normalizeSession(
+  session: SessionRecord,
+  slug: string,
+  {
+    archive,
+    assetBaseUrl,
+    runDocument
+  }: {
+    archive?: { manifest: Manifest; objects: Map<string, ArchiveEntry>; records?: RecordsFile }
+    assetBaseUrl?: string
+    runDocument?: JsonObject
+  }
+) {
   const resources: { id: string; blob: Blob }[] = []
   const resource = (blob: Blob, filename: string) => {
     const id = `science-asset:${resources.length}`
@@ -219,7 +251,7 @@ export async function parsePackageObjects(
   // instead of application/octet-stream for images and documents.
   const filenameByStorageKey = new Map<string, string>()
   for (const table of ['ArtifactVersion', 'UploadVersion'] as const) {
-    for (const row of pkg.records?.tables[table] ?? []) {
+    for (const row of archive?.records?.tables[table] ?? []) {
       const key = row.contentStorageKey
       const filename = row.filename ?? row.originalFilename
       if (typeof key === 'string' && typeof filename === 'string') {
@@ -228,33 +260,36 @@ export async function parsePackageObjects(
     }
   }
   const assets: Record<string, UseCaseAsset> = Object.create(null)
-  for (const entry of manifest.inventory) {
+  for (const entry of archive?.manifest.inventory ?? []) {
     const storageKey = entry.storageKey
     if (!storageKey) continue
     if (SKIP_BLOB.some((pattern) => pattern.test(storageKey))) continue
-    const bytes = pkg.objects.get(entry.path)
-    if (!bytes && !assetBaseUrl) continue
+    const bytes = archive?.objects.get(entry.path)
+    if (!bytes) continue
     const filename =
       filenameByStorageKey.get(storageKey) ?? storageKey.split('/').pop() ?? entry.path
-    const url = assetBaseUrl
-      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeAssetFilename(filename)}`
-      : bytes
-        ? resource(bytes.blob, filename)
-        : undefined
-    if (!url) continue
     assets[storageKey] = {
-      url,
+      url: resource(bytes.blob, filename),
       filename,
       sizeBytes: entry.sizeBytes,
       kind: entry.kind
     }
   }
 
-  // --- notebook run document ----------------------------------------------
-  const runEntry = manifest.inventory.find((e) => e.storageKey?.endsWith('/run.json'))
-  const runDocument = runEntry
-    ? await readJson<JsonObject>(pkg.objects.get(runEntry.path), runEntry.path)
-    : undefined
+  if (assetBaseUrl) {
+    for (const artifact of session.artifacts ?? []) {
+      if (!artifact || typeof artifact.path !== 'string' || !artifact.path) continue
+      const storageKey = artifact.path.replace(/^\$DATA\//, '')
+      const filename = typeof artifact.name === 'string' ? artifact.name : 'file'
+      assets[storageKey] = {
+        url: `${new URL(objectPathFor(storageKey), assetBaseUrl).href}#${encodeAssetFilename(filename)}`,
+        filename,
+        sizeBytes: typeof artifact.size === 'number' ? artifact.size : 0,
+        kind: typeof artifact.kind === 'string' ? artifact.kind : 'file'
+      }
+    }
+  }
+
   const { sanitize, deep } = buildSanitizer(session, runDocument)
 
   // Correlate notebook runs by executionInvocationId; extract base64 figures.
@@ -300,7 +335,7 @@ export async function parsePackageObjects(
   }
 
   // --- activities ------------------------------------------------------------
-  const graphActivities = pkg.sessionFile.session.conversationGraph?.activities ?? []
+  const graphActivities = session.conversationGraph?.activities ?? []
   const activityItems: { ts: number; item: TranscriptItem }[] = []
   for (const activity of graphActivities) {
     const ts =
@@ -438,15 +473,17 @@ export async function parsePackageObjects(
   const model: UseCaseSession = {
     schemaVersion: 1,
     slug,
-    title: sanitize(manifest.source.title || session.title),
+    title: sanitize(archive?.manifest.source.title || session.title),
     description: session.description ? sanitize(session.description) : undefined,
-    projectName: manifest.source.projectName,
-    exportedAt: manifest.createdAt,
+    projectName:
+      archive?.manifest.source.projectName ??
+      (typeof session.projectName === 'string' ? session.projectName : ''),
+    exportedAt: archive?.manifest.createdAt ?? Number(session.updatedAt ?? session.createdAt ?? 0),
     sessionCreatedAt: Number(session.createdAt),
     items,
     assets,
-    omissions: (manifest.omissions ?? []).map((o) => sanitize(o.description)),
-    excludedFiles: manifest.excludedFiles ?? []
+    omissions: (archive?.manifest.omissions ?? []).map((o) => sanitize(o.description)),
+    excludedFiles: archive?.manifest.excludedFiles ?? []
   }
 
   return { session: model, resources }

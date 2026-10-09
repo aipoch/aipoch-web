@@ -36,6 +36,8 @@ export function buildSciencePackage(
       version: 2,
       session: {
         title,
+        id: 'mock-session',
+        projectId: 'mock-project',
         createdAt: 1788220800000,
         messages: [
           { id: 'question', role: 'user', content: title, createdAt: 1788220800000 },

@@ -81,11 +81,14 @@ export const useCaseManifestHandlers = (origin: string) => {
         new URL(request.url).pathname.slice('/use-case-manifest/'.length)
       )
       for (const item of useCaseManifest) {
-        // Serve the same unpacked bytes as the downloadable archive, including navigation requests.
+        // Extracted replay has session and object files, but no archive inventory or records.
         const prefix = `${item.name}/extracted/`
         if (path.startsWith(prefix)) {
           const file = path.slice(prefix.length)
-          const bytes = packages.get(item.name)?.files[file]
+          const bytes =
+            file === 'session.json' || file.startsWith('objects/')
+              ? packages.get(item.name)?.files[file]
+              : undefined
           if (!bytes) return new HttpResponse(null, { status: 404 })
           return new HttpResponse(bytes as BodyInit, {
             headers: {

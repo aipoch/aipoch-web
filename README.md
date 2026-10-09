@@ -146,24 +146,31 @@ The published use-case manifest is read from the configured static origin at
 as `<manifest directory>/<case name>/extracted/`, independently of the archive's
 optional GitHub release URL.
 
-Replay first fetches `session.json`, then `manifest.json` and the inventoried
-`records.json` and notebook `run.json` object when present. The worker checks the
-size and checksum of fetched documents and reuses the archive transcript parser.
-Images and linked files use `objects/<hash>` URLs; text previews, PDF previews,
-and downloads fetch a file only when requested. PDF previews recover their MIME
-type, and artifact downloads preserve the original filename even across origins.
+Replay fetches `session.json` directly; the extracted directory does not need
+`manifest.json` or `records.json`. Each session artifact's `$DATA/` prefix is
+removed from its path to recover its storage key. Its URL is
+`objects/<SHA-256 of the UTF-8 storage key>#<encoded original filename>` — the
+object name is not the artifact's content checksum. Notebook activities can also
+load the optional `notebooks/<projectId>/<sessionId>/run.json` storage-key object
+for full execution output. Missing notebook metadata does not block the session.
+
+Images and linked files load on demand. Text/PDF previews and downloads fetch a
+file only when requested; PDF previews recover their MIME type, and downloads
+preserve original filenames across origins, including inline Markdown links.
 
 A 403 or 404 for the initial extracted session falls back to the original
-size- and SHA-256-verified `.science` download. Other errors remain visible and
-retryable instead of silently starting a large download. The extracted path
-trusts the published inventory and CDN for assets loaded directly by the browser;
-it does not verify the complete archive checksum. Published JSON and assets must
-be browser-readable with CORS. This application does not modify bucket settings.
+size- and SHA-256-verified `.science` download, whose internal manifest validation
+is preserved. Other errors remain visible and retryable instead of silently
+starting a large download. Extracted JSON has bounded reads and schema checks;
+without an inventory it trusts the published session and CDN, and does not claim
+archive or metadata checksum verification. Published JSON and assets must be
+browser-readable with CORS. This application does not modify bucket settings.
 
-The mock adapter publishes both forms from the same deterministic fixture bytes,
-including hash-only objects with generic binary content types. Run
-`bun run test:mock` to verify metadata-only startup, previews, original filenames,
-retry behavior, full-package downloads, and desktop/mobile rendering.
+The mock adapter serves session and storage-key-addressed objects while returning
+404 for extracted `manifest.json` and `records.json`. The downloadable archive
+still contains its own inventory and records. Run `bun run test:mock` to verify
+startup without a manifest, previews, original filenames, retries, archive
+fallback/downloads, and desktop/mobile rendering.
 
 ## Docker Compose
 

@@ -65,11 +65,12 @@ test('serves extracted metadata and referenced objects from the same package', a
   expect(session?.status).toBe(200)
   if (!session) throw new Error('Missing session handler')
   expect((await session.json()).version).toBe(2)
-  const manifest = await (await getResponse(handlers, new Request(`${base}manifest.json`)))?.json()
-  const report = manifest.inventory.find(
-    (item: { storageKey?: string }) => item.storageKey === 'files/coverage_report.md'
-  )
-  const asset = await getResponse(handlers, new Request(`${base}${report.path}`))
+  for (const missing of ['manifest.json', 'records.json']) {
+    expect((await getResponse(handlers, new Request(`${base}${missing}`)))?.status).toBe(404)
+  }
+  // SHA-256 of the storage key "files/coverage_report.md", not the artifact bytes.
+  const reportPath = 'objects/778154ce6ab8bf98609b24a64f35984a9df1689a6bbaa91fae12abbf52345aee'
+  const asset = await getResponse(handlers, new Request(`${base}${reportPath}`))
   expect(await asset?.text()).toBe('Sample coverage_report.md')
   expect((await getResponse(handlers, new Request(`${base}objects/missing`)))?.status).toBe(404)
 })
