@@ -78,5 +78,5 @@ export function buildSciencePackage(
     excludedFiles: []
   })
   const bytes = packScience(files)
-  return { bytes, sizeBytes: bytes.length, sha256: digest(bytes) }
+  return { bytes, files, sizeBytes: bytes.length, sha256: digest(bytes) }
 }

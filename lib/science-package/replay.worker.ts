@@ -1,6 +1,5 @@
 import type { UseCaseSession } from '../use-case-types'
-import { downloadPackage } from './archive'
-import { parsePackage } from './parse'
+import { loadReplayPackage } from './extracted'
 import type { WorkerReply, WorkerRequest } from './protocol'
 
 const send = (message: WorkerReply) => self.postMessage(message)
@@ -8,11 +7,9 @@ let parsed: UseCaseSession | undefined
 self.onmessage = async ({ data }: MessageEvent<WorkerRequest>) => {
   try {
     if (data.type === 'load') {
-      const archive = await downloadPackage(data.info, (progress) =>
+      const result = await loadReplayPackage(data.info, data.slug, (progress) =>
         send({ type: 'progress', progress })
       )
-      send({ type: 'progress', progress: { stage: 'parsing' } })
-      const result = await parsePackage(archive, data.slug)
       parsed = result.session
       send({ type: 'resources', resources: result.resources })
     } else if (parsed) {

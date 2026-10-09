@@ -29,7 +29,10 @@ export function loadReplay(
     console.error('[use-case-replay] load.failed', { slug, message })
     update({ status: 'error', message })
   }
-  update({ status: 'loading', progress: { stage: 'downloading' } })
+  update({
+    status: 'loading',
+    progress: { stage: info.extractedBaseUrl ? 'metadata' : 'downloading' }
+  })
   void (async () => {
     try {
       await waitForBrowserMock()

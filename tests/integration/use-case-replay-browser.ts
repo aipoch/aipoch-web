@@ -41,7 +41,9 @@ export async function verifyReplayDownload(page: Page, url: string) {
 // Run against the real mock Next server: package metadata now arrives in the RSC response.
 export async function verifyReplayCoverage(page: Page, url: string) {
   let downloads = 0
+  const requestedUrls = new Set<string>()
   page.context().on('request', (request) => {
+    requestedUrls.add(request.url())
     if (!request.serviceWorker() && new URL(request.url()).pathname.endsWith('.science'))
       downloads++
   })
@@ -57,6 +59,10 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   await page
     .getByText('Run the renderer coverage scenario.', { exact: true })
     .waitFor({ timeout: 30000 })
+
+  // The consent banner can cover artifact cards on narrow viewports.
+  const rejectCookies = page.getByRole('button', { name: 'Reject non-essential', exact: true })
+  if (await rejectCookies.isVisible()) await rejectCookies.click()
 
   // -- user bubble -------------------------------------------------------------
   await expect(page.getByText('Run the renderer coverage scenario.')).toBeVisible()
@@ -166,18 +172,21 @@ export async function verifyReplayCoverage(page: Page, url: string) {
 
   // -- artifact gallery: 4 states -----------------------------------------------------
   // content-visibility renders offscreen rows lazily — bring the gallery into view first.
-  await page.getByText('GENERATED · 4').scrollIntoViewIfNeeded()
-  await expect(page.getByText('GENERATED · 4')).toBeVisible()
+  await page.getByText('GENERATED · 5').scrollIntoViewIfNeeded()
+  await expect(page.getByText('GENERATED · 5')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_chart.png')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_report.md')).toBeVisible()
   await expect(page.getByTitle(/Download coverage_dataset\.zip/)).toBeVisible()
   await expect(page.getByText('Full only', { exact: true })).toHaveCount(0)
-  await expect(page.getByTitle(/Download coverage_huge.bin/)).toHaveAttribute('href', /^blob:/)
+  await expect(page.getByTitle(/Download coverage_huge.bin/)).toHaveAttribute(
+    'href',
+    /\/extracted\/objects\//
+  )
 
   // -- inline asset link in message content ---------------------------------------------
   await expect(page.getByRole('link', { name: 'coverage_report.md' }).first()).toHaveAttribute(
     'href',
-    /^blob:/
+    /\/extracted\/objects\//
   )
 
   await page.getByRole('link', { name: 'coverage_report.md' }).first().click()
@@ -188,7 +197,30 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   await expect(
     page.getByRole('button', { name: /View full version|Back to essential/ })
   ).toHaveCount(0)
-  expect(downloads).toBe(1)
+  const downloadCard = page.getByTitle(/Download coverage_dataset\.zip/)
+  expect(requestedUrls.has((await downloadCard.getAttribute('href'))?.split('#')[0] ?? '')).toBe(
+    false
+  )
+  await downloadCard.scrollIntoViewIfNeeded()
+  const [download] = await Promise.all([page.waitForEvent('download'), downloadCard.click()])
+  expect(download.suggestedFilename()).toBe('coverage_dataset.zip')
+  expect(await download.failure()).toBeNull()
+  await page.getByTitle('Preview coverage_paper.pdf').click()
+  const pdfDialog = page.getByRole('dialog', { name: 'coverage_paper.pdf', exact: true })
+  const pdfFrame = pdfDialog.locator('iframe')
+  await expect(pdfFrame).toHaveAttribute('src', /^blob:/)
+  const pdfUrl = await pdfFrame.getAttribute('src')
+  expect(
+    await page.evaluate(async (url) => {
+      const response = await fetch(url as string)
+      return {
+        type: response.headers.get('content-type'),
+        prefix: (await response.text()).slice(0, 8)
+      }
+    }, pdfUrl)
+  ).toEqual({ type: 'application/pdf', prefix: '%PDF-1.4' })
+  await page.keyboard.press('Escape')
+  expect(downloads).toBe(0)
 
   // -- global hygiene ----------------------------------------------------------------------
   const bodyText = await page.locator('body').innerText()
@@ -216,7 +248,7 @@ export async function verifyReplayLoading(page: Page, url: string) {
     Object.assign(window, { Worker: ControlledWorker })
   })
   await page.goto(url)
-  await expect(page.getByRole('status')).toHaveText('Downloading research package…')
+  await expect(page.getByRole('status')).toHaveText('Loading research session…')
   const downloadLink = page.getByRole('link', { name: 'Download research package', exact: true })
   await expect(downloadLink).toBeVisible()
   await expect(page.getByRole('progressbar')).not.toHaveAttribute('value')

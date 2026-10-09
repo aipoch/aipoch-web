@@ -73,6 +73,7 @@ export const parseUseCaseManifest = (
       title: item.title,
       preview: { image: resourceUrl(cover) },
       package: {
+        extractedBaseUrl: new URL(`${item.name}/extracted/`, base).href,
         url: releaseUrl ? httpUrl(releaseUrl).href : resourceUrl(archive),
         filename: archive.file_name,
         sizeBytes: archive.bytes,

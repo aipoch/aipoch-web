@@ -23,6 +23,8 @@ import {
   useRef,
   useState
 } from 'react'
+import { waitForBrowserMock } from '@/mocks/ready'
+import { FileDownloadLink } from './file-download-link'
 import { SessionMarkdown } from './session-markdown'
 
 // In-site preview for exported session files. Kinds the browser can render
@@ -273,20 +275,28 @@ const iconButtonClassName =
 const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () => void }) => {
   const kind = previewKindFor(file.name, file.mimeType)
   const panelRef = useRef<HTMLDivElement>(null)
-  const [textState, setTextState] = useState<{ text?: string; error?: string }>({})
+  const [textState, setTextState] = useState<{ text?: string; pdfUrl?: string; error?: string }>({})
   const [copied, setCopied] = useState(false)
 
-  // Text kinds are fetched here so the header copy button shares the payload.
+  // Fetch text and PDF only when opened; hashed CDN objects may use a generic MIME type.
   useEffect(() => {
-    if (!isTextKind(kind)) return
+    if (!isTextKind(kind) && kind !== 'pdf') return
+    let pdfUrl: string | undefined
     let cancelled = false
-    fetch(file.url)
-      .then((response) => {
+    const controller = new AbortController()
+    waitForBrowserMock()
+      .then(() => fetch(file.url, { signal: controller.signal, credentials: 'omit' }))
+      .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return response.text()
-      })
-      .then((text) => {
-        if (!cancelled) setTextState({ text })
+        if (kind === 'pdf') {
+          const blob = await response.blob()
+          if (cancelled) return
+          pdfUrl = URL.createObjectURL(blob.slice(0, blob.size, 'application/pdf'))
+          setTextState({ pdfUrl })
+        } else {
+          const text = await response.text()
+          if (!cancelled) setTextState({ text })
+        }
       })
       .catch((error: unknown) => {
         if (!cancelled)
@@ -294,6 +304,8 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
       })
     return () => {
       cancelled = true
+      controller.abort()
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
     }
   }, [file.url, kind])
 
@@ -376,7 +388,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
             </button>
           ) : null}
           <a
-            href={file.url}
+            href={textState.pdfUrl ?? file.url}
             target="_blank"
             rel="noreferrer"
             aria-label="Open in a new tab"
@@ -385,7 +397,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
           >
             <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
-          <a
+          <FileDownloadLink
             href={file.url}
             download={file.name}
             aria-label="Download the file"
@@ -393,7 +405,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
             className={iconButtonClassName}
           >
             <Download className="size-3.5" aria-hidden="true" />
-          </a>
+          </FileDownloadLink>
           <button
             type="button"
             onClick={onClose}
@@ -405,19 +417,25 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
           </button>
         </div>
         <div className="flex min-h-[240px] min-w-0 flex-col overflow-auto p-4">
-          {kind === 'image' ? (
+          {textState.error ? (
+            <p role="alert" className="text-sm text-status-failure-foreground">
+              Could not load the file: {textState.error}
+            </p>
+          ) : kind === 'image' ? (
             <ImageContent file={file} />
+          ) : kind === 'pdf' && !textState.pdfUrl ? (
+            <p role="status">Loading…</p>
           ) : kind === 'pdf' ? (
             <div className="space-y-2">
               <iframe
-                src={file.url}
+                src={textState.pdfUrl}
                 title={file.name}
                 className="h-[70vh] w-full rounded-md border border-border-200 bg-bg-100"
               />
               <p className="text-[11px] text-text-300">
                 If the PDF does not render inline,{' '}
                 <a
-                  href={file.url}
+                  href={textState.pdfUrl ?? file.url}
                   target="_blank"
                   rel="noreferrer"
                   className="underline underline-offset-2"
@@ -466,7 +484,7 @@ export const FilePreviewProvider = ({ children }: { children: ReactNode }) => {
     <PreviewContext.Provider value={open}>
       {children}
       <AnimatePresence>
-        {file ? <FilePreviewDialog file={file} onClose={close} /> : null}
+        {file ? <FilePreviewDialog key={file.url} file={file} onClose={close} /> : null}
       </AnimatePresence>
     </PreviewContext.Provider>
   )
@@ -479,14 +497,14 @@ export const ArtifactPreviewButton = ({ file }: { file: PreviewFile }) => {
   const kind = previewKindFor(file.name, file.mimeType)
   if (!kind) {
     return (
-      <a
+      <FileDownloadLink
         href={file.url}
         download={file.name}
         className="inline-flex items-center gap-1 text-xs text-[#6b6b66] underline underline-offset-2"
       >
         <Download className="size-3" aria-hidden="true" />
         Download only
-      </a>
+      </FileDownloadLink>
     )
   }
   return (
@@ -502,7 +520,7 @@ export const ArtifactPreviewButton = ({ file }: { file: PreviewFile }) => {
       <AnimatePresence>
         {open ? (
           <div className="osp-session text-left">
-            <FilePreviewDialog file={file} onClose={() => setOpen(false)} />
+            <FilePreviewDialog key={file.url} file={file} onClose={() => setOpen(false)} />
           </div>
         ) : null}
       </AnimatePresence>

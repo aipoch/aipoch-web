@@ -155,6 +155,8 @@ export interface UseCaseDetail {
 }
 
 export interface UseCasePackage {
+  /** Published metadata and content-addressed objects used for browser replay. */
+  extractedBaseUrl?: string
   url: string
   filename: string
   sizeBytes: number

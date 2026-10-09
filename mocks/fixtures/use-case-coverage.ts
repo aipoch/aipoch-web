@@ -363,7 +363,7 @@ export const coverageFixtureSession: UseCaseSession = {
       ]
     },
 
-    // -- assistant message: artifact gallery (4 states) ---------------------------
+    // -- assistant message: artifact gallery (including a PDF) ---------------------------
     {
       type: 'message',
       id: 'cov-md-artifacts',
@@ -391,6 +391,12 @@ export const coverageFixtureSession: UseCaseSession = {
           mimeType: 'application/zip',
           size: 2210,
           url: '/use-cases/coverage-fixture/objects/dataset.zip'
+        },
+        {
+          name: 'coverage_paper.pdf',
+          mimeType: 'application/pdf',
+          size: 600,
+          url: '/use-cases/coverage-fixture/objects/paper.pdf'
         },
         {
           name: 'coverage_huge.bin',

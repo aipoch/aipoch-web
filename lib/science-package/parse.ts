@@ -7,9 +7,9 @@ import type {
   UseCaseAsset,
   UseCaseSession
 } from '../use-case-types'
-import { readArchive, readJson } from './archive'
+import { type ArchiveEntry, readArchive, readJson } from './archive'
 
-interface ManifestInventoryEntry {
+export interface ManifestInventoryEntry {
   path: string
   sizeBytes: number
   checksum: string
@@ -17,7 +17,7 @@ interface ManifestInventoryEntry {
   kind: string
 }
 
-interface Manifest {
+export interface Manifest {
   format: string
   schemaVersion: number
   requiredFeatures?: string[]
@@ -100,9 +100,7 @@ const SKIP_BLOB = [
   /^execution-file-evidence\//
 ]
 
-export async function parsePackage(archive: Blob, slug: string) {
-  const objects = await readArchive(archive)
-  const manifest = await readJson<Manifest>(objects.get('manifest.json'), 'manifest.json')
+export const validateManifest = (manifest: Manifest) => {
   if (manifest.format !== 'open-science-session' || manifest.schemaVersion !== 1)
     throw new Error('Unsupported .science manifest format or schema version.')
   if (
@@ -115,11 +113,45 @@ export async function parsePackage(archive: Blob, slug: string) {
     if (!['literature', 'ro-crate'].includes(feature))
       throw new Error(`Unsupported required feature: ${feature}`)
   }
+  const paths = new Set<string>()
+  for (const entry of manifest.inventory) {
+    if (
+      !entry ||
+      typeof entry.path !== 'string' ||
+      !/^(session\.json|records\.json|ro-crate-metadata\.json|README\.md|objects\/[a-f0-9]{64})$/.test(
+        entry.path
+      ) ||
+      paths.has(entry.path) ||
+      !Number.isSafeInteger(entry.sizeBytes) ||
+      entry.sizeBytes < 0 ||
+      typeof entry.checksum !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(entry.checksum) ||
+      (entry.storageKey !== undefined && typeof entry.storageKey !== 'string')
+    )
+      throw new Error('Invalid package inventory entry.')
+    paths.add(entry.path)
+  }
+  if (!paths.has('session.json')) throw new Error('Package inventory is missing session.json.')
+}
+
+export async function parsePackage(archive: Blob, slug: string) {
+  return parsePackageObjects(await readArchive(archive), slug)
+}
+
+/** Normalize both archive-backed and remote resources with the same transcript rules. */
+export async function parsePackageObjects(
+  objects: Map<string, ArchiveEntry>,
+  slug: string,
+  assetBaseUrl?: string
+) {
+  const manifest = await readJson<Manifest>(objects.get('manifest.json'), 'manifest.json')
+  validateManifest(manifest)
   const inventoried = new Set<string>()
   for (const entry of manifest.inventory) {
     if (inventoried.has(entry.path)) throw new Error(`Duplicate inventory entry: ${entry.path}`)
     inventoried.add(entry.path)
     const file = objects.get(entry.path)
+    if (!file && assetBaseUrl) continue
     if (!file || file.blob.size !== entry.sizeBytes || file.checksum !== entry.checksum)
       throw new Error(`Package inventory verification failed: ${entry.path}`)
   }
@@ -171,11 +203,17 @@ export async function parsePackage(archive: Blob, slug: string) {
     if (!storageKey) continue
     if (SKIP_BLOB.some((pattern) => pattern.test(storageKey))) continue
     const bytes = pkg.objects.get(entry.path)
-    if (!bytes) continue
+    if (!bytes && !assetBaseUrl) continue
     const filename =
       filenameByStorageKey.get(storageKey) ?? storageKey.split('/').pop() ?? entry.path
+    const url = assetBaseUrl
+      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeURIComponent(filename)}`
+      : bytes
+        ? resource(bytes.blob, filename)
+        : undefined
+    if (!url) continue
     assets[storageKey] = {
-      url: resource(bytes.blob, filename),
+      url,
       filename,
       sizeBytes: entry.sizeBytes,
       kind: entry.kind

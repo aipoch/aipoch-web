@@ -4,6 +4,7 @@ import { Download, Eye, FileText } from 'lucide-react'
 import { useState } from 'react'
 import type { MessageArtifact, TranscriptItem } from '@/lib/use-case-types'
 import { CopyButton } from './copy-button'
+import { FileDownloadLink } from './file-download-link'
 import { previewKindFor, useFilePreview } from './file-preview'
 import { SessionMarkdown } from './session-markdown'
 
@@ -105,14 +106,14 @@ const ArtifactCard = ({ artifact }: { artifact: MessageArtifact }) => {
     )
   }
   return artifact.url ? (
-    <a
+    <FileDownloadLink
       href={artifact.url}
       download={artifact.name}
       className={`relative ${artifactCardClassName}`}
       title={`Download ${artifact.name} (no in-site preview for this type)`}
     >
       {card}
-    </a>
+    </FileDownloadLink>
   ) : (
     <div
       className={`relative ${artifactCardClassName} cursor-default`}

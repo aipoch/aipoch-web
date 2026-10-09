@@ -1,7 +1,7 @@
 import type { UseCasePackage } from '../use-case-types'
 import { Sha256 } from './sha256'
 
-export type PackageStage = 'downloading' | 'verifying' | 'parsing'
+export type PackageStage = 'metadata' | 'downloading' | 'verifying' | 'parsing'
 export type PackageProgress = { stage: PackageStage; loaded?: number; total?: number }
 export type ArchiveEntry = { blob: Blob; checksum: string }
 const ENTRY_PATH =

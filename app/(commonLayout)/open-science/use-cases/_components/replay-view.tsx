@@ -32,7 +32,7 @@ const TopBar = ({ slug, packageUrl }: { slug: string; packageUrl?: string }) => 
 )
 
 const labels = {
-  metadata: 'Fetching package information…',
+  metadata: 'Loading research session…',
   downloading: 'Downloading research package…',
   verifying: 'Verifying SHA-256…',
   parsing: 'Parsing research session…'
@@ -51,7 +51,7 @@ const ReplayProgress = ({ progress }: { progress: PackageProgress | { stage: 'me
       <progress aria-label={labels[progress.stage]} max={100} value={percent} className="w-64" />
       {percent !== undefined && <p className="text-sm tabular-nums">{percent}%</p>}
       <p className="text-sm text-[#777872]">
-        Large research packages can take a while. Keep this page open.
+        Loading the session and the files needed to display it.
       </p>
     </div>
   )
@@ -92,7 +92,7 @@ export const ReplayView = ({
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<ReplayState>({
     status: 'loading',
-    progress: { stage: 'downloading' }
+    progress: { stage: packageInfo?.extractedBaseUrl ? 'metadata' : 'downloading' }
   })
   useEffect(() => {
     void attempt

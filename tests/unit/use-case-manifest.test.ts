@@ -28,6 +28,10 @@ describe('use-case manifest normalization', () => {
     expect(cases[0].exportedAt).toBeUndefined()
     expect(cases[0].introductionUrl).toEndWith('.md')
     expect(cases[3].package.url).toBe(manifest[3].case.release_url)
+    // Replay metadata always comes from object storage, including GitHub-hosted archives.
+    expect(cases[3].package.extractedBaseUrl).toBe(
+      'https://objects.example.test/cases/first-flight-vs-evening-flight-which-is-more-reliable/extracted/'
+    )
     expect(cases[3].introductionUrl).toBeUndefined()
   })
 

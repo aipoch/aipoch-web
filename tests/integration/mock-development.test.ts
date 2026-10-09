@@ -215,7 +215,7 @@ describe('mock development end to end', () => {
     }
   }, 120000)
 
-  test('replay renders the complete package by default and retries failures', async () => {
+  test('replay loads extracted metadata without the archive and retries failures', async () => {
     const browser = await chromium.launch()
     try {
       const context = await browser.newContext()
@@ -258,7 +258,8 @@ describe('mock development end to end', () => {
       await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
       expect(await page.title()).toBe(`Replay: ${item.title} | Open-Science Use Cases`)
       const packageRequests = () => requests.filter((url) => url === info.url).length
-      expect(packageRequests()).toBe(1)
+      expect(packageRequests()).toBe(0)
+      expect(requests).toContain(`${api}/use-case-manifest/${item.name}/extracted/session.json`)
       expect(
         await page.getByRole('button', { name: /View full version|Back to essential/ }).count()
       ).toBe(0)
@@ -269,18 +270,33 @@ describe('mock development end to end', () => {
         () => (window as typeof window & { replayStates: string[] }).replayStates
       )
       expect(states).toContain('Parsing research session…')
-      // Retry the complete task after an actual checksum failure.
-      await context.route(info.url, (route) =>
+      // Retry after extracted metadata fails its inventory checksum.
+      const sessionUrl = `${api}/use-case-manifest/${item.name}/extracted/session.json`
+      await context.route(sessionUrl, (route) =>
         route.fulfill({
-          body: Buffer.alloc(info.sizeBytes),
+          body: JSON.stringify({ version: 2, session: { messages: [] } }),
           contentType: 'application/octet-stream'
         })
+      )
+      await page.reload()
+      await page.getByRole('alert').filter({ hasText: 'inventory verification failed' }).waitFor()
+      await context.unroute(sessionUrl)
+      await page.getByRole('button', { name: 'Retry', exact: true }).click()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      // Older publications still use the verified archive, including its error and retry path.
+      await context.route(sessionUrl, (route) => route.fulfill({ status: 404, body: '' }))
+      await page.reload()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      expect(packageRequests()).toBe(1)
+      await context.route(info.url, (route) =>
+        route.fulfill({ body: Buffer.alloc(info.sizeBytes) })
       )
       await page.reload()
       await page.getByRole('alert').filter({ hasText: 'SHA-256 verification failed' }).waitFor()
       await context.unroute(info.url)
       await page.getByRole('button', { name: 'Retry', exact: true }).click()
       await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      await context.unroute(sessionUrl)
       await page.goto(`${web}/open-science/use-cases/no-such-case/replay`)
       await page.getByRole('alert').filter({ hasText: 'Research package not found.' }).waitFor()
       expect(await page.getByRole('link', { name: 'Download research package' }).count()).toBe(0)

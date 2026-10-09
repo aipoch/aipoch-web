@@ -56,3 +56,20 @@ test('serves assets from the published case-name/file-name layout', async () => 
   const missing = await getResponse(handlers, new Request(`${prefix}.missing`))
   expect(missing?.status).toBe(404)
 })
+
+test('serves extracted metadata and referenced objects from the same package', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const base = `${origin}/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/extracted/`
+  const session = await getResponse(handlers, new Request(`${base}session.json`))
+  expect(session?.status).toBe(200)
+  if (!session) throw new Error('Missing session handler')
+  expect((await session.json()).version).toBe(2)
+  const manifest = await (await getResponse(handlers, new Request(`${base}manifest.json`)))?.json()
+  const report = manifest.inventory.find(
+    (item: { storageKey?: string }) => item.storageKey === 'files/coverage_report.md'
+  )
+  const asset = await getResponse(handlers, new Request(`${base}${report.path}`))
+  expect(await asset?.text()).toBe('Sample coverage_report.md')
+  expect((await getResponse(handlers, new Request(`${base}objects/missing`)))?.status).toBe(404)
+})

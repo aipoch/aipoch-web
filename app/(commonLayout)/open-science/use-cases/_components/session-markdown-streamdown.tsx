@@ -6,7 +6,7 @@ import { createMathPlugin } from '@streamdown/math'
 import { useEffect, useMemo, useState } from 'react'
 import { type Components, defaultRehypePlugins, Streamdown } from 'streamdown'
 import type { PluggableList, Plugin } from 'unified'
-import { useFilePreview } from './file-preview'
+import { previewKindFor, useFilePreview } from './file-preview'
 import 'katex/dist/katex.min.css'
 
 // Static-mode Streamdown tuned like the app's AgentMarkdown: same plugins, controls, and
@@ -60,8 +60,23 @@ const linkComponent: Components['a'] = ({ node: _node, href, children, ...props 
   // Intercept internal asset links only when a preview provider is mounted
   // (the transcript); without one, fall through to a plain link so the click
   // still opens the file instead of dying on preventDefault + no-op.
-  if ((href?.startsWith('/use-cases/') || href?.startsWith('blob:')) && openPreview) {
-    const name = typeof children === 'string' ? children : (href.split('/').pop() ?? href)
+  // Extracted objects have hash-only paths; the loader preserves the real filename in the fragment.
+  const extracted = href && /^https?:\/\/[^/]+\/.*\/extracted\/objects\/[a-f0-9]{64}#/.test(href)
+  let filename: string | undefined
+  if (extracted) {
+    try {
+      filename = decodeURIComponent(href.slice(href.indexOf('#') + 1))
+    } catch {
+      /* Use the link label. */
+    }
+  }
+  const name =
+    filename ?? (typeof children === 'string' ? children : (href?.split('/').pop() ?? 'file'))
+  if (
+    (href?.startsWith('/use-cases/') || href?.startsWith('blob:') || extracted) &&
+    openPreview &&
+    previewKindFor(name)
+  ) {
     return (
       <a
         {...props}
