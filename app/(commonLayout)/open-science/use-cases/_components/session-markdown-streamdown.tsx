@@ -93,8 +93,8 @@ const linkComponent: Components['a'] = ({ node: _node, href, children, ...props 
   // (the transcript) and the type is previewable; otherwise fall through to a
   // plain link so the click still opens the file instead of dying on
   // preventDefault + "cannot preview".
-  // Extracted objects have hash-only paths; the loader carries the filename in the fragment.
-  const extracted = href && /^https?:\/\/[^/]+\/.*\/extracted\/objects\/[a-f0-9]{64}#/.test(href)
+  // Restored storage paths may end in "content"; the loader carries the filename in the fragment.
+  const extracted = href && /^https?:\/\/[^/]+\/(?:[^?#]*\/)?extracted\/[^?#]+#/.test(href)
   if (
     href &&
     (href.startsWith('/use-cases/') || href.startsWith('blob:') || extracted) &&

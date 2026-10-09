@@ -278,7 +278,8 @@ describe('mock development end to end', () => {
         () => (window as typeof window & { replayStates: string[] }).replayStates
       )
       expect(states).toContain('Parsing research session…')
-      // Retry after extracted metadata fails its inventory checksum.
+      expect(requests.some((url) => /\/extracted\/(manifest|records)\.json$/.test(url))).toBe(false)
+      // Retry after the extracted session fails schema validation.
       const sessionUrl = `${api}/use-case-manifest/${item.name}/extracted/session.json`
       await context.route(sessionUrl, (route) =>
         route.fulfill({
@@ -287,7 +288,7 @@ describe('mock development end to end', () => {
         })
       )
       await page.reload()
-      await page.getByRole('alert').filter({ hasText: 'inventory verification failed' }).waitFor()
+      await page.getByRole('alert').filter({ hasText: 'invalid session.json' }).waitFor()
       await context.unroute(sessionUrl)
       await page.getByRole('button', { name: 'Retry', exact: true }).click()
       await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()

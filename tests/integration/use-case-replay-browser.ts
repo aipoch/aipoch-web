@@ -208,13 +208,13 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   await expect(page.getByText('Full only', { exact: true })).toHaveCount(0)
   await expect(page.getByTitle(/Download coverage_huge.bin/)).toHaveAttribute(
     'href',
-    /\/extracted\/objects\//
+    /\/extracted\/files\//
   )
 
   // -- inline asset link in message content ---------------------------------------------
   await expect(page.getByRole('link', { name: 'coverage_report.md' }).first()).toHaveAttribute(
     'href',
-    /\/extracted\/objects\//
+    /\/extracted\/files\//
   )
 
   await page.getByRole('link', { name: 'coverage_report.md' }).first().click()

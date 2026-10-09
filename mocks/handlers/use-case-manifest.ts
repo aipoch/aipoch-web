@@ -81,11 +81,11 @@ export const useCaseManifestHandlers = (origin: string) => {
         new URL(request.url).pathname.slice('/use-case-manifest/'.length)
       )
       for (const item of useCaseManifest) {
-        // Serve the same unpacked bytes as the downloadable archive, including navigation requests.
+        // Serve unchanged session JSON and objects restored to their storage-key directories.
         const prefix = `${item.name}/extracted/`
         if (path.startsWith(prefix)) {
           const file = path.slice(prefix.length)
-          const bytes = packages.get(item.name)?.files[file]
+          const bytes = packages.get(item.name)?.extractedFiles[file]
           if (!bytes) return new HttpResponse(null, { status: 404 })
           return new HttpResponse(bytes as BodyInit, {
             headers: {

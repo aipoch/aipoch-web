@@ -65,11 +65,12 @@ test('serves extracted metadata and referenced objects from the same package', a
   expect(session?.status).toBe(200)
   if (!session) throw new Error('Missing session handler')
   expect((await session.json()).version).toBe(2)
-  const manifest = await (await getResponse(handlers, new Request(`${base}manifest.json`)))?.json()
-  const report = manifest.inventory.find(
-    (item: { storageKey?: string }) => item.storageKey === 'files/coverage_report.md'
-  )
-  const asset = await getResponse(handlers, new Request(`${base}${report.path}`))
+  for (const missing of ['manifest.json', 'records.json']) {
+    expect((await getResponse(handlers, new Request(`${base}${missing}`)))?.status).toBe(404)
+  }
+  // Extracted files preserve storage keys while the archive keeps its inventory.
+  const reportPath = 'files/coverage_report.md'
+  const asset = await getResponse(handlers, new Request(`${base}${reportPath}`))
   expect(await asset?.text()).toBe('Sample coverage_report.md')
   expect((await getResponse(handlers, new Request(`${base}objects/missing`)))?.status).toBe(404)
 })

@@ -36,6 +36,8 @@ export function buildSciencePackage(
       version: 2,
       session: {
         title,
+        id: 'mock-session',
+        projectId: 'mock-project',
         createdAt: 1788220800000,
         messages: [
           { id: 'question', role: 'user', content: title, createdAt: 1788220800000 },
@@ -78,5 +80,12 @@ export function buildSciencePackage(
     excludedFiles: []
   })
   const bytes = packScience(files)
-  return { bytes, files, sizeBytes: bytes.length, sha256: digest(bytes) }
+  // Publishing restores storage keys without rewriting the exported session bytes.
+  const extractedFiles: Record<string, Uint8Array> = {
+    'session.json': files['session.json'],
+    ...Object.fromEntries(
+      Object.values(objects).map(({ storageKey, bytes }) => [storageKey, bytes])
+    )
+  }
+  return { bytes, files, extractedFiles, sizeBytes: bytes.length, sha256: digest(bytes) }
 }
