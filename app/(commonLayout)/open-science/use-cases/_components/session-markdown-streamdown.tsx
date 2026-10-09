@@ -6,6 +6,7 @@ import { createMathPlugin } from '@streamdown/math'
 import { useEffect, useMemo, useState } from 'react'
 import { type Components, defaultRehypePlugins, Streamdown } from 'streamdown'
 import type { PluggableList, Plugin } from 'unified'
+import { FileDownloadLink } from './file-download-link'
 import { previewKindFor, useFilePreview } from './file-preview'
 import 'katex/dist/katex.min.css'
 
@@ -88,6 +89,13 @@ const linkComponent: Components['a'] = ({ node: _node, href, children, ...props 
       >
         {children}
       </a>
+    )
+  }
+  if (extracted && href && !previewKindFor(name)) {
+    return (
+      <FileDownloadLink {...props} href={href} download={name}>
+        {children}
+      </FileDownloadLink>
     )
   }
   return (

@@ -102,3 +102,17 @@ test('rejects unsafe inventory references before fetching them', async () => {
   expect(requests.every((url) => url.startsWith(base))).toBe(true)
   expect(requests).toHaveLength(2)
 })
+
+for (const [filename, fragment] of [
+  ['report).md', 'report%29.md'],
+  ['report(.md', 'report%28.md']
+]) {
+  test(`encodes Markdown delimiters in the extracted URL for ${filename}`, async () => {
+    await setup()
+    const { session } = await loadReplayPackage(info, 'sample', () => {})
+    const asset = session.assets[`files/${filename}`]
+    expect(asset.url.split('#')[1]).toBe(fragment)
+    const message = session.items.find((item) => item.type === 'message' && item.artifacts?.length)
+    expect(message?.type === 'message' && message.content).toContain(`](${asset.url})`)
+  })
+}

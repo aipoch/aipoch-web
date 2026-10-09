@@ -172,8 +172,8 @@ export async function verifyReplayCoverage(page: Page, url: string) {
 
   // -- artifact gallery: 4 states -----------------------------------------------------
   // content-visibility renders offscreen rows lazily — bring the gallery into view first.
-  await page.getByText('GENERATED · 5').scrollIntoViewIfNeeded()
-  await expect(page.getByText('GENERATED · 5')).toBeVisible()
+  await page.getByText('GENERATED · 8').scrollIntoViewIfNeeded()
+  await expect(page.getByText('GENERATED · 8')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_chart.png')).toBeVisible()
   await expect(page.getByTitle('Preview coverage_report.md')).toBeVisible()
   await expect(page.getByTitle(/Download coverage_dataset\.zip/)).toBeVisible()
@@ -205,6 +205,25 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   const [download] = await Promise.all([page.waitForEvent('download'), downloadCard.click()])
   expect(download.suggestedFilename()).toBe('coverage_dataset.zip')
   expect(await download.failure()).toBeNull()
+  for (const [label, filename] of [
+    ['ZIP archive', 'coverage_dataset.zip'],
+    ['Word document', 'coverage_document.docx']
+  ]) {
+    const link = page.getByRole('link', { name: label, exact: true })
+    const [inlineDownload] = await Promise.all([page.waitForEvent('download'), link.click()])
+    expect(inlineDownload.suggestedFilename()).toBe(filename)
+    expect(await inlineDownload.failure()).toBeNull()
+  }
+  for (const [label, filename] of [
+    ['closing parenthesis', 'report).md'],
+    ['opening parenthesis', 'report(.md']
+  ]) {
+    await page.getByRole('link', { name: label, exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: filename, exact: true })
+    await expect(dialog.getByText(`Sample ${filename}`, { exact: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).not.toBeVisible()
+  }
   await page.getByTitle('Preview coverage_paper.pdf').click()
   const pdfDialog = page.getByRole('dialog', { name: 'coverage_paper.pdf', exact: true })
   const pdfFrame = pdfDialog.locator('iframe')

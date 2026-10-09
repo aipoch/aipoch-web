@@ -446,11 +446,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
               </p>
             </div>
           ) : isTextKind(kind) ? (
-            textState.error ? (
-              <p className="text-sm text-status-failure-foreground">
-                Could not load the file: {textState.error}
-              </p>
-            ) : textState.text === undefined ? (
+            textState.text === undefined ? (
               <div className="flex flex-1 items-center justify-center gap-2 text-text-300">
                 <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                 <span className="text-sm">Loading…</span>

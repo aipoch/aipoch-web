@@ -148,7 +148,6 @@ export async function parsePackageObjects(
   validateManifest(manifest)
   const inventoried = new Set<string>()
   for (const entry of manifest.inventory) {
-    if (inventoried.has(entry.path)) throw new Error(`Duplicate inventory entry: ${entry.path}`)
     inventoried.add(entry.path)
     const file = objects.get(entry.path)
     if (!file && assetBaseUrl) continue
@@ -207,7 +206,7 @@ export async function parsePackageObjects(
     const filename =
       filenameByStorageKey.get(storageKey) ?? storageKey.split('/').pop() ?? entry.path
     const url = assetBaseUrl
-      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeURIComponent(filename)}`
+      ? `${new URL(entry.path, assetBaseUrl).href}#${encodeURIComponent(filename).replace(/\(/g, '%28').replace(/\)/g, '%29')}`
       : bytes
         ? resource(bytes.blob, filename)
         : undefined
