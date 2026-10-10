@@ -20,8 +20,8 @@ const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
 const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-09'
 // Track overview and replay template changes separately from the gallery.
 const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-09'
-// Replay now loads extracted metadata and on-demand assets; the page date remains October 9.
-const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-09'
+// Preview switching and delayed PDF navigation were corrected on October 10.
+const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-10'
 const AGENT_SKILLS_LIST_LAST_MODIFIED = '2026-09-23'
 
 // Disable cache, regenerate on every request

@@ -93,7 +93,7 @@ describe('sitemap', () => {
       '/open-science/use-cases/existing-replay/replay'
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
-        new Date('2026-10-09')
+        new Date(path.endsWith('/replay') ? '2026-10-10' : '2026-10-09')
       )
     }
   })

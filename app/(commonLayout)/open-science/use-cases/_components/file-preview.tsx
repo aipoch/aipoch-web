@@ -13,13 +13,14 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useIsPresent } from 'motion/react'
 import {
   createContext,
   type ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState
 } from 'react'
@@ -283,9 +284,11 @@ const iconButtonClassName =
 
 const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () => void }) => {
   const kind = previewKindFor(file.name, file.mimeType)
+  const isPresent = useIsPresent()
   const panelRef = useRef<HTMLDivElement>(null)
   const [textState, setTextState] = useState<{ text?: string; pdfUrl?: string; error?: string }>({})
   const [copied, setCopied] = useState(false)
+  const newTabUrl = kind === 'pdf' ? textState.pdfUrl : file.url
 
   // Fetch text and PDF only when opened; hashed CDN objects may use a generic MIME type.
   useEffect(() => {
@@ -326,18 +329,10 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  // Lock background scroll and move focus into the dialog while it is open.
+  // Each incoming file receives focus; the container restores page state after closing.
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    const previousFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null
-    document.body.style.overflow = 'hidden'
-    panelRef.current?.focus()
-    return () => {
-      document.body.style.overflow = previousOverflow
-      previousFocus?.focus()
-    }
-  }, [])
+    if (isPresent) panelRef.current?.focus()
+  }, [isPresent])
 
   const copyText = async () => {
     if (textState.text === undefined) return
@@ -399,12 +394,15 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
           ) : null}
           {canOpenInNewTab(file) ? (
             <a
-              href={textState.pdfUrl ?? file.url}
+              href={newTabUrl}
+              role={newTabUrl ? undefined : 'link'}
+              aria-disabled={!newTabUrl || undefined}
+              tabIndex={newTabUrl ? undefined : -1}
               target="_blank"
               rel="noreferrer"
               aria-label="Open in a new tab"
               title="Open in a new tab"
-              className={iconButtonClassName}
+              className={`${iconButtonClassName} aria-disabled:opacity-40`}
             >
               <ExternalLink className="size-3.5" aria-hidden="true" />
             </a>
@@ -447,7 +445,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
               <p className="text-[11px] text-text-300">
                 If the PDF does not render inline,{' '}
                 <a
-                  href={textState.pdfUrl ?? file.url}
+                  href={textState.pdfUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="underline underline-offset-2"
@@ -484,14 +482,45 @@ const PreviewContext = createContext<((file: PreviewFile) => void) | null>(null)
  */
 export const useFilePreview = (): ((file: PreviewFile) => void) | null => useContext(PreviewContext)
 
+// One owner per preview session, so overlapping file animations cannot restore each other's lock.
+const usePreviewPageState = (open: boolean) => {
+  const previousFocus = useRef<HTMLElement | null>(null)
+  const captureFocus = useCallback(() => {
+    if (!open)
+      previousFocus.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+  }, [open])
+  // Restore focus after exit animations finish, so a departing panel cannot steal it back.
+  const finishExit = () => {
+    if (!open) previousFocus.current?.focus()
+  }
+  useLayoutEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+  useEffect(() => () => previousFocus.current?.focus(), [])
+  return { captureFocus, finishExit }
+}
+
 export const FilePreviewProvider = ({ children }: { children: ReactNode }) => {
   const [file, setFile] = useState<PreviewFile | null>(null)
-  const open = useCallback((next: PreviewFile) => setFile(next), [])
+  const { captureFocus, finishExit } = usePreviewPageState(file !== null)
+  const open = useCallback(
+    (next: PreviewFile) => {
+      captureFocus()
+      setFile(next)
+    },
+    [captureFocus]
+  )
   const close = useCallback(() => setFile(null), [])
   return (
     <PreviewContext.Provider value={open}>
       {children}
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={finishExit}>
         {file ? <FilePreviewDialog key={file.url} file={file} onClose={close} /> : null}
       </AnimatePresence>
     </PreviewContext.Provider>
@@ -502,6 +531,7 @@ export const FilePreviewProvider = ({ children }: { children: ReactNode }) => {
 // use-case intro page's artifact table.
 export const ArtifactPreviewButton = ({ file }: { file: PreviewFile }) => {
   const [open, setOpen] = useState(false)
+  const { captureFocus, finishExit } = usePreviewPageState(open)
   const kind = previewKindFor(file.name, file.mimeType)
   if (!kind) {
     return (
@@ -519,13 +549,16 @@ export const ArtifactPreviewButton = ({ file }: { file: PreviewFile }) => {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          captureFocus()
+          setOpen(true)
+        }}
         className="inline-flex items-center gap-1 text-xs text-[#111] underline underline-offset-2"
       >
         <Eye className="size-3" aria-hidden="true" />
         Preview
       </button>
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={finishExit}>
         {open ? (
           <div className="osp-session text-left">
             <FilePreviewDialog key={file.url} file={file} onClose={() => setOpen(false)} />

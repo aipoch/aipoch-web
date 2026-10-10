@@ -5,9 +5,11 @@ import { join } from 'node:path'
 import { expect as browserExpect, chromium, devices } from '@playwright/test'
 import manifestSample from '../../mocks/fixtures/use-case-manifest.json'
 import {
+  verifyPreviewSwitching,
   verifyReplayCoverage,
   verifyReplayDownload,
-  verifyReplayLoading
+  verifyReplayLoading,
+  verifySlowPdfPreview
 } from './use-case-replay-browser'
 
 const reviewArtifacts = join(process.cwd(), '.codex/ui-review-2026-09-21')
@@ -209,7 +211,7 @@ describe('mock development end to end', () => {
           `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-09T00:00:00.000Z</lastmod>`
         )
         expect(sitemap).toContain(
-          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-09T00:00:00.000Z</lastmod>`
+          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-10T00:00:00.000Z</lastmod>`
         )
         const detailHtml = await (await fetch(`${web}/open-science/use-cases/${item.name}`)).text()
         expect(detailHtml).toContain(`href="/open-science/use-cases/${item.name}/replay"`)
@@ -351,11 +353,16 @@ describe('mock development end to end', () => {
   for (const mobile of [false, true]) {
     for (const [name, verify] of [
       ['renderer coverage', verifyReplayCoverage],
+      ['preview switching', verifyPreviewSwitching],
+      ['slow PDF preview', verifySlowPdfPreview],
       ['package download', verifyReplayDownload],
       ['loading and retry', verifyReplayLoading]
     ] as const) {
       test(`${mobile ? 'mobile' : 'desktop'}: replay ${name} uses server-provided package information`, async () => {
-        const browser = await chromium.launch()
+        // The full Chromium headless mode supports PDF tabs; headless-shell does not.
+        const browser = await chromium.launch(
+          name === 'slow PDF preview' ? { channel: 'chromium' } : {}
+        )
         try {
           const context = await browser.newContext(mobile ? devices['Pixel 5'] : {})
           const page = await context.newPage()
