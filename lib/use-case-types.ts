@@ -59,6 +59,14 @@ export interface MessageArtifact {
   fullOnly?: boolean
 }
 
+/** A file the user attached to a message; url is present only when the package bundles the bytes. */
+export interface MessageUpload {
+  name: string
+  mimeType?: string
+  size?: number
+  url?: string
+}
+
 export type TranscriptItem =
   | {
       type: 'message'
@@ -70,6 +78,7 @@ export type TranscriptItem =
       completedAt?: number
       parts?: unknown[]
       artifacts?: MessageArtifact[]
+      uploads?: MessageUpload[]
     }
   | {
       type: 'elicitation'

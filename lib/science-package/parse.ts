@@ -1,5 +1,6 @@
 import type {
   MessageArtifact,
+  MessageUpload,
   NormalizedActivity,
   NormalizedOutput,
   NormalizedRun,
@@ -294,6 +295,51 @@ function normalizeSession(
     }
   }
 
+  // User-message uploads link to their bundled blob through the UploadVersion
+  // table (versionId → contentStorageKey → asset). Versions without a bundled
+  // blob stay display-only (no url).
+  const uploadUrlByVersionId = new Map<string, string>()
+  for (const row of archive?.records?.tables.UploadVersion ?? []) {
+    const versionId = row.id
+    const key = row.contentStorageKey
+    if (typeof versionId === 'string' && typeof key === 'string') {
+      const url = assets[key]?.url
+      if (url) uploadUrlByVersionId.set(versionId, url)
+    }
+  }
+
+  // Extracted mode has no records.json. The publisher keeps the original
+  // package layout, so upload blobs sit at a derivable storage path built from
+  // session.json alone: uploads/<projectId>/<sessionId>/<fileId>/versions/
+  // <versionId>/content (same scheme extracted.ts uses for notebook run.json).
+  if (
+    assetBaseUrl &&
+    typeof session.projectId === 'string' &&
+    session.projectId &&
+    typeof session.id === 'string' &&
+    session.id
+  ) {
+    for (const message of session.messages) {
+      for (const upload of Array.isArray(message.uploads) ? message.uploads : []) {
+        if (!upload || typeof upload !== 'object') continue
+        const record = upload as JsonObject
+        const versionId = typeof record.versionId === 'string' ? record.versionId : undefined
+        const fileId = typeof record.id === 'string' ? record.id : undefined
+        const name = record.originalName ?? record.name
+        if (!versionId || !fileId || typeof name !== 'string' || !name) continue
+        const key = `uploads/${session.projectId}/${session.id}/${fileId}/versions/${versionId}/content`
+        // storagePathFor throws on malformed keys; a single bad upload record
+        // must degrade to display-only, not abort the session parse.
+        try {
+          const url = `${new URL(storagePathFor(key), assetBaseUrl).href}#${encodeAssetFilename(name)}`
+          uploadUrlByVersionId.set(versionId, url)
+        } catch {
+          continue
+        }
+      }
+    }
+  }
+
   const { sanitize, deep } = buildSanitizer(session, runDocument)
 
   // Correlate notebook runs by executionInvocationId; extract base64 figures.
@@ -446,6 +492,25 @@ function normalizeSession(
     const messageArtifacts = artifactIds
       .map((id) => artifactByVersionId.get(id))
       .filter((artifact): artifact is MessageArtifact => Boolean(artifact))
+    // Display name prefers originalName (the composer's chip label) over the
+    // stored safe filename, mirroring the app's getUploadedAttachmentName.
+    const messageUploads = (
+      Array.isArray(message.uploads) ? (message.uploads as unknown[]) : []
+    ).flatMap((upload): MessageUpload[] => {
+      if (!upload || typeof upload !== 'object') return []
+      const record = upload as JsonObject
+      const name = record.originalName ?? record.name
+      if (typeof name !== 'string' || !name) return []
+      const versionId = typeof record.versionId === 'string' ? record.versionId : undefined
+      return [
+        {
+          name,
+          mimeType: typeof record.mimeType === 'string' ? record.mimeType : undefined,
+          size: typeof record.size === 'number' ? record.size : undefined,
+          url: versionId ? uploadUrlByVersionId.get(versionId) : undefined
+        }
+      ]
+    })
     return {
       ts: Number(message.createdAt),
       item: {
@@ -457,7 +522,8 @@ function normalizeSession(
         createdAt: Number(message.createdAt),
         completedAt: typeof message.completedAt === 'number' ? message.completedAt : undefined,
         parts: deep(message.parts) as unknown[] | undefined,
-        artifacts: messageArtifacts.length > 0 ? messageArtifacts : undefined
+        artifacts: messageArtifacts.length > 0 ? messageArtifacts : undefined,
+        uploads: messageUploads.length > 0 ? messageUploads : undefined
       }
     }
   })

@@ -1,4 +1,5 @@
 import type { NormalizedActivity } from '@/lib/use-case-types'
+import { matchNotebookRunTool, matchToolName } from './notebook-tool-names'
 
 // Port of workspace-tool-activity-groups.ts (open-science) reduced to the static replay model:
 // no ToolSearch wrappers, no live phases, so search-inference and execution-phase branches go away.
@@ -30,18 +31,20 @@ const ACTIVITY_CATEGORY_ORDER: readonly ActivityCategory[] = [
   'other'
 ]
 
-const NOTEBOOK_EXECUTION_TOOL_NAMES = new Set([
-  'mcp__open-science-notebook__repl_execute',
-  'mcp__open-science-notebook__notebook_execute'
-])
-
-const SKILL_TOOL_NAMES = new Set(['mcp__skills__load_skill'])
-
+// Kernel-run tools are matched across every provider namespacing form
+// (mcp__server__tool, mcp.server.tool, server/tool, server_tool); the title
+// fallback covers providers that keep the identity out of providerToolName.
 export const isNotebookExecutionActivity = (activity: NormalizedActivity): boolean =>
-  NOTEBOOK_EXECUTION_TOOL_NAMES.has(activity.providerToolName ?? '')
+  [activity.providerToolName, activity.title].some(
+    (name) => matchNotebookRunTool(name) !== undefined
+  )
 
+// Skill loads are matched across every provider namespacing form, same as the
+// kernel-run tools (mcp__skills__load_skill, mcp.skills.load_skill, …).
 export const isSkillLoadActivity = (activity: NormalizedActivity): boolean =>
-  SKILL_TOOL_NAMES.has(activity.providerToolName ?? '')
+  [activity.providerToolName, activity.title].some((name) =>
+    matchToolName(name, 'skills', 'load_skill')
+  )
 
 const getNormalizedProviderName = (activity: NormalizedActivity): string =>
   activity.providerToolName?.trim().toLowerCase() ?? ''

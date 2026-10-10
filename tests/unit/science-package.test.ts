@@ -14,7 +14,7 @@ for (const size of [0, 3, 55, 56, 64, 65, 1000000]) {
 
 import { afterEach, mock } from 'bun:test'
 import { downloadPackage, readArchive } from '../../lib/science-package/archive'
-import { parsePackage } from '../../lib/science-package/parse'
+import { parseExtractedSession, parsePackage } from '../../lib/science-package/parse'
 import { buildSciencePackage, digest, packScience } from '../../mocks/fixtures/science-package'
 
 const originalFetch = globalThis.fetch
@@ -265,4 +265,116 @@ test('degrades multi-line array image payloads instead of throwing', async () =>
   expect(Array.isArray(run?.outputs[0].data?.['image/png'])).toBe(true)
   expect(run?.outputs[1].data?.['image/png']).toBe('science-asset:0')
   expect(result.resources).toHaveLength(1)
+})
+
+test('links user message uploads to bundled blobs through UploadVersion records', async () => {
+  const png = new TextEncoder().encode('png-bytes')
+  const xlsx = new TextEncoder().encode('xlsx-bytes')
+  const sheetMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  const sample = buildSciencePackage(
+    'Uploads',
+    {
+      messages: [
+        {
+          id: 'u1',
+          role: 'user',
+          content: 'Check these files',
+          createdAt: 1,
+          uploads: [
+            {
+              id: 'up1',
+              name: 'figure9-check.png',
+              originalName: 'figure9-check.png',
+              mimeType: 'image/png',
+              size: png.length,
+              versionId: 'v1'
+            },
+            {
+              id: 'up2',
+              name: 'safe-name.xlsx',
+              originalName: 'xiao figure1 source.xlsx',
+              mimeType: sheetMime,
+              size: xlsx.length,
+              versionId: 'v2'
+            },
+            // No matching UploadVersion row: display-only, no url.
+            { id: 'up3', name: 'missing.txt', versionId: 'v-absent' }
+          ]
+        },
+        { id: 'a1', role: 'assistant', content: 'Done.', createdAt: 2 }
+      ]
+    },
+    {
+      [`objects/${digest(png)}`]: { bytes: png, storageKey: 'uploads/s1/figure9-check.png' },
+      [`objects/${digest(xlsx)}`]: { bytes: xlsx, storageKey: 'uploads/s1/safe-name.xlsx' }
+    },
+    {
+      tables: {
+        UploadVersion: [
+          { id: 'v1', contentStorageKey: 'uploads/s1/figure9-check.png' },
+          {
+            id: 'v2',
+            contentStorageKey: 'uploads/s1/safe-name.xlsx',
+            originalFilename: 'xiao figure1 source.xlsx'
+          }
+        ]
+      }
+    }
+  )
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'uploads')
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.uploads).toEqual([
+    { name: 'figure9-check.png', mimeType: 'image/png', size: png.length, url: 'science-asset:0' },
+    // Display name prefers originalName over the stored safe filename.
+    {
+      name: 'xiao figure1 source.xlsx',
+      mimeType: sheetMime,
+      size: xlsx.length,
+      url: 'science-asset:1'
+    },
+    { name: 'missing.txt', mimeType: undefined, size: undefined, url: undefined }
+  ])
+  const assistant = result.session.items[1]
+  expect(assistant.type === 'message' && assistant.uploads).toBeUndefined()
+})
+
+test('derives upload URLs from session identifiers in extracted mode', async () => {
+  // No records.json in extracted mode: the publisher keeps the original
+  // package layout, so uploads/proj/sess/file/versions/ver/content resolves.
+  const session = {
+    title: 'Uploads',
+    createdAt: 1,
+    projectId: 'proj-1',
+    id: 'sess-1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Check this file',
+        createdAt: 1,
+        uploads: [
+          {
+            id: 'file-1',
+            name: 'figure9-check.png',
+            originalName: 'figure9 check.png',
+            mimeType: 'image/png',
+            versionId: 'ver-1'
+          },
+          // Missing versionId: display-only, no url.
+          { id: 'file-2', name: 'no-version.txt' }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(session as never, 'uploads', 'https://cdn.example.test/pkg/')
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.uploads).toEqual([
+    {
+      name: 'figure9 check.png',
+      mimeType: 'image/png',
+      size: undefined,
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#figure9%20check.png'
+    },
+    { name: 'no-version.txt', mimeType: undefined, size: undefined, url: undefined }
+  ])
 })

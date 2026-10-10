@@ -1,12 +1,14 @@
 'use client'
 
+import type { HighlightResult } from '@streamdown/code'
 import { FileText, FlaskConical, Info } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode, useEffect, useState } from 'react'
+import type { BundledLanguage } from 'shiki'
 import { cn } from '@/lib/utils'
 import { previewKindFor, useFilePreview } from './file-preview'
+import { useCodeHighlighter } from './use-code-highlighter'
 
 // Static ports of WorkspaceToolCodeBlock / WorkspaceToolDiffBlock / WorkspaceToolSummaryCard.
-// Shiki tokenization is dropped: plain <pre> keeps the same frame and metrics.
 
 export const sectionLabelClassName = 'text-[11px] font-medium uppercase tracking-wide text-text-300'
 
@@ -14,28 +16,94 @@ export const SectionLabel = ({ children }: { children: ReactNode }) => (
   <div className={sectionLabelClassName}>{children}</div>
 )
 
+// Shiki font-style bitmask: Italic = 1, Bold = 2, Underline = 4.
+const fontStyleToCss = (fontStyle: number | undefined): React.CSSProperties => {
+  if (!fontStyle) return {}
+  const style: React.CSSProperties = {}
+  if (fontStyle & 1) style.fontStyle = 'italic'
+  if (fontStyle & 2) style.fontWeight = 600
+  if (fontStyle & 4) style.textDecoration = 'underline'
+  return style
+}
+
+// Keys a highlight request to its exact input so stale tokens never paint newer code.
+const createHighlightKey = (code: string, language: string | undefined): string =>
+  language ? `${language} ${code}` : ''
+
+// Light-only site: both theme slots are github-light, matching the session markdown.
+const SHIKI_THEMES: ['github-light', 'github-light'] = ['github-light', 'github-light']
+
+// Renders code with lazy Shiki highlighting, falling back to plain text before tokens resolve.
 export const ToolCodeBlock = ({
-  code,
+  code: source,
   language,
   className
 }: {
   code: string
   language?: string
   className?: string
-}) => (
-  <div
-    className={cn(
-      'group relative max-h-[320px] overflow-hidden rounded-md border border-border-200 bg-bg-000',
-      className
-    )}
-  >
-    <pre data-language={language} className="m-0 max-h-[320px] overflow-auto px-3 py-2.5">
-      <code className="block whitespace-pre font-mono text-[12px] leading-relaxed text-text-000">
-        {code}
-      </code>
-    </pre>
-  </div>
-)
+}) => {
+  const [highlighted, setHighlighted] = useState<{ key: string; result: HighlightResult } | null>(
+    null
+  )
+  const highlightKey = createHighlightKey(source, language)
+  const highlighter = useCodeHighlighter(Boolean(language))
+
+  useEffect(() => {
+    if (!language || !highlighter?.supportsLanguage(language as BundledLanguage)) return
+
+    let active = true
+    const apply = (result: HighlightResult): void => {
+      if (active) setHighlighted({ key: highlightKey, result })
+    }
+    // The highlighter loads languages/themes asynchronously; cached hits return immediately instead.
+    const immediate = highlighter.highlight(
+      { code: source, language: language as BundledLanguage, themes: SHIKI_THEMES },
+      apply
+    )
+    if (immediate) queueMicrotask(() => apply(immediate))
+
+    return () => {
+      active = false
+    }
+  }, [source, language, highlightKey, highlighter])
+
+  // Only paint tokens that were produced for the currently rendered code and language.
+  const tokens = highlighted?.key === highlightKey ? highlighted.result.tokens : undefined
+
+  return (
+    <div
+      className={cn(
+        'group relative max-h-[320px] overflow-hidden rounded-md border border-border-200 bg-bg-000',
+        className
+      )}
+    >
+      <pre data-language={language} className="m-0 max-h-[320px] overflow-auto px-3 py-2.5">
+        <code className="block whitespace-pre font-mono text-[12px] leading-relaxed text-text-000">
+          {tokens
+            ? tokens.map((line, lineIndex) => (
+                <Fragment key={lineIndex}>
+                  {line.map((token, tokenIndex) => (
+                    <span
+                      key={tokenIndex}
+                      style={{
+                        color: token.color,
+                        ...(token.htmlStyle as React.CSSProperties | undefined),
+                        ...fontStyleToCss(token.fontStyle)
+                      }}
+                    >
+                      {token.content}
+                    </span>
+                  ))}
+                  {lineIndex < tokens.length - 1 ? '\n' : null}
+                </Fragment>
+              ))
+            : source}
+        </code>
+      </pre>
+    </div>
+  )
+}
 
 const prettyPrint = (value: unknown): string => {
   if (typeof value === 'string') {

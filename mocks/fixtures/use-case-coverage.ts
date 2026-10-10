@@ -18,6 +18,7 @@ export const COVERAGE_FIXTURE_SLUG = 'coverage-fixture'
 export const COVERAGE_FIXTURE_RENDERERS: ActivityRenderer[] = [
   'skill',
   'notebook',
+  'notebook-control',
   'read',
   'packages',
   'artifact-write',
@@ -215,6 +216,21 @@ export const coverageFixtureSession: UseCaseSession = {
             script: 'auc = 0.83',
             outputs: [{ type: 'display', data: { 'text/plain': '{"coverage_auc": 0.83}' } }]
           }
+        },
+        {
+          id: 'cov-act-notebook-restart',
+          // Dotted provider form on purpose: exercises the multi-form tool
+          // matching (mcp.server.tool) for the notebook-control renderer.
+          title: 'mcp.open-science-notebook.notebook_restart',
+          providerToolName: 'mcp.open-science-notebook.notebook_restart',
+          toolKind: 'other',
+          status: 'completed',
+          createdAt: 1790133061500,
+          updatedAt: 1790133061800,
+          input: {},
+          output: [
+            { type: 'text', text: '{"status": "restarted", "kernelStatus": "idle", "cells": 3}' }
+          ]
         },
         {
           id: 'cov-act-read',
