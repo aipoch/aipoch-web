@@ -49,21 +49,90 @@ describe('use-case manifest normalization', () => {
     expect(entry.introductionUrl).toBe(
       'https://objects.example.test/cases/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.md'
     )
-    for (const file_name of ['.', '..', '../cover.png', 'a/b.png', 'a\\b.png', 'cover\u0000.png']) {
-      expect(() =>
-        parseUseCaseManifest([{ ...manifest[0], cover: { ...manifest[0].cover, file_name } }], url)
-      ).toThrow()
+  })
+
+  test('accepts NVDA source paths and encodes published filenames for every resource', () => {
+    const title = 'NVDA: ALL AT ONCE OR FOUR WEEKS?'
+    const item = structuredClone(manifest[0])
+    item.name = 'nvda-all-at-once-or-four-weeks'
+    item.title = title
+    for (const [key, extension] of [
+      ['cover', 'png'],
+      ['case', 'science'],
+      ['introduction', 'md']
+    ] as const) {
+      Object.assign(item, {
+        [key]: {
+          ...item[key],
+          file_name: `${title}.${extension}`,
+          path: `${title}/${title}.${extension}`
+        }
+      })
+    }
+    const [entry] = parseUseCaseManifest([item], url)
+    const prefix = 'https://objects.example.test/cases/nvda-all-at-once-or-four-weeks/'
+    expect(entry.preview?.image).toBe(
+      `${prefix}NVDA%3A%20ALL%20AT%20ONCE%20OR%20FOUR%20WEEKS%3F.png`
+    )
+    expect(entry.package.url).toBe(
+      `${prefix}NVDA%3A%20ALL%20AT%20ONCE%20OR%20FOUR%20WEEKS%3F.science`
+    )
+    expect(entry.introductionUrl).toBe(
+      `${prefix}NVDA%3A%20ALL%20AT%20ONCE%20OR%20FOUR%20WEEKS%3F.md`
+    )
+  })
+
+  test('ignores missing, non-string and arbitrary source paths for every resource', () => {
+    const expected = parseUseCaseManifest([manifest[0]], url)
+    for (const key of ['cover', 'case', 'introduction'] as const) {
+      for (const path of [
+        undefined,
+        null,
+        42,
+        false,
+        {},
+        [],
+        '',
+        '../cover.png',
+        '/cover.png',
+        'https://evil.test/a',
+        'a/../b',
+        'a\\b',
+        'a\u0000b'
+      ]) {
+        const item = structuredClone(manifest[0])
+        // JSON serialization omits undefined, exercising an actually absent field.
+        Object.assign(item, { [key]: { ...item[key], path } })
+        expect(parseUseCaseManifest(JSON.parse(JSON.stringify([item])), url)).toEqual(expected)
+      }
+    }
+  })
+
+  test('still rejects invalid published filenames for every resource', () => {
+    for (const key of ['cover', 'case', 'introduction'] as const) {
+      for (const file_name of [
+        undefined,
+        null,
+        42,
+        '',
+        ' ',
+        '.',
+        '..',
+        '../cover.png',
+        'a/b.png',
+        'a\\b.png',
+        'cover\u0000.png'
+      ]) {
+        expect(() =>
+          parseUseCaseManifest([{ ...manifest[0], [key]: { ...manifest[0][key], file_name } }], url)
+        ).toThrow()
+      }
     }
   })
 
   test('accepts an empty manifest and rejects duplicate slugs or invalid resources', () => {
     expect(parseUseCaseManifest([], url)).toEqual([])
     expect(() => parseUseCaseManifest([manifest[0], manifest[0]], url)).toThrow()
-    for (const path of ['../cover.png', '/cover.png', 'https://evil.test/a', 'a/../b', 'a\\b']) {
-      expect(() =>
-        parseUseCaseManifest([{ ...manifest[0], cover: { ...manifest[0].cover, path } }], url)
-      ).toThrow()
-    }
     expect(() =>
       parseUseCaseManifest(
         [{ ...manifest[0], case: { ...manifest[0].case, release_url: 'javascript:alert(1)' } }],
@@ -78,6 +147,132 @@ describe('use-case manifest normalization', () => {
 })
 
 describe('use-case manifest cache', () => {
+  // Diagnostics must identify the broken field without disclosing its value.
+  test.each([
+    [{}, '$', 'array'],
+    [[null], '$[0]', 'object'],
+    [[{ ...manifest[0], title: '' }], '$[0].title', 'non-empty string'],
+    [[{ ...manifest[0], name: 'PRIVATE NAME' }], '$[0].name', 'lowercase kebab-case slug'],
+    [[manifest[0], manifest[0]], '$[1].name', 'unique slug'],
+    [[{ ...manifest[0], cover: null }], '$[0].cover', 'object'],
+    [
+      [{ ...manifest[0], cover: { ...manifest[0].cover, bytes: -1 } }],
+      '$[0].cover.bytes',
+      'non-negative safe integer'
+    ],
+    [
+      [{ ...manifest[0], cover: { ...manifest[0].cover, sha256: 'PRIVATE HASH' } }],
+      '$[0].cover.sha256',
+      '64 hexadecimal characters'
+    ],
+    [
+      [{ ...manifest[0], case: { ...manifest[0].case, file_name: '../PRIVATE' } }],
+      '$[0].case.file_name',
+      'safe non-empty file name'
+    ],
+    [
+      [{ ...manifest[0], case: { ...manifest[0].case, release_url: null } }],
+      '$[0].case.release_url',
+      'string'
+    ],
+    [
+      [{ ...manifest[0], case: { ...manifest[0].case, release_url: 'PRIVATE URL' } }],
+      '$[0].case.release_url',
+      'HTTP(S) URL without credentials'
+    ],
+    [
+      [
+        {
+          ...manifest[0],
+          case: { ...manifest[0].case, release_url: 'https://user:PRIVATE@host.test/file' }
+        }
+      ],
+      '$[0].case.release_url',
+      'HTTP(S) URL without credentials'
+    ]
+  ])('logs the validation path for invalid manifest %#', async (value, fieldPath, expected) => {
+    spyOn(console, 'info').mockImplementation(() => {})
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch = mock(async () => body('"invalid"', value)) as unknown as typeof fetch
+    await expect(
+      createUseCaseManifestCache(`${url}?signature=PRIVATE`).read(() => {})
+    ).rejects.toThrow()
+    const details = JSON.parse(error.mock.calls[0][2])
+    expect(details).toMatchObject({
+      failureStage: 'validation',
+      httpStatus: 200,
+      fieldPath,
+      expected,
+      errorMessage: expect.stringContaining(fieldPath as string),
+      actualType: expect.any(String),
+      retainedCache: false
+    })
+    const logs = JSON.stringify(error.mock.calls)
+    expect(logs).not.toContain('PRIVATE')
+    expect(logs).not.toContain(manifest[0].name)
+    expect(logs).not.toContain(manifest[0].title)
+    expect(logs).not.toContain(url)
+  })
+
+  test('distinguishes JSON, HTTP, network and timeout failures without logging raw errors', async () => {
+    spyOn(console, 'info').mockImplementation(() => {})
+    const error = spyOn(console, 'error').mockImplementation(() => {})
+    const networkError = new TypeError(`Failed to fetch ${url}?signature=PRIVATE`, {
+      cause: Object.assign(new Error('PRIVATE connection details'), { code: 'ECONNRESET' })
+    })
+    const cases = [
+      {
+        result: () => new Response('{"PRIVATE":bad}'),
+        stage: 'json',
+        message: 'Manifest response is not valid JSON'
+      },
+      {
+        result: () => new Response('PRIVATE', { status: 503 }),
+        stage: 'http',
+        message: 'Manifest HTTP 503'
+      },
+      {
+        result: () => new Response(null, { status: 304 }),
+        stage: 'http',
+        message: 'Unexpected 304 without a cached validator'
+      },
+      {
+        result: () => {
+          throw networkError
+        },
+        stage: 'request',
+        message: 'Manifest request failed',
+        code: 'ECONNRESET'
+      },
+      {
+        result: () => {
+          throw new DOMException('PRIVATE', 'TimeoutError')
+        },
+        stage: 'request',
+        message: 'Manifest request timed out'
+      },
+      {
+        result: () => {
+          throw 'PRIVATE'
+        },
+        stage: 'request',
+        message: 'Manifest request failed'
+      }
+    ]
+    for (const scenario of cases) {
+      globalThis.fetch = mock(async () => scenario.result()) as unknown as typeof fetch
+      await expect(createUseCaseManifestCache(url).read(() => {})).rejects.toBeDefined()
+      const details = JSON.parse(error.mock.calls.at(-1)?.[2])
+      expect(details).toMatchObject({
+        failureStage: scenario.stage,
+        errorMessage: scenario.message
+      })
+      expect(details.errorCode).toBe(scenario.code)
+    }
+    expect(JSON.stringify(error.mock.calls)).not.toContain('PRIVATE')
+    expect(JSON.stringify(error.mock.calls)).not.toContain(url)
+  })
+
   test('coalesces cold loads, returns stale data immediately, and sends the exact ETag after response', async () => {
     const first = deferred()
     const next = deferred()
