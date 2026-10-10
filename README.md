@@ -141,42 +141,21 @@ bunx msw init public --no-save
 
 ## Use-case replay assets
 
-The published use-case manifest is read from the configured static origin at
-`/open-science/usecases/manifest.json`. Browser replay derives each extracted root
-as `<manifest directory>/<case name>/extracted/`, independently of the archive's
-optional GitHub release URL.
+The catalog at `/open-science/usecases/manifest.json` defines each case. Replay
+loads from `<manifest directory>/<case name>/extracted/`.
 
-Replay fetches `session.json` directly; the extracted directory does not need
-`manifest.json` or `records.json`. Each session artifact's `$DATA/` prefix is
-removed from its path to recover its storage key. Its URL is
-`<extracted root>/<encoded storage key>#<encoded original filename>`. The publisher
-restores each archive object to its inventory `storageKey`, preserving directories
-and the original session JSON. For example, `$DATA/artifacts/project/version/content`
-resolves to `extracted/artifacts/project/version/content`; the browser does not
-request `objects/<hash>`. Notebook activities can also load the optional restored
-`notebooks/<projectId>/<sessionId>/run.json` document
-for full execution output. Missing notebook metadata does not block the session.
-
-Images and linked files load on demand. Text/PDF previews and downloads fetch a
-file only when requested; PDF previews recover their MIME type, and downloads
-preserve original filenames across origins, including inline Markdown links. SVG
-images returned as generic binary objects recover their image MIME type after a
-failed image load, including thumbnails, inline images and previews. They remain
-image-only blobs; SVG markup is never injected or offered as a new-tab document.
-
-A 403 or 404 for the initial extracted session falls back to the original
-size- and SHA-256-verified `.science` download, whose internal manifest validation
-is preserved. Other errors remain visible and retryable instead of silently
-starting a large download. Extracted JSON has bounded reads and schema checks;
-without an inventory it trusts the published session and CDN, and does not claim
-archive or metadata checksum verification. Published JSON and assets must be
-browser-readable with CORS. This application does not modify bucket settings.
-
-The mock adapter serves session and restored storage-key directories while returning
-404 for extracted `manifest.json` and `records.json`. The downloadable archive
-still contains its own inventory and records. Run `bun run test:mock` to verify
-startup without a manifest, previews, original filenames, retries, archive
-fallback/downloads, and desktop/mobile rendering.
+- **Publish:** Preserve `session.json` and restore archive objects to their inventory
+  `storageKey` paths. Enable CORS for JSON and assets.
+- **Load:** Fetch `session.json` and optional `notebooks/<projectId>/<sessionId>/run.json`.
+  Extracted `manifest.json` and `records.json` are not required.
+- **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
+  Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
+  original filenames. SVG remains image-only.
+- **Fallback:** An initial session 403/404 loads the size- and SHA-256-verified
+  `.science` archive. Other errors remain retryable. Extracted metadata has size
+  limits and schema checks; asset integrity relies on the CDN.
+- **Verify:** `bun run test:mock` covers restored directories, previews, downloads,
+  retries and archive fallback on desktop and mobile.
 
 ## Docker Compose
 
