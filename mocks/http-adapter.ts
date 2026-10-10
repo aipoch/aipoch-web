@@ -1,6 +1,6 @@
 import { createServer as createHttpServer } from 'node:http'
 import { createServer } from '@mswjs/http-middleware'
-import { adapterHandlers } from './handlers'
+import { adapterHandlers } from './handlers/adapter'
 
 /** A single state owner; all business routing is provided by MSW's HTTP adapter. */
 export const startStateAdapter = async (port: number) => {

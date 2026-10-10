@@ -115,7 +115,7 @@ describe('homepage GEO contracts', () => {
       dateTime: 'Aug 4, 2026',
       label: 'Aug 4, 2026'
     })
-    expect(webpage?.dateModified).toBe('2026-10-08')
+    expect(webpage?.dateModified).toBe('2026-10-10T00:00:00.000Z')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v0.20.4',
       dateModified: '2026-08-04',
@@ -238,7 +238,7 @@ console.log(renderToStaticMarkup(await Home()))`
     expect(schemas.find((schema) => schema['@type'] === 'WebPage')).toMatchObject({
       '@id': 'https://aipoch.com/#webpage',
       url: 'https://aipoch.com',
-      dateModified: '2026-10-08',
+      dateModified: '2026-10-10T00:00:00.000Z',
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']

@@ -25,6 +25,14 @@ describe('mock launcher isolation', () => {
   })
   test('accepts dedicated ports and rejects invalid or ambiguous options', () => {
     expect(parseMockOptions(['--port', '4310', '--mock-port', '4311'])).toEqual({
+      hostname: '127.0.0.1',
+      port: 4310,
+      mockPort: 4311
+    })
+    expect(
+      parseMockOptions(['--hostname', '0.0.0.0', '--port', '4310', '--mock-port', '4311'])
+    ).toEqual({
+      hostname: '0.0.0.0',
       port: 4310,
       mockPort: 4311
     })
@@ -34,6 +42,8 @@ describe('mock launcher isolation', () => {
       ['--port', '65536'],
       ['--port', '2.5'],
       ['--unknown'],
+      ['--hostname'],
+      ['--hostname', '--port'],
       ['--port', '4310', '--mock-port', '4310']
     ]) {
       expect(() => parseMockOptions(args)).toThrow()

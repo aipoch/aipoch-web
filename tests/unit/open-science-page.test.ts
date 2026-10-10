@@ -26,6 +26,12 @@ mock.module('../../app/(commonLayout)/open-science/open-science-download', () =>
   OpenScienceDownload: () => createElement('button', { type: 'button' }, 'Download Open-Science')
 }))
 
+// Bun does not run Next's static image loader; mirror its metadata in server-render tests.
+// The browser suite loads the real hashed asset produced by Next.
+mock.module('../../public/figma/open-science/workflow-share.png', () => ({
+  default: { src: '/figma/open-science/workflow-share.png', width: 2223, height: 1162 }
+}))
+
 const expectedSeoTitle = 'AIPOCH Open-Science | Open-Source AI Research Workbench'
 const expectedSeoDescription =
   'AIPOCH Open-Science is an open-source, local-first AI research workbench with model choice, code execution, reviewer checks, and traceable artifacts.'
@@ -154,7 +160,7 @@ describe('Open-Science page', () => {
     const webpage = schemas.find((item) => item['@type'] === 'WebPage')
     const softwareApplication = schemas.find((item) => item['@type'] === 'SoftwareApplication')
 
-    expect(webpage?.dateModified).toBe('2026-10-08')
+    expect(webpage?.dateModified).toBe('2026-10-10')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v1.2.3',
       dateModified: '2026-09-07',
@@ -268,13 +274,21 @@ describe('Open-Science page', () => {
     const text = textFromMarkup(html)
     for (const title of [
       'One workspace from research question to traceable artifact',
-      'Research agents that can work inside the research environment',
+      'Run, inspect, and share research with .science',
       'Local-first research with explicit external access',
       'Can Open-Science use the latest AI models?',
       'Get to know Open-Science',
       'Start building inspectable research workflows with Open-Science.'
     ])
       expect(text).toContain(title)
+    expect(text).toContain(
+      'AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources, persistent context, and traceable outputs. .science packages make selected research records portable for review, handoff, and continuation.'
+    )
+    expect(text).toContain(
+      'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
+    )
+    expect(html).toContain('workflow-share.png')
+    expect(html).toContain('workflow-share.svg')
     expect(text).toContain(
       'Open-Science stores project state, sessions, uploads, notebook history, and generated artifacts on the user’s computer by default.'
     )

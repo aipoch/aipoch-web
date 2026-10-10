@@ -12,8 +12,8 @@ import {
   badgeClassNames,
   getActiveChildHref,
   getActiveGroupIds,
+  getActiveLinkHref,
   isExternalNavHref,
-  isLinkActive,
   navActions,
   navItems
 } from './navbar-data'
@@ -23,6 +23,7 @@ export function Navbar() {
   const pathname = usePathname()
   const isContentPage = usesContentPageDesign(pathname)
   const activeGroupIds = useMemo(() => getActiveGroupIds(pathname), [pathname])
+  const activeLinkHref = getActiveLinkHref(pathname)
   const [isOpen, setIsOpen] = useState(false)
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null)
   const [openMobileSections, setOpenMobileSections] = useState<string[]>(activeGroupIds)
@@ -145,7 +146,7 @@ export function Navbar() {
         <div className="absolute inset-x-0 mx-auto hidden w-fit items-center gap-0.5 lg:flex">
           {navItems.map((item) => {
             if (item.type === 'link') {
-              const isActive = isLinkActive(pathname, item.href)
+              const isActive = activeLinkHref === item.href
 
               return (
                 <Link
@@ -292,7 +293,7 @@ export function Navbar() {
         >
           {navItems.map((item) => {
             if (item.type === 'link') {
-              const isActive = isLinkActive(pathname, item.href)
+              const isActive = activeLinkHref === item.href
 
               return (
                 <div

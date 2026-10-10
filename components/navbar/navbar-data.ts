@@ -1,14 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import {
-  BookOpen,
-  Dna,
-  Download,
-  FileCheck2,
-  LayoutGrid,
-  Sparkles,
-  Trophy,
-  Workflow
-} from 'lucide-react'
+import { BookOpen, Download, LayoutGrid, Trophy } from 'lucide-react'
 
 export type NavBadge = 'Beta' | 'Soon'
 export type NavBadgeTone = 'beta' | 'soon' | 'gray'
@@ -49,33 +40,7 @@ export const isExternalNavHref = (href: string) => /^https?:\/\//.test(href)
 
 export const navItems: NavItem[] = [
   { type: 'link', label: 'Open-Science', href: '/open-science' },
-  {
-    type: 'group',
-    label: 'Product',
-    id: 'product',
-    children: [
-      {
-        label: 'MedFlow',
-        href: '/medflow',
-        description: 'Clinical research workflows',
-        icon: Workflow,
-        badge: 'Soon',
-        badgeTone: 'soon',
-        iconClassName:
-          'border-[rgba(74,138,114,0.28)] bg-[rgba(74,138,114,0.12)] text-[#3f8268] group-hover:bg-[rgba(74,138,114,0.18)] group-hover:text-[#356f59]'
-      },
-      {
-        label: 'Evova',
-        description: 'Evidence evaluation platform',
-        icon: Sparkles,
-        disabled: true,
-        badge: 'Soon',
-        badgeTone: 'gray',
-        iconClassName:
-          'border-[rgba(217,119,6,0.28)] bg-[rgba(217,119,6,0.12)] text-[#d97706] group-hover:bg-[rgba(217,119,6,0.18)] group-hover:text-[#b8650a]'
-      }
-    ]
-  },
+  { type: 'link', label: 'Use Cases', href: '/open-science/use-cases' },
   {
     type: 'group',
     label: 'Agent Skills',
@@ -107,27 +72,7 @@ export const navItems: NavItem[] = [
       }
     ]
   },
-  {
-    type: 'group',
-    label: 'Benchmark',
-    id: 'benchmark',
-    children: [
-      {
-        label: 'MedSkillAudit',
-        href: '/medskillaudit',
-        description: 'Audit & score skill quality',
-        icon: FileCheck2
-      },
-      {
-        label: 'MedFlow',
-        description: 'Workflow benchmark suite',
-        icon: Dna,
-        disabled: true,
-        badge: 'Soon',
-        badgeTone: 'gray'
-      }
-    ]
-  },
+  { type: 'link', label: 'Benchmark', href: '/medskillaudit' },
   { type: 'link', label: 'Blog', href: '/blog' }
   // Community route code is retained, but the public entry is hidden while the page returns 404.
   // { type: 'link', label: 'Community', href: '/community' }
@@ -156,7 +101,7 @@ export const isGroupActive = (pathname: string | null, item: NavGroup) => {
   return item.children.some((child) => Boolean(child.href && isLinkActive(pathname, child.href)))
 }
 
-export const getActiveChildHref = (pathname: string | null, children: NavChild[]) => {
+export const getActiveChildHref = (pathname: string | null, children: Pick<NavChild, 'href'>[]) => {
   const activeChildren = children.filter(
     (child) => child.href && isLinkActive(pathname, child.href)
   )
@@ -165,6 +110,13 @@ export const getActiveChildHref = (pathname: string | null, children: NavChild[]
     (first, second) => (second.href?.length ?? 0) - (first.href?.length ?? 0)
   )[0]?.href
 }
+
+/** Prefer the dedicated entry over a parent route, such as Use Cases over Open-Science. */
+export const getActiveLinkHref = (pathname: string | null) =>
+  getActiveChildHref(
+    pathname,
+    navItems.filter((item) => item.type === 'link')
+  )
 
 export const getActiveGroupIds = (pathname: string | null) => {
   return navItems

@@ -1,5 +1,5 @@
 /** Persistent modification date for shared navigation and browser scroll restoration. */
-export const COMMON_LAYOUT_LAST_MODIFIED = '2026-10-08'
+export const COMMON_LAYOUT_LAST_MODIFIED = '2026-10-09'
 
 /** Keep newer content dates while recording changes to the shared page shell. */
 export function commonLayoutLastModified(contentDate?: string | Date | null): string {

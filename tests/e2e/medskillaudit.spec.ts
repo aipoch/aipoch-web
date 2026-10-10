@@ -2,47 +2,48 @@ import { expect, test } from '@playwright/test'
 
 test.describe.configure({ timeout: 60000 })
 
-test('desktop mega navigation opens MedSkillAudit from the Benchmark menu', async ({
+test('desktop navigation links directly to Use Cases and MedSkillAudit', async ({
   page,
   isMobile
-}) => {
+}, testInfo) => {
   test.skip(isMobile, 'desktop navigation order is covered by the desktop project')
 
   await page.goto('/')
 
   const headerNav = page.locator('header nav')
 
-  await expect(headerNav.getByRole('button', { name: 'Product' })).toBeVisible()
+  await expect(headerNav.getByRole('button', { name: 'Product' })).toHaveCount(0)
   await expect(headerNav.getByRole('button', { name: 'Agent Skills' })).toBeVisible()
-  await expect(headerNav.getByRole('button', { name: 'Benchmark' })).toBeVisible()
+  await expect(headerNav.getByRole('button', { name: 'Benchmark' })).toHaveCount(0)
   await expect(headerNav.getByRole('link', { name: 'Blog' })).toBeVisible()
   await expect(headerNav.getByRole('link', { name: 'Community' })).toHaveCount(0)
 
-  await headerNav.getByRole('button', { name: 'Benchmark' }).click()
-  const medSkillAuditLink = headerNav.getByRole('link', { name: /MedSkillAudit/ })
-  await expect(medSkillAuditLink).toBeVisible()
-  await expect(medSkillAuditLink).toHaveAttribute('href', '/medskillaudit')
+  const useCasesLink = headerNav.getByRole('link', { name: 'Use Cases', exact: true })
+  await expect(useCasesLink).toHaveAttribute('href', '/open-science/use-cases')
+  await useCasesLink.hover()
+  await expect(headerNav.locator('[data-desktop-nav-panel]')).not.toBeVisible()
+  await useCasesLink.click()
+  await expect(page).toHaveURL(/\/open-science\/use-cases$/)
+  await expect(page.getByRole('heading', { name: 'Use Case Gallery' })).toBeVisible()
+  await expect(useCasesLink).toHaveAttribute('aria-current', 'page')
+  await expect(
+    headerNav.getByRole('link', { name: 'Open-Science', exact: true })
+  ).not.toHaveAttribute('aria-current', 'page')
+  await headerNav.screenshot({
+    path: testInfo.outputPath('desktop-navigation.png'),
+    animations: 'disabled'
+  })
+
+  const benchmarkLink = headerNav.getByRole('link', { name: 'Benchmark', exact: true })
+  await expect(benchmarkLink).toHaveAttribute('href', '/medskillaudit')
+  await benchmarkLink.hover()
+  await expect(headerNav.locator('[data-desktop-nav-panel]')).not.toBeVisible()
   await Promise.all([
     page.waitForURL(/\/medskillaudit$/, { timeout: 30000 }),
-    medSkillAuditLink.click()
+    benchmarkLink.click()
   ])
-  await expect(headerNav.getByRole('button', { name: 'Benchmark' })).toHaveAttribute(
-    'aria-expanded',
-    'false'
-  )
+  await expect(benchmarkLink).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('heading', { name: 'What is MedSkillAudit?' })).toBeVisible()
-
-  const benchmarkTrigger = headerNav.getByRole('button', { name: 'Benchmark' })
-  await benchmarkTrigger.hover()
-  await medSkillAuditLink.hover()
-  await expect(medSkillAuditLink).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-  await expect(benchmarkTrigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-  await headerNav.getByText('Workflow benchmark suite', { exact: true }).hover()
-  await expect(medSkillAuditLink).toHaveAttribute('aria-current', 'page')
-  await expect(medSkillAuditLink).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-  await page.mouse.move(0, 500)
-  await expect(benchmarkTrigger).toHaveAttribute('aria-expanded', 'false')
-  await expect(benchmarkTrigger).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 })
 
 test('MedSkillAudit page presents framework content and assets', async ({ page }) => {
@@ -105,21 +106,40 @@ test('MedSkillAudit page presents framework content and assets', async ({ page }
   await expect(page.getByText('Veto', { exact: true })).toHaveCount(0)
 })
 
-test('mobile navigation opens MedSkillAudit and closes the menu', async ({ page, isMobile }) => {
+test('mobile navigation links directly to Use Cases and MedSkillAudit and closes the menu', async ({
+  page,
+  isMobile
+}, testInfo) => {
   test.skip(!isMobile, 'mobile menu behavior is covered by the Mobile Chrome project')
 
   await page.goto('/')
+  await page.getByRole('button', { name: 'Reject non-essential', exact: true }).click()
   await page.getByRole('button', { name: 'Open menu' }).click()
   await expect(page.getByRole('dialog', { name: 'Mobile navigation' })).toBeVisible()
 
   const mobileNav = page.getByRole('dialog', { name: 'Mobile navigation' })
-  await mobileNav.getByRole('button', { name: 'Benchmark' }).click()
-  const medSkillAuditLink = mobileNav.getByRole('link', { name: /MedSkillAudit/ })
-  await expect(medSkillAuditLink).toBeVisible()
+  await expect(mobileNav.getByRole('button', { name: 'Product' })).toHaveCount(0)
+  await expect(mobileNav.getByRole('button', { name: 'Benchmark' })).toHaveCount(0)
+  await expect(mobileNav.getByRole('button', { name: 'Use Cases' })).toHaveCount(0)
+  const useCasesLink = mobileNav.getByRole('link', { name: 'Use Cases', exact: true })
+  await expect(useCasesLink).toHaveAttribute('href', '/open-science/use-cases')
+  await useCasesLink.click()
+  await expect(page).toHaveURL(/\/open-science\/use-cases$/)
+  await expect(mobileNav).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Use Case Gallery' })).toBeVisible()
+  await page.getByRole('button', { name: 'Open menu' }).click()
+  await expect(useCasesLink).toHaveAttribute('aria-current', 'page')
+  await page.screenshot({
+    path: testInfo.outputPath('mobile-navigation.png'),
+    animations: 'disabled'
+  })
+  const benchmarkLink = mobileNav.getByRole('link', { name: 'Benchmark', exact: true })
+  await expect(benchmarkLink).toHaveAttribute('href', '/medskillaudit')
   await Promise.all([
     page.waitForURL(/\/medskillaudit$/, { timeout: 30000 }),
-    medSkillAuditLink.click()
+    benchmarkLink.click()
   ])
+  await expect(mobileNav).not.toBeVisible()
   await expect(page.getByRole('button', { name: 'Open menu' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'What is MedSkillAudit?' })).toBeVisible()
 })

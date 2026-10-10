@@ -28,6 +28,12 @@ const steps = [
     title: 'Review',
     description:
       'Open every result in place. Inspect data, documents, images, source, structures, and notebook output before you approve or share it.'
+  },
+  {
+    id: 'share',
+    title: 'Share',
+    description:
+      'Export a session as a portable .science package with its conversation branches, selected files, and recorded evidence — so a collaborator can inspect how the result was produced, not just see the conclusion.'
   }
 ] as const
 
@@ -100,16 +106,33 @@ export const ResearchWorkbench = () => {
           loading="lazy"
           className="absolute left-[-2.73%] top-0 h-full w-[105.47%] max-w-none"
         />
-        {/* biome-ignore lint/performance/noImgElement: Apply the shadow to the visible bitmap bounds, not a wider letterboxed image element. */}
-        <img
-          key={steps[active].id}
-          src={`/figma/landing/workflow-${steps[active].id}.png`}
-          alt={`Open-Science ${steps[active].title.toLowerCase()} workflow preview`}
-          width={4096}
-          height={3072}
-          loading="lazy"
-          className="absolute left-[9.856%] top-[10.79%] h-[166.67%] w-[166.67%] max-w-none rounded-lg object-contain shadow-[0_24px_70px_rgba(0,0,0,.34)]"
-        />
+        {steps[active].id === 'share' ? (
+          <div
+            data-testid="workflow-share-crop"
+            className="absolute left-[8.3333%] top-[10.7906%] h-[109.4017%] w-[94.8718%] overflow-hidden border border-white/52 shadow-[0_12px_28px_rgba(0,0,0,.16)]"
+          >
+            {/* biome-ignore lint/performance/noImgElement: Preserve the export dialog's original Figma crop within the 624 × 468 preview. */}
+            <img
+              src="/figma/landing/workflow-share.png"
+              alt="Open-Science share workflow preview: export a session as a portable .science package"
+              width={1247}
+              height={1261}
+              loading="lazy"
+              className="absolute left-0 top-[-.99%] h-[117.01%] w-full max-w-none"
+            />
+          </div>
+        ) : (
+          /* biome-ignore lint/performance/noImgElement: Apply the shadow to the visible bitmap bounds, not a wider letterboxed image element. */
+          <img
+            key={steps[active].id}
+            src={`/figma/landing/workflow-${steps[active].id}.png`}
+            alt={`Open-Science ${steps[active].title.toLowerCase()} workflow preview`}
+            width={4096}
+            height={3072}
+            loading="lazy"
+            className="absolute left-[9.856%] top-[10.79%] h-[166.67%] w-[166.67%] max-w-none rounded-lg object-contain shadow-[0_24px_70px_rgba(0,0,0,.34)]"
+          />
+        )}
       </figure>
     </div>
   )

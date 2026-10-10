@@ -52,6 +52,9 @@ const downloadManifestFixture = {
 const GITHUB_REPOSITORY_API_GLOB =
   'https://api.github.com/repos/aipoch/open-science?homepage_load=*'
 
+const SKILLS_GITHUB_API_GLOB =
+  'https://api.github.com/repos/aipoch/medical-research-skills?homepage_load=*'
+
 async function mockOpenScienceDownloadManifest(page: Page) {
   // Client-side fetch; Playwright can intercept this CDN request.
   await page.route('**/open-science/app/stable/version.json', async (route) => {
@@ -64,6 +67,13 @@ async function mockOpenScienceDownloadManifest(page: Page) {
 }
 
 const mockGithubStars = async (page: Page) => {
+  await page.route(SKILLS_GITHUB_API_GLOB, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"stargazers_count":1937}'
+    })
+  )
   // Client-side fetch; keep the homepage suite independent from GitHub availability and rate limits.
   await page.route(GITHUB_REPOSITORY_API_GLOB, async (route) => {
     await route.fulfill({
@@ -82,41 +92,157 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
 })
 
-test('refreshes GitHub stars once per page load without polling', async ({ page }) => {
-  // Finish the initial load before counting requests from the reloads below.
-  await expect(page.getByTestId('home-github-stars')).toContainText('3.6K')
-  let githubRequestCount = 0
-  let githubStars = 4210
-  const githubRequestMethods: string[] = []
+test('loads each repository once per page load without sharing counts or polling', async ({
+  page
+}) => {
+  await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
+  await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('1.9K')
+  const counts = [0, 0]
+  const stars = [4210, 2310]
+  for (const [index, glob] of [GITHUB_REPOSITORY_API_GLOB, SKILLS_GITHUB_API_GLOB].entries()) {
+    await page.unroute(glob)
+    await page.route(glob, async (route) => {
+      expect(route.request().method()).toBe('GET')
+      counts[index] += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ stargazers_count: stars[index] })
+      })
+    })
+  }
+  await page.reload()
+  await expect(page.getByTestId('home-github-stars')).toHaveText('4.2K')
+  await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('2.3K')
+  expect(counts).toEqual([1, 1])
+  await page.waitForTimeout(1_000)
+  expect(counts).toEqual([1, 1])
+  stars[0] = 4380
+  stars[1] = 2470
+  await page.reload()
+  await expect(page.getByTestId('home-github-stars')).toHaveText('4.4K')
+  await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('2.5K')
+  expect(counts).toEqual([2, 2])
+})
 
-  await page.unroute(GITHUB_REPOSITORY_API_GLOB)
-  await page.route(GITHUB_REPOSITORY_API_GLOB, async (route) => {
-    githubRequestMethods.push(route.request().method())
-    if (route.request().method() !== 'GET') {
-      await route.fulfill({ status: 204 })
-      return
+test('uses identical GitHub star formatting in both placements', async ({ page }) => {
+  await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
+  let body = '{}'
+  for (const glob of [GITHUB_REPOSITORY_API_GLOB, SKILLS_GITHUB_API_GLOB]) {
+    await page.unroute(glob)
+    await page.route(glob, (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body })
+    )
+  }
+
+  for (const [value, formatted] of [
+    [0, '0'],
+    [987, '987'],
+    [5500, '5.5K'],
+    [1250000, '1.3M']
+  ] as const) {
+    body = JSON.stringify({ stargazers_count: value })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    for (const [prefix, name] of [
+      ['home-github', 'Open-Science'],
+      ['ecosystem-github', 'Medical Research Skills']
+    ]) {
+      await expect(page.getByTestId(`${prefix}-stars`)).toHaveText(formatted)
+      await expect(page.getByTestId(`${prefix}-link`)).toHaveAttribute(
+        'aria-label',
+        `${name} on GitHub, ${formatted} stars`
+      )
     }
-    githubRequestCount += 1
-    await route.fulfill({
+  }
+})
+
+test('isolates Skills GitHub failures from the hero repository', async ({ page }) => {
+  await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
+  await page.unroute(SKILLS_GITHUB_API_GLOB)
+  let status = 200
+  let body = '{}'
+  await page.route(SKILLS_GITHUB_API_GLOB, (route) =>
+    route.fulfill({ status, contentType: 'application/json', body })
+  )
+
+  for (const failedResponse of [
+    { status: 403, body: '{"message":"API rate limit exceeded"}' },
+    { status: 200, body: '{}' },
+    { status: 200, body: '{"stargazers_count":-1}' },
+    { status: 200, body: '{"stargazers_count":"5500"}' },
+    { status: 200, body: 'invalid JSON' }
+  ]) {
+    status = failedResponse.status
+    body = failedResponse.body
+    const response = page.waitForResponse(SKILLS_GITHUB_API_GLOB)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await (await response).finished()
+    await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('1.9K')
+  }
+})
+
+test('isolates hero GitHub failures from the Skills repository', async ({ page }) => {
+  await page.unroute(GITHUB_REPOSITORY_API_GLOB)
+  await page.route(GITHUB_REPOSITORY_API_GLOB, (route) => route.fulfill({ status: 403 }))
+  await page.unroute(SKILLS_GITHUB_API_GLOB)
+  await page.route(SKILLS_GITHUB_API_GLOB, (route) =>
+    route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ stargazers_count: githubStars })
+      body: '{"stargazers_count":9876}'
     })
+  )
+  await page.reload()
+  await expect(page.getByTestId('home-github-stars')).toHaveText('3.5K')
+  await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('9.9K')
+})
+
+test('keeps the ecosystem GitHub stars beside the skills count and accessible at all widths', async ({
+  page
+}, testInfo) => {
+  const reject = page.getByRole('button', { name: 'Reject Non-Essential' })
+  if (await reject.isVisible()) await reject.click()
+  const link = page.getByTestId('ecosystem-github-link')
+  await expect(link).toHaveAttribute('href', 'https://github.com/aipoch/medical-research-skills')
+  await expect(link).toHaveAttribute('target', '_blank')
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  const card = page.locator('#ecosystem article').filter({
+    has: page.getByRole('heading', { name: 'Medical Research Skills', exact: true })
   })
-
-  await page.reload()
-  await expect(page.getByTestId('home-github-stars')).toContainText('4.2K')
-  expect(githubRequestCount).toBe(1)
-  expect(githubRequestMethods).toEqual(['GET'])
-
-  await page.waitForTimeout(1_000)
-  expect(githubRequestCount).toBe(1)
-
-  githubStars = 4380
-  await page.reload()
-  await expect(page.getByTestId('home-github-stars')).toContainText('4.4K')
-  expect(githubRequestCount).toBe(2)
-  expect(githubRequestMethods).toEqual(['GET', 'GET'])
+  await expect(card.getByTestId('ecosystem-github-stars')).toHaveText('1.9K')
+  for (const width of [390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await link.scrollIntoViewIfNeeded()
+    const bounds = await link.evaluate((element) => {
+      const row = element.parentElement
+      const value = row?.querySelector('p')
+      if (!row || !value) throw new Error('Missing ecosystem information row')
+      const box = element.getBoundingClientRect()
+      const parent = row.getBoundingClientRect()
+      const text = value.getBoundingClientRect()
+      return {
+        contained: box.left >= parent.left && box.right <= parent.right,
+        rightAligned: Math.abs(box.right - parent.right) < 1,
+        separate: box.left >= text.right || box.top >= text.bottom,
+        sameRow: Math.abs(box.top - text.top) < 1,
+        overflow: document.documentElement.scrollWidth > window.innerWidth
+      }
+    })
+    expect(bounds.contained).toBe(true)
+    expect(bounds.rightAligned).toBe(true)
+    expect(bounds.separate).toBe(true)
+    expect(bounds.overflow).toBe(false)
+    if (width === 1440) expect(bounds.sameRow).toBe(true)
+    await link.focus()
+    await expect(link).toBeFocused()
+    await link.press('Tab')
+    if (width === 390 || width === 1440) {
+      await page.locator('#ecosystem').screenshot({
+        path: `.codex/homepage-ecosystem-stars/ecosystem-${width}-${testInfo.project.name}.png`
+      })
+    }
+  }
 })
 
 test('uses a direct Windows download with macOS and Linux architecture menus', async ({ page }) => {
@@ -256,7 +382,12 @@ test('renders the Figma sections with existing API data and no superseded module
   await expect(page.getByRole('contentinfo')).toHaveCount(1)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Science, Open to All')
   await expect(page.getByTestId('skills-count')).toHaveText(String(homepageSkillsCountFixture))
-  await expect(page.getByTestId('home-hero-stat-skills')).toContainText('500+')
+  await expect(page.getByTestId('home-hero-stats').locator('strong')).toHaveText([
+    '25',
+    '4',
+    '597',
+    '36'
+  ])
   const spotlight = page.locator('#open-science-spotlight')
   await expect(
     spotlight.getByRole('heading', { name: homepageOpenScienceConfigFixture.latest_release_title })
@@ -287,7 +418,7 @@ test('switches workflow details and matching images with pointer and keyboard', 
 }) => {
   const workbench = page.locator('#open-science')
   const preview = page.getByTestId('workflow-preview').getByRole('img')
-  for (const step of ['Plan', 'Execute', 'Produce', 'Review']) {
+  for (const step of ['Plan', 'Execute', 'Produce', 'Review', 'Share']) {
     const button = workbench.getByRole('button', { name: step, exact: true })
     await button.click()
     await expect(button).toHaveAttribute('aria-expanded', 'true')
@@ -297,13 +428,27 @@ test('switches workflow details and matching images with pointer and keyboard', 
       `/figma/landing/workflow-${step.toLowerCase()}.png`
     )
     await expect(workbench.getByRole('link', { name: 'Learn more' })).toHaveCount(1)
+    await expect(workbench.getByRole('link', { name: 'Learn more' })).toHaveAttribute(
+      'href',
+      '/open-science'
+    )
     await expect
       .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
       .toBe(true)
   }
-  await workbench.getByRole('button', { name: 'Review', exact: true }).press('ArrowUp')
-  await expect(workbench.getByRole('button', { name: 'Produce', exact: true })).toBeFocused()
-  await expect(preview).toHaveAttribute('src', '/figma/landing/workflow-produce.png')
+  await expect(workbench.locator('#workflow-share-detail')).toContainText(
+    'Export a session as a portable .science package'
+  )
+  await workbench.getByRole('button', { name: 'Share', exact: true }).press('ArrowUp')
+  await expect(workbench.getByRole('button', { name: 'Review', exact: true })).toBeFocused()
+  await expect(preview).toHaveAttribute('src', '/figma/landing/workflow-review.png')
+  await page.keyboard.press('End')
+  await expect(workbench.getByRole('button', { name: 'Share', exact: true })).toBeFocused()
+  await expect(preview).toHaveAttribute('src', '/figma/landing/workflow-share.png')
+  await page.keyboard.press('ArrowDown')
+  await expect(workbench.getByRole('button', { name: 'Plan', exact: true })).toBeFocused()
+  await page.keyboard.press('ArrowUp')
+  await expect(workbench.getByRole('button', { name: 'Share', exact: true })).toBeFocused()
   await page.keyboard.press('Home')
   await expect(workbench.getByRole('button', { name: 'Plan', exact: true })).toHaveAttribute(
     'aria-expanded',

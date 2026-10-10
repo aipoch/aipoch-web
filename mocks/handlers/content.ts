@@ -1,6 +1,14 @@
 import { HttpResponse, http } from 'msw'
 import { homepageOpenScienceConfigFixture } from '../../tests/e2e/homepage-e2e-fixtures'
-import { blogs, commentFor, fixtureDate, mockManifest, posts, skills } from '../fixtures'
+import {
+  blogs,
+  commentFor,
+  fixtureDate,
+  githubRepositories,
+  mockManifest,
+  posts,
+  skills
+} from '../fixtures'
 import { json, matches, missing, paginate, query, withRequest } from './shared'
 
 export const contentHandlers = (origin: string) => [
@@ -84,8 +92,8 @@ export const contentHandlers = (origin: string) => [
   http.get('https://statics.aipoch.com/open-science/app/stable/version.json', () =>
     HttpResponse.json(mockManifest(origin))
   ),
-  http.get('https://api.github.com/repos/aipoch/open-science', () =>
-    HttpResponse.json({ stargazers_count: 1234 })
+  ...Object.entries(githubRepositories).map(([repository, data]) =>
+    http.get(`https://api.github.com/repos/aipoch/${repository}`, () => HttpResponse.json(data))
   ),
   http.get(`${origin}/sitemap`, () =>
     HttpResponse.xml('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>')

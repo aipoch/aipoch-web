@@ -69,12 +69,11 @@ export function OpenScienceCapabilities() {
     <section className={`${openScienceContainer} py-16 lg:py-20`}>
       <OpenScienceSectionHeading
         eyebrow="How it works"
-        title="Research agents that can work inside the research environment"
+        title="Run, inspect, and share research with .science"
       >
-        Open-Science connects agent reasoning with executable tools, scientific resources,
-        <br className="hidden lg:block" /> persistent project context, and traceable outputs. The
-        following capabilities
-        <br className="hidden lg:block" /> work together inside the same research workspace.
+        AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources,
+        persistent context, and traceable outputs. .science packages make selected research records
+        portable for review, handoff, and continuation.
       </OpenScienceSectionHeading>
       <div className="space-y-16 lg:space-y-24">
         <Capability

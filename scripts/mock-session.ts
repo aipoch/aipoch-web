@@ -5,13 +5,13 @@ import { buildMockEnvironment, parseMockOptions } from './mock-options'
 
 // One foreground launcher owns the shared mock state and the complete Next process group.
 const main = async () => {
-  const { port, mockPort } = parseMockOptions(process.argv.slice(2))
+  const { hostname, port, mockPort } = parseMockOptions(process.argv.slice(2))
   const server = await startStateAdapter(mockPort)
   const origin = server.origin
   const root = fileURLToPath(new URL('../', import.meta.url))
   const child = spawn(
     process.execPath,
-    ['--bun', 'next', 'dev', '--hostname', '127.0.0.1', '--port', String(port)],
+    ['--bun', 'next', 'dev', '--hostname', hostname, '--port', String(port)],
     {
       cwd: root,
       stdio: 'inherit',
@@ -41,7 +41,7 @@ const main = async () => {
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
   process.stdout.write(
-    `MSW state adapter: ${origin}/api\nMock Web: http://127.0.0.1:${port}\nSample data is held in memory; Ctrl+C stops both services.\n`
+    `MSW state adapter: ${origin}/api\nMock Web: http://${hostname}:${port}\nSample data is held in memory; Ctrl+C stops both services.\n`
   )
   try {
     const exitCode = await new Promise<number>((resolve, reject) => {

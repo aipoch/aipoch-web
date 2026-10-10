@@ -109,8 +109,12 @@ describe('Figma homepage with existing live data contracts', () => {
       expect(hero).toContain(`aria-label="Download ${platform}"`)
     expect(hero).toContain('Apple Silicon / Intel')
     expect(hero).toContain('https://github.com/aipoch/open-science?tab=Apache-2.0-1-ov-file')
-    expect(hero).toContain('>500+</strong>')
-    expect(hero).toContain('>24</strong>')
+    expect([...hero.matchAll(/<strong[^>]*>([^<]+)<\/strong>/g)].map((match) => match[1])).toEqual([
+      '25',
+      '4',
+      '597',
+      '36'
+    ])
   })
 
   test('uses API counts, release details, articles, media and overview content', () => {
@@ -184,8 +188,10 @@ describe('Figma homepage with existing live data contracts', () => {
 
   test('includes all workflow descriptions and meaningful static image alternatives', () => {
     const html = render()
-    for (const step of ['plan', 'execute', 'produce', 'review'])
+    for (const step of ['plan', 'execute', 'produce', 'review', 'share'])
       expect(html).toContain(`aria-controls="workflow-${step}-detail"`)
+    expect(html).toContain('Export a session as a portable .science package')
+    expect(html).toContain('conversation branches, selected files, and recorded evidence')
     expect(html).toContain('Open-Science plan workflow preview')
     expect(html).toContain('Search, assess, and synthesize research evidence.')
     expect(html).toContain(
@@ -205,5 +211,24 @@ describe('Figma homepage with existing live data contracts', () => {
       [1250000, '1.3M']
     ] as const)
       expect(formatCompactGithubCount(value)).toBe(expected)
+  })
+
+  test('server-renders independent GitHub counts for the hero and skills repositories', () => {
+    for (const [githubStars, formatted] of [
+      [0, '0'],
+      [987, '987'],
+      [5500, '5.5K'],
+      [1250000, '1.3M']
+    ] as const) {
+      const html = renderToStaticMarkup(<HomePage githubStars={githubStars} skillsCount={612} />)
+      expect(html.split(`aria-label="Open-Science on GitHub, ${formatted} stars"`)).toHaveLength(2)
+      const ecosystem = html.split('id="ecosystem"')[1]?.split('</section>')[0] ?? ''
+      const skillsCard =
+        ecosystem.split('<article').find((card) => card.includes('href="/agent-skills/list"')) ?? ''
+      expect(skillsCard).toContain('612 skills')
+      expect(skillsCard).toContain('data-testid="ecosystem-github-stars"')
+      expect(skillsCard).toContain('href="https://github.com/aipoch/medical-research-skills"')
+      expect(skillsCard).toContain('aria-label="Medical Research Skills on GitHub, 1.9K stars"')
+    }
   })
 })

@@ -139,6 +139,24 @@ locked MSW package. After upgrading MSW, regenerate it using:
 bunx msw init public --no-save
 ```
 
+## Use-case replay assets
+
+The catalog at `/open-science/usecases/manifest.json` defines each case. Replay
+loads from `<manifest directory>/<case name>/extracted/`.
+
+- **Publish:** Preserve `session.json` and restore archive objects to their inventory
+  `storageKey` paths. Enable CORS for JSON and assets.
+- **Load:** Fetch `session.json` and optional `notebooks/<projectId>/<sessionId>/run.json`.
+  Extracted `manifest.json` and `records.json` are not required.
+- **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
+  Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
+  original filenames. SVG remains image-only.
+- **Fallback:** An initial session 403/404 loads the size- and SHA-256-verified
+  `.science` archive. Other errors remain retryable. Extracted metadata has size
+  limits and schema checks; asset integrity relies on the CDN.
+- **Verify:** `bun run test:mock` covers restored directories, previews, downloads,
+  retries and archive fallback on desktop and mobile.
+
 ## Docker Compose
 
 ```sh

@@ -67,6 +67,60 @@ test('fits all four screenshots inside the exact Figma preview geometry', async 
   }
 })
 
+test('matches the Share export preview crop without overflowing the page', async ({
+  page
+}, testInfo) => {
+  const workbench = page.locator('#open-science')
+  const preview = page.getByTestId('workflow-preview')
+  await workbench.getByRole('button', { name: 'Share', exact: true }).click()
+  const image = preview.getByRole('img')
+  await preview.scrollIntoViewIfNeeded()
+  await expect
+    .poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+    .toBe(true)
+
+  for (const width of [390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    const geometry = await preview.evaluate((element) => {
+      const crop = element.querySelector('[data-testid="workflow-share-crop"]')
+      const img = crop?.querySelector('img')
+      if (!crop || !img) throw new Error('Missing Share preview')
+      const frame = element.getBoundingClientRect()
+      const box = crop.getBoundingClientRect()
+      const bitmap = img.getBoundingClientRect()
+      return {
+        aspect: frame.width / frame.height,
+        left: (box.left - frame.left) / frame.width,
+        top: (box.top - frame.top) / frame.height,
+        width: box.width / frame.width,
+        height: box.height / frame.height,
+        bitmapAspect: bitmap.width / bitmap.height,
+        sourceAspect: img.naturalWidth / img.naturalHeight,
+        imageTop: (bitmap.top - box.top - crop.clientTop) / crop.clientHeight,
+        overflow: getComputedStyle(crop).overflow,
+        pageOverflow: document.documentElement.scrollWidth > window.innerWidth
+      }
+    })
+    expect(geometry.aspect).toBeCloseTo(4 / 3, 3)
+    expect(geometry.left).toBeCloseTo(52 / 624, 3)
+    expect(geometry.top).toBeCloseTo(50.5 / 468, 3)
+    expect(geometry.width).toBeCloseTo(592 / 624, 3)
+    expect(geometry.height).toBeCloseTo(512 / 468, 3)
+    expect(geometry.bitmapAspect).toBeCloseTo(geometry.sourceAspect, 2)
+    expect(geometry.imageTop).toBeCloseTo(-0.0099, 3)
+    expect(geometry.overflow).toBe('hidden')
+    expect(geometry.pageOverflow).toBe(false)
+    if (width === 390 || width === 1440) {
+      await workbench.screenshot({
+        path: `.codex/homepage-share/share-${width}-${testInfo.project.name}.png`
+      })
+      await preview.screenshot({
+        path: `.codex/homepage-share/share-preview-${width}-${testInfo.project.name}.png`
+      })
+    }
+  }
+})
+
 test('aligns the ecosystem columns and keeps homepage sections evenly spaced', async ({
   page
 }, testInfo) => {

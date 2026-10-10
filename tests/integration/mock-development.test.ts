@@ -3,6 +3,14 @@ import { mkdirSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { expect as browserExpect, chromium, devices } from '@playwright/test'
+import manifestSample from '../../mocks/fixtures/use-case-manifest.json'
+import {
+  verifyPreviewSwitching,
+  verifyReplayCoverage,
+  verifyReplayDownload,
+  verifyReplayLoading,
+  verifySlowPdfPreview
+} from './use-case-replay-browser'
 
 const reviewArtifacts = join(process.cwd(), '.codex/ui-review-2026-09-21')
 
@@ -17,6 +25,17 @@ const availablePort = async (): Promise<number> => {
   )
   return address.port
 }
+// Next development embeds server console logs in scripts; inspect rendered markup separately.
+const renderedHtml = async (response: Response) =>
+  new HTMLRewriter()
+    .on('script', {
+      element: (element) => {
+        element.remove()
+      }
+    })
+    .transform(response)
+    .text()
+
 let launcher: ReturnType<typeof Bun.spawn>
 let web: string
 let api: string
@@ -62,6 +81,347 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('server-renders both GitHub counts and loads independent browser-intercepted results', async () => {
+    const html = await renderedHtml(await fetch(web))
+    expect(html.match(/aria-label="Open-Science on GitHub, 3\.5K stars"/g)).toHaveLength(1)
+    expect(html).toContain('aria-label="Medical Research Skills on GitHub, 1.9K stars"')
+    expect(html).toContain('data-testid="ecosystem-github-stars"')
+
+    const browser = await chromium.launch()
+    try {
+      for (const device of ['desktop', 'mobile']) {
+        const context = await browser.newContext(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 900 } }
+        )
+        const page = await context.newPage()
+        const errors: string[] = []
+        page.on('pageerror', (error) => errors.push(error.message))
+        const githubResponses: Record<string, boolean[]> = {
+          'open-science': [],
+          'medical-research-skills': []
+        }
+        page.on('response', (response) => {
+          for (const repository of Object.keys(githubResponses)) {
+            if (response.url().startsWith(`https://api.github.com/repos/aipoch/${repository}?`)) {
+              githubResponses[repository].push(response.fromServiceWorker())
+            }
+          }
+        })
+        await page.goto(web)
+        await browserExpect(page.getByTestId('home-github-stars')).toHaveText('1.2K')
+        await browserExpect(page.getByTestId('ecosystem-github-stars')).toHaveText('9.9K')
+        expect(githubResponses).toEqual({
+          'open-science': [true],
+          'medical-research-skills': [true]
+        })
+        await page.reload()
+        await browserExpect(page.getByTestId('home-github-stars')).toHaveText('1.2K')
+        await browserExpect(page.getByTestId('ecosystem-github-stars')).toHaveText('9.9K')
+        expect(githubResponses).toEqual({
+          'open-science': [true, true],
+          'medical-research-skills': [true, true]
+        })
+        expect(errors).toEqual([])
+        await context.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
+  test('serves cached manifest data before conditional refresh and retains it through failures', async () => {
+    const pageUrl = `${web}/open-science/use-cases`
+    const controlUrl = `${api}/__mock/use-case-manifest`
+    const stats = async () => (await fetch(controlUrl)).json()
+    const update = async (value: object) => {
+      expect((await fetch(controlUrl, { method: 'PUT', body: JSON.stringify(value) })).status).toBe(
+        200
+      )
+    }
+    const eventually = async (check: () => Promise<boolean>) => {
+      for (let i = 0; i < 60; i++) {
+        if (await check()) return
+        await Bun.sleep(100)
+      }
+      throw new Error('Manifest background refresh did not complete')
+    }
+    const first = await fetch(pageUrl)
+    expect(first.status).toBe(200)
+    const html = await renderedHtml(first)
+    expect(html).toContain(manifestSample[0].title)
+    expect(html).toContain('Can%20a%20Simple%20Algorithm')
+    expect(html).not.toContain(manifestSample[0].cover.sha256)
+    expect(html).not.toContain(manifestSample[6].title)
+    expect(html).toContain('/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple')
+    await (await fetch(pageUrl)).text()
+    await eventually(async () => (await stats()).notModified > 0)
+    expect((await stats()).lastValidator).toMatch(/^"use-case-manifest-/)
+
+    // The response uses its old snapshot even when S3 needs time to return a new body.
+    await update({ titleSuffix: ' Updated', delayMs: 1000 })
+    const stale = await renderedHtml(await fetch(pageUrl))
+    expect(stale).not.toContain(`${manifestSample[0].title} Updated`)
+    await eventually(async () =>
+      (await renderedHtml(await fetch(pageUrl))).includes(`${manifestSample[0].title} Updated`)
+    )
+
+    await update({ mode: 'error' })
+    const beforeFailure = (await stats()).requests
+    await (await fetch(pageUrl)).text()
+    await eventually(async () => (await stats()).requests > beforeFailure)
+    expect(await renderedHtml(await fetch(pageUrl))).toContain(`${manifestSample[0].title} Updated`)
+
+    await update({ mode: 'empty' })
+    await eventually(async () =>
+      (await renderedHtml(await fetch(pageUrl))).includes('No published use cases yet.')
+    )
+    await update({})
+    await eventually(async () =>
+      (await renderedHtml(await fetch(pageUrl))).includes(manifestSample[0].title)
+    )
+  }, 120000)
+
+  test('manifest covers, pagination and introductions work without client JavaScript', async () => {
+    const browser = await chromium.launch()
+    try {
+      const context = await browser.newContext({ javaScriptEnabled: false })
+      const page = await context.newPage()
+      await page.goto(`${web}/open-science/use-cases`)
+      await page.getByRole('heading', { name: manifestSample[0].title, exact: true }).waitFor()
+      expect(await page.locator('main img').count()).toBe(6)
+      expect(
+        await page
+          .locator('main img')
+          .first()
+          .evaluate((image) => (image as HTMLImageElement).naturalWidth)
+      ).toBeGreaterThan(0)
+      await page.getByRole('link', { name: 'Next', exact: true }).click()
+      expect(await page.locator('main img').count()).toBe(3)
+      await page.goto(`${web}/open-science/use-cases/${manifestSample[0].name}`)
+      await page.getByText('Local sample introduction.', { exact: true }).waitFor()
+      // Shared typography must apply during SSR, even without client JavaScript.
+      const introduction = page.locator('main .markdown-body')
+      expect(await introduction.count()).toBe(1)
+      const [headingSize, paragraphSize] = await Promise.all(
+        ['h1', 'p'].map((selector) =>
+          introduction
+            .locator(selector)
+            .first()
+            .evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
+        )
+      )
+      expect(headingSize).toBeGreaterThan(paragraphSize)
+      expect(await page.locator('meta[name="description"]').getAttribute('content')).toContain(
+        'Read-only replay of the Open-Science session'
+      )
+      const download = page.getByRole('link', { name: 'Download research package' })
+      expect(await download.count()).toBe(2)
+      const downloadUrl = await download.first().getAttribute('href')
+      expect(await download.last().getAttribute('href')).toBe(downloadUrl)
+      expect(downloadUrl).toBe(
+        `${api}/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.science`
+      )
+      if (!downloadUrl) throw new Error('Missing research package URL')
+      expect((await fetch(downloadUrl)).status).toBe(200)
+      expect(
+        await page
+          .getByRole('link', { name: 'View the research session' })
+          .last()
+          .getAttribute('href')
+      ).toBe(`/open-science/use-cases/${manifestSample[0].name}/replay`)
+      expect(await page.locator('main').innerText()).not.toContain('1970')
+      // Shared "AI" keywords promote the later data-center case before the first fallback.
+      const related = page.locator('main section').filter({
+        has: page.getByRole('heading', { name: 'Related research', exact: true })
+      })
+      expect(await related.locator('h3').allTextContents()).toEqual([
+        'Can AI Spot the Errors in a Spreadsheet',
+        'How Many Homes Could AI Data Centers Power',
+        'Can GLP-1 Drugs Really Help Us Live Longer'
+      ])
+      expect(
+        await related
+          .locator('a[href*="/use-cases/"]')
+          .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+      ).toEqual([
+        '/open-science/use-cases/can-ai-spot-the-errors-in-a-spreadsheet',
+        '/open-science/use-cases/how-many-homes-could-ai-data-centers-power',
+        '/open-science/use-cases/can-glp-1-drugs-really-help-us-live-longer'
+      ])
+      await page.goto(`${web}/open-science/use-cases/${manifestSample[3].name}`)
+      expect(
+        await page.getByRole('heading', { name: manifestSample[3].title, exact: true }).count()
+      ).toBe(1)
+      expect(await page.getByRole('link', { name: 'Download research package' }).count()).toBe(2)
+      const sitemap = (await (await fetch(`${web}/sitemap.xml`)).text()).replace(/>\s+</g, '><')
+      for (const item of manifestSample) {
+        expect(sitemap).toContain(
+          `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-09T00:00:00.000Z</lastmod>`
+        )
+        expect(sitemap).toContain(
+          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-10T00:00:00.000Z</lastmod>`
+        )
+        const detailHtml = await (await fetch(`${web}/open-science/use-cases/${item.name}`)).text()
+        expect(detailHtml).toContain(`href="/open-science/use-cases/${item.name}/replay"`)
+        expect(detailHtml).toContain('View the research session')
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 120000)
+
+  test('replay loads extracted metadata without the archive and retries failures', async () => {
+    const browser = await chromium.launch()
+    try {
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      const item = manifestSample[1]
+      // The replay page supplies package metadata without a separate endpoint.
+      expect(
+        (await fetch(`${web}/open-science/use-cases/no-such-case/replay/dot-science`)).status
+      ).toBe(404)
+      const requests: string[] = []
+      context.on('request', (request) => {
+        if (!request.serviceWorker()) requests.push(request.url())
+      })
+      await page.addInitScript(() => {
+        const observed: string[] = []
+        Object.assign(window, { replayStates: observed })
+        new MutationObserver(() => {
+          const text = document.querySelector('[role="status"]')?.textContent
+          if (text && observed.at(-1) !== text) observed.push(text)
+        }).observe(document, { subtree: true, childList: true, characterData: true })
+      })
+      await page.goto(`${web}/open-science/use-cases/${item.name}`)
+      const manifest = await (await fetch(`${api}/use-case-manifest/manifest.json`)).json()
+      const resource = manifest.find((entry: { name: string }) => entry.name === item.name).case
+      const info = {
+        url: `${api}/use-case-manifest/${item.name}/${encodeURIComponent(resource.file_name)}`,
+        filename: resource.file_name,
+        sha256: resource.sha256,
+        sizeBytes: resource.bytes
+      }
+      const replayHtml = await (
+        await fetch(`${web}/open-science/use-cases/${item.name}/replay`)
+      ).text()
+      expect(replayHtml).toContain(info.sha256)
+      expect(replayHtml).toContain(encodeURIComponent(info.filename))
+      expect(replayHtml).not.toContain(`Local sample replay for ${item.title}.`)
+      await page
+        .getByRole('link', { name: 'View the research session', exact: true })
+        .first()
+        .click()
+      expect(info.filename).toBe(item.case.file_name)
+      expect(info.sha256).toMatch(/^[a-f0-9]{64}$/)
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      expect(await page.title()).toBe(`Replay: ${item.title} | Open-Science Use Cases`)
+      const packageRequests = () => requests.filter((url) => url === info.url).length
+      expect(packageRequests()).toBe(0)
+      expect(requests).toContain(`${api}/use-case-manifest/${item.name}/extracted/session.json`)
+      expect(
+        await page.getByRole('button', { name: /View full version|Back to essential/ }).count()
+      ).toBe(0)
+      expect(await page.getByText('Full only', { exact: true }).count()).toBe(0)
+      expect(requests.some((url) => url.includes('/api/v1/open-science/use-cases'))).toBe(false)
+      expect(requests.some((url) => url.includes('/replay/dot-science'))).toBe(false)
+      const states = await page.evaluate(
+        () => (window as typeof window & { replayStates: string[] }).replayStates
+      )
+      expect(states).toContain('Parsing research session…')
+      expect(requests.some((url) => /\/extracted\/(manifest|records)\.json$/.test(url))).toBe(false)
+      // Retry after the extracted session fails schema validation.
+      const sessionUrl = `${api}/use-case-manifest/${item.name}/extracted/session.json`
+      await context.route(sessionUrl, (route) =>
+        route.fulfill({
+          body: JSON.stringify({ version: 2, session: { messages: [] } }),
+          contentType: 'application/octet-stream'
+        })
+      )
+      await page.reload()
+      await page.getByRole('alert').filter({ hasText: 'invalid session.json' }).waitFor()
+      await context.unroute(sessionUrl)
+      await page.getByRole('button', { name: 'Retry', exact: true }).click()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      // Older publications still use the verified archive, including its error and retry path.
+      await context.route(sessionUrl, (route) => route.fulfill({ status: 404, body: '' }))
+      await page.reload()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      expect(packageRequests()).toBe(1)
+      await context.route(info.url, (route) =>
+        route.fulfill({ body: Buffer.alloc(info.sizeBytes) })
+      )
+      await page.reload()
+      await page.getByRole('alert').filter({ hasText: 'SHA-256 verification failed' }).waitFor()
+      await context.unroute(info.url)
+      await page.getByRole('button', { name: 'Retry', exact: true }).click()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      await context.unroute(sessionUrl)
+      await page.goto(`${web}/open-science/use-cases/no-such-case/replay`)
+      await page.getByRole('alert').filter({ hasText: 'Research package not found.' }).waitFor()
+      expect(await page.getByRole('link', { name: 'Download research package' }).count()).toBe(0)
+      expect(await page.getByRole('button', { name: 'Retry', exact: true }).count()).toBe(1)
+    } finally {
+      await browser.close()
+    }
+  }, 120000)
+
+  test('retry refreshes server package information when the cached case becomes available', async () => {
+    const controlUrl = `${api}/__mock/use-case-manifest`
+    const update = (mode: string) =>
+      fetch(controlUrl, { method: 'PUT', body: JSON.stringify({ mode }) })
+    const waitForCatalog = async (text: string) => {
+      for (let attempt = 0; attempt < 60; attempt++) {
+        if ((await renderedHtml(await fetch(`${web}/open-science/use-cases`))).includes(text))
+          return
+        await Bun.sleep(100)
+      }
+      throw new Error('Manifest refresh did not finish')
+    }
+    const browser = await chromium.launch()
+    try {
+      await update('empty')
+      await waitForCatalog('No published use cases yet.')
+      const page = await browser.newPage()
+      const item = manifestSample[1]
+      const requests: string[] = []
+      page.on('request', (request) => requests.push(request.url()))
+      await page.goto(`${web}/open-science/use-cases/${item.name}/replay`)
+      await page.getByRole('alert').filter({ hasText: 'Research package not found.' }).waitFor()
+      await update('normal')
+      await waitForCatalog(manifestSample[0].title)
+      await page.getByRole('button', { name: 'Retry', exact: true }).click()
+      await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
+      expect(requests.some((url) => url.includes('/replay/dot-science'))).toBe(false)
+    } finally {
+      await update('normal')
+      await browser.close()
+    }
+  }, 120000)
+
+  for (const mobile of [false, true]) {
+    for (const [name, verify] of [
+      ['renderer coverage', verifyReplayCoverage],
+      ['preview switching', verifyPreviewSwitching],
+      ['slow PDF preview', verifySlowPdfPreview],
+      ['package download', verifyReplayDownload],
+      ['loading and retry', verifyReplayLoading]
+    ] as const) {
+      test(`${mobile ? 'mobile' : 'desktop'}: replay ${name} uses server-provided package information`, async () => {
+        // The full Chromium headless mode supports PDF tabs; headless-shell does not.
+        const browser = await chromium.launch(
+          name === 'slow PDF preview' ? { channel: 'chromium' } : {}
+        )
+        try {
+          const context = await browser.newContext(mobile ? devices['Pixel 5'] : {})
+          const page = await context.newPage()
+          await verify(page, `${web}/open-science/use-cases/${manifestSample[0].name}/replay`)
+        } finally {
+          await browser.close()
+        }
+      }, 120000)
+    }
+  }
+
   test('renders server data, linked details and sitemap without a business backend', async () => {
     // The state adapter intentionally cannot serve read-only business fixtures.
     expect((await fetch(`${api}/api/v1/skills`)).status).toBe(404)
@@ -84,7 +444,7 @@ describe('mock development end to end', () => {
           ...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/g)
         ].flatMap((match) => JSON.parse(match[1]))
         expect(schemas.find((schema) => schema['@type'] === 'WebPage')).toMatchObject({
-          dateModified: '2026-10-08'
+          dateModified: '2026-10-09'
         })
         expect(schemas.find((schema) => schema['@type'] === 'SoftwareApplication')).toMatchObject({
           dateModified: '2026-09-01T00:00:00.000Z',
@@ -96,23 +456,51 @@ describe('mock development end to end', () => {
     const sitemap = await (await fetch(`${web}/sitemap.xml`)).text()
     expect(sitemap).toContain('/agent-skills/literature-review</loc>')
     for (const [path, date] of [
-      ['', '2026-10-08'],
-      ['/agent-skills/list', '2026-10-08'],
-      ['/agent-skills/literature-review', '2026-10-08'],
-      ['/blog', '2026-10-08'],
-      ['/blog/release-notes', '2026-10-08']
+      ['', '2026-10-09'],
+      ['/agent-skills/list', '2026-10-09'],
+      ['/agent-skills/literature-review', '2026-10-09'],
+      ['/blog', '2026-10-09'],
+      ['/blog/release-notes', '2026-10-09']
     ]) {
       expect(sitemap).toContain(
         `<loc>https://aipoch.com${path}</loc>\n<lastmod>${date}T00:00:00.000Z</lastmod>`
       )
     }
     expect(sitemap).toContain(
-      '<loc>https://aipoch.com/open-science/download</loc>\n<lastmod>2026-10-08T00:00:00.000Z</lastmod>'
+      '<loc>https://aipoch.com/open-science/download</loc>\n<lastmod>2026-10-09T00:00:00.000Z</lastmod>'
     )
     expect(sitemap).not.toContain('/leaderboard')
     expect(sitemap).not.toContain('/claim/')
     expect(sitemap).not.toContain('/open-science/overview</loc>')
   }, 120000)
+
+  test('mobile navigation renders manifest cards without downloading the manifest in the browser', async () => {
+    const browser = await chromium.launch()
+    try {
+      const context = await browser.newContext(devices['Pixel 5'])
+      const page = await context.newPage()
+      const requests: string[] = []
+      page.on('request', (request) => requests.push(request.url()))
+      await page.goto(`${web}/open-science/use-cases`)
+      await page.getByRole('heading', { name: manifestSample[0].title, exact: true }).waitFor()
+      await page.getByRole('link', { name: 'Next', exact: true }).click()
+      await page.waitForURL('**/open-science/use-cases?page=2')
+      await page.getByRole('heading', { name: manifestSample[6].title, exact: true }).waitFor()
+      expect(await page.locator('main img').count()).toBe(3)
+      expect(
+        await page.getByRole('heading', { name: manifestSample[0].title, exact: true }).count()
+      ).toBe(0)
+      await page.goBack()
+      await page.getByRole('heading', { name: manifestSample[0].title, exact: true }).waitFor()
+      expect(await page.locator('main img').count()).toBe(6)
+      await page.goForward()
+      await page.getByRole('heading', { name: manifestSample[6].title, exact: true }).waitFor()
+      expect(await page.locator('main img').count()).toBe(3)
+      expect(requests.some((url) => url.includes('/use-case-manifest/manifest.json'))).toBe(false)
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
 
   test('blog layout keeps the reading time with the heading and the desktop contents pinned', async () => {
     const browser = await chromium.launch()
@@ -574,7 +962,7 @@ describe('mock development end to end', () => {
         const schemas = await page.locator('script[type="application/ld+json"]').allTextContents()
         const parsed = schemas.map((schema) => JSON.parse(schema))
         expect(parsed.find((schema) => schema['@type'] === 'WebPage').dateModified).toBe(
-          '2026-10-08'
+          '2026-10-09'
         )
         expect(
           parsed.find((schema) => schema['@type'] === 'SoftwareApplication').dateModified

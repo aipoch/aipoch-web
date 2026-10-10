@@ -2,6 +2,8 @@ export const DEFAULT_SKILL_LIBRARY_COUNT = 597
 
 /** Fallback GitHub star count for the homepage when the API request fails. */
 export const DEFAULT_GITHUB_STAR_COUNT = 3500
+// Last verified repository count on October 10, 2026; live data replaces this fallback.
+export const DEFAULT_MEDICAL_RESEARCH_SKILLS_STAR_COUNT = 1937
 
 const compactGithubCountFormatter = new Intl.NumberFormat('en', {
   notation: 'compact',
@@ -15,10 +17,10 @@ export const formatCompactGithubCount = (value: number): string => {
 }
 
 export const homeHeroStats = [
-  { value: '24', label: 'OFFICIAL MODEL APIs', detail: '+ CUSTOM GATEWAY' },
+  { value: '25', label: 'OFFICIAL MODEL APIs', detail: '+ CUSTOM GATEWAY' },
   { value: '4', label: 'AGENT FRAMEWORKS' },
-  { value: '500+', label: 'SKILLS', testId: 'home-hero-stat-skills' },
-  { value: '24', label: 'SCIENCE CONNECTORS' }
+  { value: '597', label: 'SKILLS', testId: 'home-hero-stat-skills' },
+  { value: '36', label: 'SCIENCE CONNECTORS' }
 ] as const
 
 export const resolveSkillLibraryCount = (value?: number | null): number =>

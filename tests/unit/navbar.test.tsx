@@ -35,29 +35,34 @@ describe('navbar', () => {
     expect(currentLink?.[0]).not.toMatch(/\sbg-\[#f3f3f3\]/)
   })
 
-  test('renders grouped desktop mega navigation entries', () => {
-    mockPathname = '/agent-skills'
-
+  test('replaces Product with Use Cases and makes Benchmark a direct link', () => {
+    mockPathname = '/'
     const html = renderToStaticMarkup(<Navbar />)
 
-    expect(html).toContain('Product')
-    expect(html).not.toContain('Open-source AI research workbench')
-    expect(html).toContain('Agent Skills')
+    expect(navItems.map((item) => item.label)).toEqual([
+      'Open-Science',
+      'Use Cases',
+      'Agent Skills',
+      'Benchmark',
+      'Blog'
+    ])
+    expect(html).toContain('href="/open-science/use-cases"')
+    expect(html).toContain('href="/medskillaudit"')
+    expect(html).not.toContain('Product')
+    expect(html).not.toContain('Workflow benchmark suite')
+    expect(html).not.toContain('Clinical research workflows')
+    expect(html).not.toContain('desktop-nav-trigger-benchmark')
+    expect(html).not.toContain('desktop-nav-trigger-product')
+    expect(html).not.toContain('mobile-nav-benchmark')
+    expect(html).not.toContain('mobile-nav-product')
     expect(html).toContain('Browse every medical skill')
-    expect(html).toContain('Benchmark')
-    expect(html).toContain('Workflow benchmark suite')
   })
 
   test('renders Open-Science as the first standalone navigation item', () => {
     mockPathname = '/open-science'
-
     const html = renderToStaticMarkup(<Navbar />)
-    const productGroup = navItems.find((item) => item.type === 'group' && item.id === 'product')
 
     expect(navItems[0]).toEqual({ type: 'link', label: 'Open-Science', href: '/open-science' })
-    expect(productGroup?.type).toBe('group')
-    if (productGroup?.type !== 'group') throw new Error('Product nav group missing')
-    expect(productGroup.children.some((child) => child.label === 'Open-Science')).toBe(false)
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/open-science"/)
   })
 
@@ -77,18 +82,18 @@ describe('navbar', () => {
     mockPathname = '/'
 
     const html = renderToStaticMarkup(<Navbar />)
-    const productTrigger = html.match(
-      /<button[^>]*data-testid="desktop-nav-trigger-product"[^>]*>[\s\S]*?<\/button>/
+    const skillsTrigger = html.match(
+      /<button[^>]*data-testid="desktop-nav-trigger-agent-skills"[^>]*>[\s\S]*?<\/button>/
     )?.[0]
     const openScienceLink = html.match(/<a[^>]*href="\/open-science"[^>]*>Open-Science<\/a>/)?.[0]
     const primaryAction = html.match(
       /<a[^>]*href="\/open-science\/download"[^>]*>Download<\/a>/
     )?.[0]
 
-    expect(productTrigger).toBeDefined()
-    expect(productTrigger).not.toContain('<svg')
+    expect(skillsTrigger).toBeDefined()
+    expect(skillsTrigger).not.toContain('<svg')
     expect(html).toMatch(
-      /<button[^>]*aria-controls="mobile-nav-product"[^>]*>[\s\S]*?<svg[\s\S]*?<\/button>/
+      /<button[^>]*aria-controls="mobile-nav-agent-skills"[^>]*>[\s\S]*?<svg[\s\S]*?<\/button>/
     )
     expect(html).toContain('data-desktop-nav-panel=""')
     expect(html).toMatch(
@@ -112,18 +117,18 @@ describe('navbar', () => {
     const plainLinks = [...html.matchAll(/<a[^>]*data-nav-plain-link=""[^>]*>/g)].map(
       ([link]) => link
     )
-    const productTrigger = html.match(
-      /<button[^>]*data-testid="desktop-nav-trigger-product"[^>]*>/
+    const skillsTrigger = html.match(
+      /<button[^>]*data-testid="desktop-nav-trigger-agent-skills"[^>]*>/
     )?.[0]
     const primaryAction = html.match(
       /<a[^>]*href="\/open-science\/download"[^>]*>Download<\/a>/
     )?.[0]
 
-    expect(plainLinks).toHaveLength(3)
+    expect(plainLinks).toHaveLength(5)
     expect(plainLinks.every((link) => !link.includes('bg-'))).toBe(true)
     expect(plainLinks.every((link) => !link.includes('hover:bg-'))).toBe(true)
     expect(navbarSource).not.toContain("[&_a[aria-current='page']]")
-    expect(productTrigger).toContain('hover:bg-')
+    expect(skillsTrigger).toContain('hover:bg-')
     expect(primaryAction).toContain('bg-black')
   })
 
@@ -137,51 +142,30 @@ describe('navbar', () => {
     expect(html).not.toContain('href="/benchmark"')
   })
 
-  test('links the Product MedFlow menu item to the MedFlow page', () => {
-    mockPathname = '/medflow'
-
-    const html = renderToStaticMarkup(<Navbar />)
-    const productGroup = navItems.find((item) => item.type === 'group' && item.id === 'product')
-    if (productGroup?.type !== 'group') throw new Error('Product nav group missing')
-    const medFlowItem = productGroup?.children.find((child) => child.label === 'MedFlow')
-
-    expect(medFlowItem?.href).toBe('/medflow')
-    expect(medFlowItem?.disabled).toBeUndefined()
-    expect(html).toContain('Clinical research workflows')
-    expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/medflow"/)
-    expect(html).toContain('Soon')
-  })
-
-  test('renders unavailable submenu items as inert menu items without selected styling', () => {
-    mockPathname = '/agent-skills'
-
-    const html = renderToStaticMarkup(<Navbar />)
-    const inertItems = [...html.matchAll(/<span[^>]*aria-disabled="true"[^>]*>/g)].map(
-      ([item]) => item
-    )
-
-    expect(html).toContain('aria-disabled="true"')
-    expect(inertItems).not.toHaveLength(0)
-    expect(inertItems.every((item) => !/(^|\s)bg-\[#f3f3f3\](\s|$)/.test(item))).toBe(true)
-    expect(inertItems.every((item) => item.includes('hover:bg-[#f3f3f3]'))).toBe(true)
-    expect(inertItems.every((item) => !item.includes('aria-current'))).toBe(true)
-    expect(html).not.toMatch(/<button[^>]*\sdisabled(?:=|\s|>)/)
-    expect(html).not.toContain('href="/evova"')
-    expect(html).not.toContain('href="/medflow-benchmark"')
-  })
-
-  test('keeps unavailable menu item icons hoverable without making them links', () => {
-    const disabledChildren = navItems
-      .filter((item) => item.type === 'group')
-      .flatMap((item) => item.children)
-      .filter((child) => child.disabled)
-
-    expect(disabledChildren).not.toHaveLength(0)
-    expect(
-      disabledChildren.every(
-        (child) => !child.iconClassName || child.iconClassName.includes('group-hover')
+  test('marks only Use Cases current on the gallery, details and replay pages', () => {
+    for (const pathname of [
+      '/open-science/use-cases',
+      '/open-science/use-cases/can-ai-spot-the-errors-in-a-spreadsheet',
+      '/open-science/use-cases/can-ai-spot-the-errors-in-a-spreadsheet/replay'
+    ]) {
+      mockPathname = pathname
+      const html = renderToStaticMarkup(<Navbar />)
+      const currentLinks = [...html.matchAll(/<a[^>]*aria-current="page"[^>]*>/g)]
+      expect(currentLinks).toHaveLength(2)
+      expect(currentLinks.every(([link]) => link.includes('href="/open-science/use-cases"'))).toBe(
+        true
       )
-    ).toBe(true)
+      expect(html).not.toMatch(/<a[^>]*aria-current="page"[^>]*href="\/open-science"/)
+    }
+  })
+
+  test('marks Benchmark current as a standalone link on MedSkillAudit', () => {
+    mockPathname = '/medskillaudit'
+    const html = renderToStaticMarkup(<Navbar />)
+    expect(html).toMatch(
+      /<a[^>]*aria-current="page"[^>]*href="\/medskillaudit"[^>]*>Benchmark<\/a>/
+    )
+    expect(html).not.toContain('Workflow benchmark suite')
   })
 
   test('adds spacing between submenu items on desktop and mobile', () => {
@@ -193,14 +177,12 @@ describe('navbar', () => {
     expect(html).toContain('flex flex-col gap-1.5')
   })
 
-  test('keeps Product collapsed when the standalone Open-Science route is active', () => {
-    mockPathname = '/open-science'
-
+  test('keeps Agent Skills collapsed when a standalone route is active', () => {
+    mockPathname = '/open-science/use-cases'
     const html = renderToStaticMarkup(<Navbar />)
-
-    expect(html).toMatch(/aria-expanded="false" aria-controls="mobile-nav-product"/)
+    expect(html).toMatch(/aria-expanded="false" aria-controls="mobile-nav-agent-skills"/)
     expect(html).toMatch(
-      /id="mobile-nav-product"[^>]*data-open="false"[^>]*aria-hidden="true"[^>]*grid-rows-\[0fr\]/
+      /id="mobile-nav-agent-skills"[^>]*data-open="false"[^>]*aria-hidden="true"[^>]*grid-rows-\[0fr\]/
     )
   })
 
@@ -213,11 +195,8 @@ describe('navbar', () => {
       /role="dialog" aria-modal="true" aria-hidden="true" inert="" aria-label="Mobile navigation"/
     )
     expect(html).toContain('id="mobile-nav-agent-skills"')
-    expect(html).toContain('id="mobile-nav-benchmark"')
     expect(html).toMatch(/id="mobile-nav-agent-skills"[^>]*data-open="false"/)
-    expect(html).toMatch(/id="mobile-nav-benchmark"[^>]*data-open="false"/)
     expect(html).toMatch(/id="mobile-nav-agent-skills"[^>]*grid-rows-\[0fr\]/)
-    expect(html).toMatch(/id="mobile-nav-benchmark"[^>]*grid-rows-\[0fr\]/)
   })
 
   test('renders the mobile Open-Science entry as a standalone current link', () => {
@@ -233,9 +212,7 @@ describe('navbar', () => {
 
     const html = renderToStaticMarkup(<Navbar />)
 
-    expect(html).toContain('aria-controls="mobile-nav-product"')
     expect(html).toContain('aria-controls="mobile-nav-agent-skills"')
-    expect(html).toContain('aria-controls="mobile-nav-benchmark"')
     expect(html).toContain('Install &amp; run skills locally')
   })
 
@@ -281,15 +258,5 @@ describe('navbar', () => {
     // Open-Science must not force a gray underlay that darkens the bar on overscroll.
     expect(navbarSource).not.toContain('rgba(246,245,242')
     expect(navbarSource).not.toMatch(/pathname === ['"]\/open-science['"]/)
-  })
-  test('keeps the remaining product icon brand colors in the dark menu', () => {
-    mockPathname = '/'
-
-    const html = renderToStaticMarkup(<Navbar />)
-
-    expect(html).toContain('text-[#3f8268]')
-    expect(html).toContain('bg-[rgba(74,138,114,0.12)]')
-    expect(html).toContain('text-[#d97706]')
-    expect(html).toContain('bg-[rgba(217,119,6,0.12)]')
   })
 })

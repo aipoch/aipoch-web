@@ -18,13 +18,22 @@ export const buildMockEnvironment = (
 
 /** Fail early on malformed arguments instead of silently starting on an unexpected port. */
 export const parseMockOptions = (args: string[]) => {
-  const options = { port: 3202, mockPort: 3203 }
+  // Hostname defaults to loopback; pass --hostname 0.0.0.0 explicitly for LAN
+  // debugging so the dev server is never exposed to the network by accident.
+  const options = { hostname: '127.0.0.1', port: 3202, mockPort: 3203 }
   const seen = new Set<string>()
   for (let index = 0; index < args.length; index += 2) {
     const flag = args[index]
-    if (!['--port', '--mock-port'].includes(flag) || seen.has(flag))
+    if (!['--hostname', '--port', '--mock-port'].includes(flag) || seen.has(flag))
       throw new Error(`Unknown or duplicate option: ${flag}`)
     seen.add(flag)
+    if (flag === '--hostname') {
+      const hostname = args[index + 1]
+      if (!hostname || hostname.startsWith('--'))
+        throw new Error('--hostname requires a host value')
+      options.hostname = hostname
+      continue
+    }
     const port = Number(args[index + 1])
     if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
       throw new Error(`${flag} requires a port between 1 and 65535`)

@@ -12,10 +12,16 @@ import { guidePageLastModified } from '@/lib/guide-page-metadata'
 import { getAllGuides } from '@/lib/guides'
 import { fetchBlogSitemap } from '@/service/blog'
 import { fetchOpenScienceDownloadManifest } from '@/service/open-science-download'
+import { fetchUseCaseSitemapEntries } from '@/service/open-science-use-cases.server'
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
+const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-09'
+// Track overview and replay template changes separately from the gallery.
+const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-09'
+// Preview switching and delayed PDF navigation were corrected on October 10.
+const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-10'
 const AGENT_SKILLS_LIST_LAST_MODIFIED = '2026-09-23'
 
 // Disable cache, regenerate on every request
@@ -107,6 +113,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8
     }),
     withReliableLastModified({
+      url: `${SITE_DOMAIN}/open-science/use-cases`,
+      lastModified: OPEN_SCIENCE_USE_CASES_LAST_MODIFIED,
+      changeFrequency: 'weekly',
+      priority: 0.8
+    }),
+    withReliableLastModified({
       url: `${SITE_DOMAIN}/medflow`,
       lastModified: MEDFLOW_PAGE_LAST_MODIFIED,
       changeFrequency: 'monthly',
@@ -167,5 +179,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   )
 
-  return [...staticRoutes, ...dynamicRoutes, ...blogRoutes, ...guideRoutes, ...wikiRoutes]
+  // Every published case has both an overview and an inspectable session.
+  const useCaseRoutes: MetadataRoute.Sitemap = (await fetchUseCaseSitemapEntries()).flatMap(
+    (useCase) => [
+      withReliableLastModified({
+        url: `${SITE_DOMAIN}/open-science/use-cases/${useCase.slug}`,
+        lastModified: OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED,
+        changeFrequency: 'monthly',
+        priority: 0.7
+      }),
+      withReliableLastModified({
+        url: `${SITE_DOMAIN}/open-science/use-cases/${useCase.slug}/replay`,
+        lastModified: OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED,
+        changeFrequency: 'monthly',
+        priority: 0.6
+      })
+    ]
+  )
+
+  return [
+    ...staticRoutes,
+    ...dynamicRoutes,
+    ...blogRoutes,
+    ...guideRoutes,
+    ...wikiRoutes,
+    ...useCaseRoutes
+  ]
 }

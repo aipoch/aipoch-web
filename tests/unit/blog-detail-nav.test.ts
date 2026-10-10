@@ -116,7 +116,7 @@ describe('blog detail publication metadata', () => {
         ...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/g)
       ].flatMap((match) => JSON.parse(match[1]))
       const webpage = schemas.find((schema) => schema['@type'] === 'WebPage')
-      expect(webpage.dateModified).toBe('2026-10-08')
+      expect(webpage.dateModified).toBe('2026-10-09')
       for (const schema of schemas.filter((schema) =>
         ['WebPage', 'Article', 'BlogPosting'].includes(schema['@type'])
       )) {

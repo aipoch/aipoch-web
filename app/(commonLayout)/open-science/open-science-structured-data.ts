@@ -13,7 +13,7 @@ import {
   OPEN_SCIENCE_RELEASES_URL
 } from './open-science-download-data'
 import { openScienceFaqItems } from './open-science-faq-data'
-import { openScienceSeo } from './open-science-metadata'
+import { OPEN_SCIENCE_PAGE_LAST_MODIFIED, openScienceSeo } from './open-science-metadata'
 
 export const OPEN_SCIENCE_CURRENT_VERSION = 'v0.16.0'
 export const OPEN_SCIENCE_CURRENT_RELEASE_DATE = '2026-08-16'
@@ -156,7 +156,13 @@ export const buildOpenSciencePageGraph = ({
         isPartOf: { '@id': AIPOCH_WEBSITE_ID },
         mainEntity: { '@id': OPEN_SCIENCE_PRODUCT_ID },
         breadcrumb: { '@id': OPEN_SCIENCE_BREADCRUMB_ID },
-        dateModified: commonLayoutLastModified(schemaDate)
+        dateModified: toSchemaDate(
+          commonLayoutLastModified(
+            schemaDate && Date.parse(schemaDate) > Date.parse(OPEN_SCIENCE_PAGE_LAST_MODIFIED)
+              ? schemaDate
+              : OPEN_SCIENCE_PAGE_LAST_MODIFIED
+          )
+        )
       },
       softwareApplication,
       {

@@ -1,63 +1,54 @@
 import Link from 'next/link'
+import { HomeGithubLink } from '../home-github-link'
 import { homeContainer, homeSection } from '../home-styles'
 
 export const HomeEcosystemSection = ({ skillsCount }: { skillsCount: number }) => (
   <section id="ecosystem" className={homeSection}>
     <div className={homeContainer}>
-      <div className="text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[.06em] text-[#61615c]">
-          Ecosystem <span className="text-[#989894]">/ Signal flow</span>
+      <div>
+        <p className="flex items-center gap-2 text-xs font-medium leading-4 tracking-[.6px] text-[#111]/72">
+          Ecosystem <span className="text-[#111]/38">/ signal flow</span>
         </p>
-        {/* biome-ignore lint/performance/noImgElement: Exact decorative artwork exported from Figma. */}
-        <img
-          src="/figma/landing/ecosystem-bridge.png"
-          alt=""
-          width={287}
-          height={54}
-          className="mx-auto mb-5 mt-8 h-[54px] w-[287px] object-contain opacity-40"
-          loading="lazy"
-        />
-        <h2
-          data-testid="ecosystem-title"
-          className="font-[Georgia] text-[36px] leading-[1.03] tracking-[-.04em] sm:text-[56px]"
-        >
-          AIPOCH Ecosystem <br />
-          Scientific AI Workflows
-        </h2>
-        <p className="mx-auto mt-6 max-w-[912px] text-base leading-[26px] text-[#6b6b66]">
-          AIPOCH Open-Science provides the research workspace. Reusable skills define task-specific
-          instructions and resources, while MedSkillAudit provides a framework for evaluating
-          medical research skills.
-        </p>
+        <div className="mt-9 grid gap-6 lg:min-h-[132px] lg:grid-cols-[minmax(0,764px)_minmax(0,364px)] lg:gap-9">
+          <h2
+            data-testid="ecosystem-title"
+            className="font-[Georgia] text-[36px] font-normal leading-[1.11] tracking-[-1px] sm:text-[56px] sm:leading-[62px] sm:tracking-[-2px]"
+          >
+            The AIPOCH ecosystem <br />
+            Scientific AI workflows
+          </h2>
+          <p className="text-base leading-[26px] text-[#292929]/62">
+            Open Science runs and documents the work. Medical Research Skills provide vetted domain
+            methods, and MedSkillAudit checks each skill before release.
+          </p>
+        </div>
       </div>
-      <div className="mt-12 grid gap-9 md:grid-cols-3">
+      <div className="mt-12 grid gap-x-9 gap-y-12 md:grid-cols-3 md:gap-y-2 lg:mt-[86px]">
         {[
           {
             title: 'Open-Science',
             image: 'ecosystem-workbench.png',
-            imageClass: 'left-[.54%] top-[.94%] h-full w-[69.38%]',
             href: '/open-science',
             description: 'Organize projects, run analyses, and inspect outputs.',
             detail:
               'Orchestrate end-to-end scientific workflows with agents, tools, and data connectors in one place.',
-            label: 'Workbench',
-            value: 'Orchestrator'
+            label: 'System role',
+            value: 'Workbench · Orchestrator'
           },
           {
             title: 'Medical Research Skills',
             image: 'ecosystem-skills.png',
-            imageClass: 'left-[-2.98%] top-[-10.06%] h-[114.41%] w-[75.77%]',
             href: '/agent-skills/list',
             description: 'Domain knowledge and execution logic.',
             detail:
               'Access 550+ vetted medical research skills covering analysis, reporting, data ops, and study operations.',
-            label: 'Library',
-            value: `${skillsCount} skills`
+            label: 'Skill library',
+            value: `${skillsCount} skills`,
+            showGithubStars: true
           },
           {
             title: 'MedSkillAudit',
             image: 'ecosystem-audit.png',
-            imageClass: 'left-[-17.26%] top-[-21.22%] h-[144.13%] w-full',
             href: '/medskillaudit',
             description: 'Audited release-ready before deployment.',
             detail:
@@ -68,29 +59,36 @@ export const HomeEcosystemSection = ({ skillsCount }: { skillsCount: number }) =
         ].map((item) => (
           <article
             key={item.title}
-            className="grid min-w-0 gap-2 px-4 text-left md:row-span-5 md:grid-rows-subgrid lg:px-7"
+            className="grid min-w-0 gap-2 text-left md:row-span-5 md:grid-rows-subgrid"
           >
-            <div className="relative mb-2 aspect-[308/213.7] w-full overflow-hidden">
+            <div className="relative mb-6 aspect-[364/242] w-full overflow-hidden">
               {/* biome-ignore lint/performance/noImgElement: Preserve the exact Figma artwork and crop. */}
               <img
                 src={`/figma/landing/${item.image}`}
                 alt=""
+                width={364}
+                height={242}
                 loading="lazy"
-                className={`absolute max-w-none ${item.imageClass}`}
+                className="absolute inset-0 h-full w-full object-cover"
               />
             </div>
-            <h3 className="text-[27px] font-semibold leading-[1.1] tracking-[-.04em]">
+            <h3 className="font-[Georgia] text-[22px] font-normal leading-[30px] md:min-h-8">
               <Link href={item.href} className="hover:underline">
                 {item.title}
               </Link>
             </h3>
-            <p className="text-base font-medium leading-[22px]">{item.description}</p>
-            <p className="text-[15.5px] leading-[22px] text-[#484844]">{item.detail}</p>
-            <p className="mt-2 flex min-h-[51px] items-center justify-between gap-2 bg-[#e5e7eb] px-4 py-4 font-mono text-[11px] font-bold uppercase tracking-[.07em] text-[#6b6b66] xl:px-7 xl:text-[13px]">
-              <span>{item.label}</span>
-              <span aria-hidden className="h-[13px] w-px shrink-0 bg-[#b6b7bb]" />
-              <span className="text-[#111]">{item.value}</span>
+            <p className="text-base leading-[26px] text-[#171717] md:min-h-[52px]">
+              {item.description}
             </p>
+            <p className="text-sm leading-5 text-[#111]/78 md:min-h-[82px]">{item.detail}</p>
+            <div className="mt-6 flex min-h-9 flex-wrap items-center gap-x-4 gap-y-2 py-2.5 text-xs font-medium leading-4 tracking-[.6px] md:mt-[34px]">
+              <p className="flex min-w-0 items-center gap-2.5">
+                <span className="shrink-0 uppercase text-[#111]/32">{item.label}</span>
+                <span aria-hidden className="h-px w-[18px] shrink-0 bg-[#b6b7bb]/28" />
+                <span className="min-w-0 text-[#111]">{item.value}</span>
+              </p>
+              {item.showGithubStars ? <HomeGithubLink variant="compact" /> : null}
+            </div>
           </article>
         ))}
       </div>

@@ -89,6 +89,18 @@ describe('local mock API contracts', () => {
       (await data('/api/v1/skills')).total
     )
   })
+  test('mocks independent homepage GitHub counts with the page-load query parameter', async () => {
+    for (const [repository, count] of [
+      ['open-science', 1234],
+      ['medical-research-skills', 9876]
+    ]) {
+      const response = await handle(
+        new Request(`https://api.github.com/repos/aipoch/${repository}?homepage_load=1791580800000`)
+      )
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({ stargazers_count: count })
+    }
+  })
   test('supports leaderboard range and category filters', async () => {
     const result = await data(
       '/api/v1/leaderboards/overall?category=research&rank_min=2&rank_max=10&score_min=80&page_size=2'

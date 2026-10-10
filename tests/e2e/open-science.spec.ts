@@ -54,9 +54,15 @@ const placeholderImagePath = 'public/open-science/og-science-open-to-all.jpg'
 
 test.beforeEach(async ({ page }) => {
   // Keep visual assertions deterministic; production asset availability is not an app E2E concern.
-  await page.route(/\/_next\/image\?/, (route) =>
-    route.fulfill({ contentType: 'image/jpeg', path: placeholderImagePath })
-  )
+  await page.route(/\/_next\/image\?/, (route) => {
+    const source = new URL(route.request().url()).searchParams.get('url')
+    if (
+      source?.startsWith('/figma/open-science/') ||
+      source?.startsWith('/_next/static/media/workflow-share.')
+    )
+      return route.continue()
+    return route.fulfill({ contentType: 'image/jpeg', path: placeholderImagePath })
+  })
   await page.route(/^https:\/\/statics\.aipoch\.com\/public\/f\/image\/open-science-/, (route) =>
     route.fulfill({ contentType: 'image/jpeg', path: placeholderImagePath })
   )
@@ -145,7 +151,7 @@ test('renders every design section, retains shared navigation and loads all mark
   ).toBeVisible()
   await expect(
     page.getByRole('heading', {
-      name: 'Research agents that can work inside the research environment'
+      name: 'Run, inspect, and share research with .science'
     })
   ).toBeVisible()
   await expect(
@@ -187,13 +193,71 @@ test('renders every design section, retains shared navigation and loads all mark
     const currentSrc = await image.evaluate((node: HTMLImageElement) => node.currentSrc)
     const imageUrl = new URL(currentSrc, page.url())
     expect(imageUrl.searchParams.get('url') ?? imageUrl.href).toMatch(
-      /^https:\/\/statics\.aipoch\.com\/public\/f\/image\/open-science-.+\.(webp|svg)$/
+      /^(https:\/\/statics\.aipoch\.com\/public\/f\/image\/open-science-.+\.(webp|svg)|(?:https?:\/\/[^/]+)?\/figma\/open-science\/workflow-.+\.(png|svg)|\/_next\/static\/media\/workflow-share\.[\w-]+\.png)$/
     )
   }
   await page.locator('footer').scrollIntoViewIfNeeded()
   await expect(page.getByRole('link', { name: 'Privacy Policy', exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   expect(errors).toEqual([])
+})
+
+test('shows the five-step workflow artwork and portable Share package across screen sizes', async ({
+  page
+}, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/open-science')
+  const reject = page.getByRole('button', { name: 'Reject Non-Essential' })
+  if (await reject.isVisible()) await reject.click()
+  const workflow = page.getByTestId('open-science-workflow')
+  await expect(workflow.getByRole('heading', { level: 3 })).toHaveText([
+    'Define',
+    'Plan',
+    'Execute',
+    'Inspect',
+    'Share'
+  ])
+  await expect(workflow.locator('li').last()).toContainText(
+    'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
+  )
+  for (const image of await workflow.locator('img').all()) {
+    await image.scrollIntoViewIfNeeded()
+    await expect
+      .poll(() =>
+        image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)
+      )
+      .toBe(true)
+  }
+  for (const width of [390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1400 })
+    await workflow.scrollIntoViewIfNeeded()
+    const geometry = await workflow.evaluate((element) => {
+      const picture = element.querySelector('img')?.getBoundingClientRect()
+      const cards = Array.from(element.querySelectorAll('li')).map((card) =>
+        card.getBoundingClientRect()
+      )
+      const icons = Array.from(element.querySelectorAll('li img')).map((icon) => {
+        const rect = icon.getBoundingClientRect()
+        return { width: rect.width, height: rect.height }
+      })
+      return {
+        ratio: picture ? picture.width / picture.height : 0,
+        columns: new Set(cards.map((card) => Math.round(card.x))).size,
+        shareWidth: cards.at(-1)?.width,
+        rowWidth: element.querySelector('ol')?.getBoundingClientRect().width,
+        icons,
+        overflow: document.documentElement.scrollWidth > innerWidth
+      }
+    })
+    expect(geometry.ratio).toBeCloseTo(2223 / 1162, 2)
+    expect(geometry.columns).toBe(width === 1440 ? 5 : width === 768 ? 2 : 1)
+    if (width === 768) expect(geometry.shareWidth).toBeCloseTo(geometry.rowWidth ?? 0, 0)
+    expect(geometry.icons).toEqual(Array(5).fill({ width: 21, height: 21 }))
+    expect(geometry.overflow).toBe(false)
+    await workflow.screenshot({
+      path: `.codex/open-science-share/workflow-${width}-${testInfo.project.name}.png`
+    })
+  }
 })
 
 test('downloads the selected platform and supports keyboard dismissal', async ({ page }) => {
