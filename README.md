@@ -157,6 +157,64 @@ loads from `<manifest directory>/<case name>/extracted/`.
 - **Verify:** `bun run test:mock` covers restored directories, previews, downloads,
   retries and archive fallback on desktop and mobile.
 
+### Import a replay into Open-Science
+
+The composer below each replay downloads the complete `.science` file into a
+browser-held Blob after **Continue in Open-Science** is clicked. The button shows
+download progress above **Downloading .science package**. Once the Blob is ready,
+the website automatically attempts the SDK protocol launch and starts sending.
+Asynchronous downloads can exhaust browser user activation; automatic protocol
+launch is best effort. After failure, clicking **Continue in Open-Science** again
+launches synchronously with the retained Blob, without another download. The
+composer shows installation guidance and a **Download Open-Science** link when
+sending fails or browser import is unsupported.
+
+Receipt means only that the desktop received the file; the user must still review
+and confirm the import there. The composer text area and research tools are
+disabled; no prompt text is sent.
+
+The pinned SDK cannot probe a running app before downloading, configure exactly
+five readiness attempts spaced one second apart, or bypass native receipt consent.
+These requirements are pending the [upstream capability request](https://github.com/aipoch/open-science/pull/3493#issuecomment-6119384385).
+No pre-download detection or automatic download-page redirect is implemented.
+Do not interpret connection failure as proof that the app is not installed, scan
+ports, or replace the SDK transport. Its existing readiness timeout and retry
+policy remain in effect until an upstream version exposes the required controls.
+
+- Keep ordinary downloads available. Browser transfer requires a nonempty
+  `.science` file no larger than 2 GiB, HTTPS (or loopback for development), Web
+  Crypto and `AbortSignal.any/timeout`. Permission to open external apps and
+  access the local network may be required. A timeout does not prove the app is
+  absent. Downloads have a two-minute timeout and can be canceled.
+- Downloads await MSW readiness and use the existing manifest package URL.
+  Package hosts must permit cross-origin fetches. A representative production
+  package on `statics.aipoch.com` returned `Access-Control-Allow-Origin: *` on
+  2026-10-12; other configured hosts, including GitHub releases, may differ.
+  The GitHub release CORS recheck could not complete because the network request
+  timed out; its cross-origin download path is not verified.
+  The replay route currently has no repository-defined CSP. If a deployment
+  adds CSP, retain existing restrictions and explicitly permit the download
+  origins and `http://127.0.0.1:*` in `connect-src`.
+- Retain the Blob for retry. Transient failures reuse the SDK transfer while
+  it is live; cancellation, readiness timeout, invalid receiver or expiry use
+  a new transfer on the next user click. **Start a new transfer** also allows
+  explicit recovery without another download. Unmount aborts pending work and
+  releases references. Transfer URLs contain credentials and are never rendered,
+  logged or persisted by this integration.
+- SDK source is pinned under [`vendor/open-science`](vendor/open-science/UPSTREAM.md)
+  because the npm package was unavailable at integration time. Protocol and
+  crypto implementation come from that upstream SDK; no website transport is
+  reimplemented. An installed desktop build supporting that protocol is required.
+
+Run `bun test --isolate tests/unit/browser-science-import.test.ts
+tests/unit/browser-import-provenance.test.ts` for state/size/provenance checks,
+`bun test tests/integration/browser-science-import.test.ts` for the actual React
+composer with a test-only SDK substitute in Chromium on desktop/mobile, and
+`bun run test:mock` for Next SSR/browser downloads and MSW failure scenarios.
+The component harness uses harmless hash navigation instead of a custom protocol.
+These checks do **not** validate real desktop receipt, OS protocol registration,
+native permission prompts or final desktop import.
+
 ## Docker Compose
 
 ```sh

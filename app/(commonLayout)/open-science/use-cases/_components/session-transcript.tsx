@@ -28,9 +28,9 @@ const turnFinalMessageIds = (items: UseCaseSession['items']): Set<string> => {
 export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
   const turnFinal = turnFinalMessageIds(session.items)
   return (
-    <div className="osp-session min-h-screen text-text-000">
+    <div className="osp-session text-text-000">
       <FilePreviewProvider>
-        <div className="mx-auto w-full max-w-4xl pb-14 pt-4">
+        <div className="mx-auto w-full max-w-4xl pb-4 pt-4">
           {session.items.map((item) => {
             // content-visibility skips rendering for offscreen rows — the main
             // lever against long-transcript jank (the app does the same).
