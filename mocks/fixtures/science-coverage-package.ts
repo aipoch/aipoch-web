@@ -60,7 +60,8 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
   const activities = sample.items.flatMap<Record<string, unknown>>((item) => {
     if (item.type === 'message') return []
     if (item.type === 'elicitation') return [{ ...item, elicitation: item }]
-    return item.activities.map((activity) => {
+    const itemActivities = item.type === 'plan' ? [item.activity] : item.activities
+    return itemActivities.map((activity) => {
       if (activity.run)
         runs.push({
           ...activity.run,

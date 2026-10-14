@@ -1,5 +1,11 @@
 import type { NormalizedActivity } from '@/lib/use-case-types'
 import { isNotebookExecutionActivity, isSkillLoadActivity } from './activity-group-title'
+import {
+  isNotebookSummaryToolName,
+  isPlanToolName,
+  matchNotebookControlTool,
+  matchToolName
+} from './notebook-tool-names'
 
 // Single source of truth for "which renderer handles this tool activity".
 // buildActivityDetails (activity-row.tsx) dispatches on this, and
@@ -7,6 +13,8 @@ import { isNotebookExecutionActivity, isSkillLoadActivity } from './activity-gro
 export type ActivityRenderer =
   | 'skill'
   | 'notebook'
+  | 'notebook-control'
+  | 'plan'
   | 'read'
   | 'packages'
   | 'artifact-write'
@@ -19,6 +27,8 @@ export type ActivityRenderer =
 export const ALL_ACTIVITY_RENDERERS: ActivityRenderer[] = [
   'skill',
   'notebook',
+  'notebook-control',
+  'plan',
   'read',
   'packages',
   'artifact-write',
@@ -31,14 +41,38 @@ export const classifyActivityRenderer = (activity: NormalizedActivity): Activity
   const providerName = activity.providerToolName ?? ''
   if (isSkillLoadActivity(activity)) return 'skill'
   if (isNotebookExecutionActivity(activity)) return 'notebook'
+  if ([activity.providerToolName, activity.title].some(isNotebookSummaryToolName)) {
+    return 'notebook-control'
+  }
+  if ([activity.providerToolName, activity.title].some(isPlanToolName)) {
+    return 'plan'
+  }
   if (providerName === 'Read' || (activity.toolKind === 'read' && activity.locations?.length)) {
     return 'read'
   }
-  if (providerName.includes('manage_packages') || providerName.includes('inspect_packages')) {
+  // Package tools live under the notebook server; the identity may sit in the
+  // title when providerToolName is null (exported envelopes do that).
+  if (
+    [activity.providerToolName, activity.title]
+      .map((name) => matchNotebookControlTool(name))
+      .some((suffix) => suffix === 'manage_packages' || suffix === 'inspect_packages')
+  ) {
     return 'packages'
   }
-  if (providerName === 'mcp__open-science-artifacts__write_artifact_file') return 'artifact-write'
-  if (providerName === 'mcp__open-science-library__save_to_inbox') return 'library-inbox'
+  if (
+    [activity.providerToolName, activity.title].some((name) =>
+      matchToolName(name, 'open-science-artifacts', 'write_artifact_file')
+    )
+  ) {
+    return 'artifact-write'
+  }
+  if (
+    [activity.providerToolName, activity.title].some((name) =>
+      matchToolName(name, 'open-science-library', 'save_to_inbox')
+    )
+  ) {
+    return 'library-inbox'
+  }
   if (
     providerName.toLowerCase().replace(/[\s-]/g, '_') === 'websearch' ||
     providerName === 'WebSearch'

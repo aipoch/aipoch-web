@@ -21,62 +21,24 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState
 } from 'react'
 import { waitForBrowserMock } from '@/mocks/ready'
+import { fetchTextWithLimit } from './artifact-preview'
 import { AssetImage } from './asset-image'
+import { CodeHighlightContent } from './code-highlight'
 import { ExtensionPreservingFileName } from './extension-preserving-file-name'
 import { FileDownloadLink } from './file-download-link'
+import type { PreviewFile, PreviewKind } from './preview-kind'
+import { canOpenInNewTab, extensionOf, previewKindFor } from './preview-kind'
 import { SessionMarkdown } from './session-markdown'
 
-// In-site preview for exported session files. Kinds the browser can render
-// open in a modal; anything else downloads directly (see ArtifactCard).
-export type PreviewKind = 'image' | 'markdown' | 'json' | 'csv' | 'text' | 'pdf'
-
-export interface PreviewFile {
-  name: string
-  url: string
-  mimeType?: string
-}
-
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']
-const TEXT_EXTENSIONS = [
-  'txt',
-  'log',
-  'py',
-  'js',
-  'ts',
-  'tsx',
-  'sh',
-  'r',
-  'yaml',
-  'yml',
-  'toml',
-  'xml'
-]
-
-const extensionOf = (name: string): string => {
-  const segment = name.split(/[?#]/u)[0]
-  return segment.includes('.') ? (segment.split('.').pop()?.toLowerCase() ?? '') : ''
-}
-
-export const previewKindFor = (name: string, mimeType?: string): PreviewKind | null => {
-  const ext = extensionOf(name)
-  if (mimeType?.startsWith('image/') || IMAGE_EXTENSIONS.includes(ext)) return 'image'
-  if (mimeType === 'application/pdf' || ext === 'pdf') return 'pdf'
-  if (ext === 'md' || ext === 'markdown') return 'markdown'
-  if (ext === 'csv' || mimeType === 'text/csv') return 'csv'
-  if (ext === 'json' || mimeType?.includes('json')) return 'json'
-  if (mimeType?.startsWith('text/') || TEXT_EXTENSIONS.includes(ext)) return 'text'
-  return null
-}
-
-// SVG blobs keep image/svg+xml so <img> renders them, but navigating to one as
-// a top-level document would run its scripts same-origin — downloads and inline
-// images are the only offered exits, never "open in a new tab".
-export const canOpenInNewTab = (file: PreviewFile): boolean =>
-  file.mimeType !== 'image/svg+xml' && extensionOf(file.name) !== 'svg'
+// Re-exported so existing consumers keep one import site; the definitions live
+// in preview-kind.ts (dependency-free, shared with artifact-preview.ts).
+export type { PreviewFile, PreviewKind } from './preview-kind'
+export { canOpenInNewTab, previewKindFor } from './preview-kind'
 
 const isTextKind = (kind: PreviewKind | null): kind is 'markdown' | 'json' | 'csv' | 'text' =>
   kind === 'markdown' || kind === 'json' || kind === 'csv' || kind === 'text'
@@ -121,67 +83,133 @@ const parseCsv = (text: string): string[][] => {
 }
 
 const CSV_PREVIEW_ROWS = 100
+const CSV_PREVIEW_COLUMNS = 24
 
-const CsvPreview = ({ text }: { text: string }) => {
+export interface CsvPreviewModel {
+  /** Visible header labels (first row), capped at CSV_PREVIEW_COLUMNS. */
+  headers: string[]
+  /** Visible body rows, capped at CSV_PREVIEW_ROWS. */
+  rows: string[][]
+  rowCount: number
+  columnCount: number
+  hiddenColumnCount: number
+  /** False when the row cap hid the tail, so the total is unknown. */
+  totalKnown: boolean
+}
+
+// First row is treated as column headers (CSV does not mark them); the UI
+// discloses the convention in the footer, like the app's CsvPreviewRenderer.
+export const buildCsvPreviewModel = (text: string): CsvPreviewModel | undefined => {
   const rows = parseCsv(text)
   const [header, ...body] = rows
-  const visible = body.slice(0, CSV_PREVIEW_ROWS)
-  if (!header) return <pre className="whitespace-pre-wrap break-words text-xs">{text}</pre>
+  if (!header) return undefined
+  const columnCount = Math.max(0, ...rows.map((row) => row.length))
+  const visibleColumnCount = Math.min(columnCount, CSV_PREVIEW_COLUMNS)
+  return {
+    headers: Array.from({ length: visibleColumnCount }, (_, index) => header[index] ?? ''),
+    rows: body.slice(0, CSV_PREVIEW_ROWS),
+    rowCount: body.length,
+    columnCount,
+    hiddenColumnCount: Math.max(columnCount - visibleColumnCount, 0),
+    totalKnown: body.length <= CSV_PREVIEW_ROWS
+  }
+}
+
+const CsvPreview = ({ text }: { text: string }) => {
+  const model = buildCsvPreviewModel(text)
+  if (!model) return <pre className="whitespace-pre-wrap break-words text-xs">{text}</pre>
   return (
-    <div className="max-h-[60vh] overflow-auto rounded-md border border-border-200">
-      <table className="w-full min-w-max border-separate border-spacing-0 text-xs">
-        <thead>
-          <tr>
-            {header.map((cell, index) => (
-              <th
-                key={`h-${index}`}
-                className="sticky top-0 border-b border-border-200 bg-bg-100 px-3 py-2 text-left font-medium text-text-100"
-              >
-                {cell}
+    <div className="flex max-h-[60vh] flex-col overflow-hidden rounded-md border border-border-200">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-200 bg-bg-000 px-3 py-2 text-[12px] text-text-300">
+        {model.totalKnown ? (
+          <span>
+            {model.rowCount} rows · {model.columnCount} columns
+          </span>
+        ) : (
+          <span />
+        )}
+        <span className="shrink-0">
+          Showing {model.rows.length} rows · {model.headers.length} columns
+        </span>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="w-full min-w-max border-separate border-spacing-0 text-xs">
+          <thead>
+            <tr>
+              <th className="sticky left-0 top-0 z-20 w-12 border-b border-r border-border-200 bg-bg-100 px-3 py-2 text-right font-mono font-medium text-text-300">
+                #
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {visible.map((cells, rowIndex) => (
-            <tr key={`r-${rowIndex}`}>
-              {cells.map((cell, cellIndex) => (
-                <td
-                  key={`c-${cellIndex}`}
-                  className="border-b border-border-200/50 px-3 py-1.5 align-top text-text-000"
+              {model.headers.map((cell, index) => (
+                <th
+                  key={`h-${index}`}
+                  className="sticky top-0 max-w-[180px] border-b border-border-200 bg-bg-100 px-3 py-2 text-left font-medium text-text-100"
                 >
-                  {cell}
-                </td>
+                  <span className="block truncate" title={cell || `Column ${index + 1}`}>
+                    {cell || `Column ${index + 1}`}
+                  </span>
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {body.length > CSV_PREVIEW_ROWS ? (
-        <p className="px-3 py-2 text-[11px] text-text-300">
-          Showing the first {CSV_PREVIEW_ROWS} of {body.length} rows — download for the full file.
-        </p>
-      ) : null}
+          </thead>
+          <tbody>
+            {model.rows.map((cells, rowIndex) => (
+              <tr key={`r-${rowIndex}`}>
+                <td className="sticky left-0 w-12 border-b border-r border-border-200/50 bg-bg-000 px-3 py-1.5 text-right font-mono text-text-300">
+                  {rowIndex + 1}
+                </td>
+                {model.headers.map((_, cellIndex) => (
+                  <td
+                    key={`c-${cellIndex}`}
+                    className="max-w-[180px] border-b border-border-200/50 px-3 py-1.5 align-top text-text-000"
+                  >
+                    <span className="block truncate" title={cells[cellIndex] ?? ''}>
+                      {cells[cellIndex] ?? ''}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="shrink-0 border-t border-border-200 bg-bg-000 px-3 py-2 text-[11px] text-text-300">
+        <p>First row is used as column headers.</p>
+        {model.hiddenColumnCount > 0 ? (
+          <p>
+            {model.hiddenColumnCount} more {model.hiddenColumnCount === 1 ? 'column' : 'columns'}{' '}
+            hidden in this preview.
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }
 
-const TextContent = ({ kind, text }: { kind: PreviewKind; text: string }) => {
+// Shiki language for text/code previews, by file extension (json is handled by kind).
+const PREVIEW_LANGUAGE_BY_EXT: Record<string, string> = {
+  py: 'python',
+  js: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  r: 'r',
+  sh: 'bash',
+  yaml: 'yaml',
+  yml: 'yaml',
+  toml: 'toml',
+  xml: 'xml'
+}
+
+// JSON keeps its original formatting (no stringify reflow); both JSON and
+// text/code previews get Shiki highlighting and line numbers, like the app.
+const TextContent = ({ kind, name, text }: { kind: PreviewKind; name: string; text: string }) => {
   if (kind === 'markdown') return <SessionMarkdown content={text} />
   if (kind === 'csv') return <CsvPreview text={text} />
-  const pretty =
-    kind === 'json'
-      ? (() => {
-          try {
-            return JSON.stringify(JSON.parse(text), null, 2)
-          } catch {
-            return text
-          }
-        })()
-      : text
+  const language = kind === 'json' ? 'json' : PREVIEW_LANGUAGE_BY_EXT[extensionOf(name)]
   return (
-    <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-200 bg-bg-000 p-3 font-mono text-xs text-text-000">
-      {pretty}
+    <pre className="max-h-[60vh] overflow-auto rounded-md border border-border-200 bg-bg-000 p-3 font-mono text-xs text-text-000">
+      <code className="block whitespace-pre">
+        <CodeHighlightContent code={text} language={language} lineNumbers />
+      </code>
     </pre>
   )
 }
@@ -282,33 +310,62 @@ const ImageContent = ({ file }: { file: PreviewFile }) => {
 const iconButtonClassName =
   'flex size-7 items-center justify-center rounded-md text-text-300 transition-colors hover:bg-bg-200 hover:text-text-000'
 
+// Text previews cap the payload; the dialog discloses truncation above the content.
+const TEXT_PREVIEW_BYTE_LIMIT = 256 * 1024
+
 const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () => void }) => {
   const kind = previewKindFor(file.name, file.mimeType)
   const isPresent = useIsPresent()
   const panelRef = useRef<HTMLDivElement>(null)
-  const [textState, setTextState] = useState<{ text?: string; pdfUrl?: string; error?: string }>({})
+  const [textState, setTextState] = useState<{
+    text?: string
+    truncated?: boolean
+    pdfUrl?: string
+    error?: string
+  }>({})
   const [copied, setCopied] = useState(false)
   const newTabUrl = kind === 'pdf' ? textState.pdfUrl : file.url
+  // JSON parses here only to disclose invalid content; the raw text is shown either
+  // way. A truncated payload never parses, so the truncation notice covers it.
+  const jsonInvalid = useMemo(() => {
+    if (kind !== 'json' || textState.text === undefined || textState.truncated) return false
+    try {
+      JSON.parse(textState.text)
+      return false
+    } catch {
+      return true
+    }
+  }, [kind, textState.text, textState.truncated])
 
   // Fetch text and PDF only when opened; hashed CDN objects may use a generic MIME type.
+  // Text previews cap at a byte limit (blob slice / http Range) and disclose truncation.
   useEffect(() => {
     if (!isTextKind(kind) && kind !== 'pdf') return
     let pdfUrl: string | undefined
     let cancelled = false
     const controller = new AbortController()
     waitForBrowserMock()
-      .then(() => fetch(file.url, { signal: controller.signal, credentials: 'omit' }))
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      .then(async () => {
         if (kind === 'pdf') {
+          const response = await fetch(file.url, { signal: controller.signal, credentials: 'omit' })
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
           const blob = await response.blob()
           if (cancelled) return
           pdfUrl = URL.createObjectURL(blob.slice(0, blob.size, 'application/pdf'))
           setTextState({ pdfUrl })
-        } else {
-          const text = await response.text()
-          if (!cancelled) setTextState({ text })
+          return
         }
+        const result = await fetchTextWithLimit(
+          file.url,
+          TEXT_PREVIEW_BYTE_LIMIT,
+          controller.signal
+        )
+        if (cancelled || controller.signal.aborted) return
+        if (!result) {
+          setTextState({ error: 'Failed to load' })
+          return
+        }
+        setTextState({ text: result.text, truncated: result.truncated })
       })
       .catch((error: unknown) => {
         if (!cancelled)
@@ -462,7 +519,19 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
                 <span className="text-sm">Loading…</span>
               </div>
             ) : (
-              <TextContent kind={kind} text={textState.text} />
+              <div className="space-y-2">
+                {textState.truncated ? (
+                  <p role="status" className="text-[11px] text-text-300">
+                    Preview truncated — download for the full file.
+                  </p>
+                ) : null}
+                {jsonInvalid ? (
+                  <p role="status" className="text-[11px] text-status-failure-foreground">
+                    Invalid JSON — showing the raw file content.
+                  </p>
+                ) : null}
+                <TextContent kind={kind} name={file.name} text={textState.text} />
+              </div>
             )
           ) : (
             <p className="text-sm text-text-200">This file type cannot be previewed here.</p>

@@ -3,10 +3,10 @@
 import { FileText, FlaskConical, Info } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { CodeHighlightContent } from './code-highlight'
 import { previewKindFor, useFilePreview } from './file-preview'
 
 // Static ports of WorkspaceToolCodeBlock / WorkspaceToolDiffBlock / WorkspaceToolSummaryCard.
-// Shiki tokenization is dropped: plain <pre> keeps the same frame and metrics.
 
 export const sectionLabelClassName = 'text-[11px] font-medium uppercase tracking-wide text-text-300'
 
@@ -14,14 +14,17 @@ export const SectionLabel = ({ children }: { children: ReactNode }) => (
   <div className={sectionLabelClassName}>{children}</div>
 )
 
+// Renders code with lazy Shiki highlighting, falling back to plain text before tokens resolve.
 export const ToolCodeBlock = ({
-  code,
+  code: source,
   language,
-  className
+  className,
+  lineNumbers = false
 }: {
   code: string
   language?: string
   className?: string
+  lineNumbers?: boolean
 }) => (
   <div
     className={cn(
@@ -31,7 +34,7 @@ export const ToolCodeBlock = ({
   >
     <pre data-language={language} className="m-0 max-h-[320px] overflow-auto px-3 py-2.5">
       <code className="block whitespace-pre font-mono text-[12px] leading-relaxed text-text-000">
-        {code}
+        <CodeHighlightContent code={source} language={language} lineNumbers={lineNumbers} />
       </code>
     </pre>
   </div>

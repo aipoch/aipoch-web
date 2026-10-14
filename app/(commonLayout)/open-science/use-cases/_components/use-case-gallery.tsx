@@ -13,14 +13,14 @@ const GalleryCard = ({ useCase }: { useCase: GalleryEntry }) => (
     href={`/open-science/use-cases/${useCase.slug}`}
     className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
   >
-    <div className="relative aspect-[406/190] overflow-hidden bg-[#e8e8e4]">
+    <div className={`bg-[#e8e8e4] ${useCase.preview?.image ? '' : 'aspect-[406/190]'}`}>
       {useCase.preview?.image ? (
         // biome-ignore lint/performance/noImgElement: manifest images retain their published URLs.
         <img
           src={useCase.preview.image}
           alt=""
           aria-hidden="true"
-          className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none"
+          className="block h-auto w-full"
           loading="lazy"
           decoding="async"
         />
@@ -39,9 +39,12 @@ const GalleryCard = ({ useCase }: { useCase: GalleryEntry }) => (
 
 export function UseCaseGallery({
   items,
+  category,
   initialCount = USE_CASE_BATCH_SIZE
 }: {
   items: GalleryEntry[]
+  /** Active catalog filter; kept on the pagination links so they stay filtered. */
+  category?: string
   initialCount?: number
 }) {
   const [visibleCount, setVisibleCount] = useState(initialCount)
@@ -79,7 +82,7 @@ export function UseCaseGallery({
       <div ref={sentinel} className="mt-10 flex min-h-11 items-center justify-center">
         {hasMore ? (
           <Link
-            href={`/open-science/use-cases?page=${Math.floor(visibleCount / USE_CASE_BATCH_SIZE) + 1}#use-case-grid`}
+            href={`/open-science/use-cases?page=${Math.floor(visibleCount / USE_CASE_BATCH_SIZE) + 1}${category ? `&category=${encodeURIComponent(category)}` : ''}#use-case-grid`}
             prefetch={false}
             aria-controls="use-case-grid"
             onClick={(event) => {

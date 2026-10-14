@@ -27,6 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { basename, join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { Parser as TarParser } from 'tar'
+import { matchToolName } from '../app/(commonLayout)/open-science/use-cases/_components/notebook-tool-names'
 import type {
   MessageArtifact,
   NormalizedActivity,
@@ -380,6 +381,17 @@ const importOne = (archivePath: string, slug: string): void => {
   for (const activity of graphActivities) {
     const ts =
       typeof activity.sortIndex === 'number' ? activity.sortIndex : Number(activity.createdAt)
+    // Keep in sync with lib/science-package/parse.ts: step updates never render
+    // (their state lives in the plan card), generate_plan is a standalone item.
+    const activityNames = [activity.providerToolName, activity.title]
+    if (
+      activityNames.some(
+        (name) =>
+          typeof name === 'string' && matchToolName(name, 'open-science-plan', 'update_step_status')
+      )
+    ) {
+      continue
+    }
     const elicitation = activity.elicitation as JsonObject | undefined
     if (elicitation) {
       activityItems.push({
@@ -418,11 +430,18 @@ const importOne = (archivePath: string, slug: string): void => {
       output: deep(activity.rawOutput),
       contentBlocks: deep(activity.toolContent) as unknown[] | undefined,
       locations: deep(activity.toolLocations) as NormalizedActivity['locations'],
-      run: invocationId ? runsByInvocation.get(invocationId) : undefined
+      run: invocationId ? runsByInvocation.get(invocationId) : undefined,
+      executionInvocationId: invocationId
     }
+    const isGeneratePlan = activityNames.some(
+      (name) =>
+        typeof name === 'string' && matchToolName(name, 'open-science-plan', 'generate_plan')
+    )
     activityItems.push({
       ts,
-      item: { type: 'activity-group', id: normalized.id, activities: [normalized] }
+      item: isGeneratePlan
+        ? { type: 'plan', id: normalized.id, activity: normalized }
+        : { type: 'activity-group', id: normalized.id, activities: [normalized] }
     })
   }
 
@@ -567,6 +586,26 @@ const importOne = (archivePath: string, slug: string): void => {
     .reduce((sum, asset) => sum + asset.sizeBytes, 0)
 
   let truncatedActivityCount = 0
+  const truncateActivity = (activity: NormalizedActivity): NormalizedActivity => {
+    const truncated = hasOversizedString([
+      activity.input,
+      activity.output,
+      activity.contentBlocks,
+      activity.run
+    ])
+    if (!truncated) return activity
+    truncatedActivityCount += 1
+    return {
+      ...activity,
+      input: truncateOversizedStrings(activity.input) as NormalizedActivity['input'],
+      output: truncateOversizedStrings(activity.output) as NormalizedActivity['output'],
+      contentBlocks: truncateOversizedStrings(
+        activity.contentBlocks
+      ) as NormalizedActivity['contentBlocks'],
+      run: truncateOversizedStrings(activity.run) as NormalizedActivity['run'],
+      essentialTruncated: true
+    }
+  }
   const essentialItems: TranscriptItem[] = items.map((item) => {
     if (item.type === 'message') {
       if (!item.artifacts?.length) return item
@@ -587,29 +626,11 @@ const importOne = (archivePath: string, slug: string): void => {
         })
       }
     }
+    if (item.type === 'plan') return { ...item, activity: truncateActivity(item.activity) }
     if (item.type !== 'activity-group') return item
     return {
       ...item,
-      activities: item.activities.map((activity) => {
-        const truncated = hasOversizedString([
-          activity.input,
-          activity.output,
-          activity.contentBlocks,
-          activity.run
-        ])
-        if (!truncated) return activity
-        truncatedActivityCount += 1
-        return {
-          ...activity,
-          input: truncateOversizedStrings(activity.input) as NormalizedActivity['input'],
-          output: truncateOversizedStrings(activity.output) as NormalizedActivity['output'],
-          contentBlocks: truncateOversizedStrings(
-            activity.contentBlocks
-          ) as NormalizedActivity['contentBlocks'],
-          run: truncateOversizedStrings(activity.run) as NormalizedActivity['run'],
-          essentialTruncated: true
-        }
-      })
+      activities: item.activities.map(truncateActivity)
     }
   })
   const essentialAssets = Object.fromEntries(

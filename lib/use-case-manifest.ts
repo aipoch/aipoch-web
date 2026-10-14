@@ -84,10 +84,40 @@ export const parseUseCaseManifest = (
     const releaseUrl = record(item.case, `${path}.case`).release_url
     if (typeof releaseUrl !== 'string')
       throw new ManifestValidationError(`${path}.case.release_url`, 'string', releaseUrl)
+    // Taxonomy: catalog is the display label, catalog_name the kebab-case key.
+    // Empty strings are placeholders for "uncategorized", not invalid values.
+    if (item.catalog !== undefined && typeof item.catalog !== 'string')
+      throw new ManifestValidationError(`${path}.catalog`, 'string', item.catalog)
+    if (item.catalog_name !== undefined && typeof item.catalog_name !== 'string')
+      throw new ManifestValidationError(`${path}.catalog_name`, 'string', item.catalog_name)
+    const catalogLabel =
+      typeof item.catalog === 'string' && item.catalog.trim() ? item.catalog.trim() : undefined
+    const catalogName =
+      typeof item.catalog_name === 'string' && item.catalog_name.trim()
+        ? item.catalog_name
+        : undefined
+    if (catalogName && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(catalogName))
+      throw new ManifestValidationError(
+        `${path}.catalog_name`,
+        'lowercase kebab-case key',
+        item.catalog_name
+      )
+    const catalogKey =
+      catalogName ??
+      catalogLabel
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
 
     return {
       slug: item.name,
       title: item.title,
+      ...(catalogLabel === undefined && catalogKey === undefined
+        ? {}
+        : {
+            ...(catalogLabel ? { catalog: catalogLabel } : {}),
+            ...(catalogKey ? { catalogKey } : {})
+          }),
       preview: { image: resourceUrl(cover) },
       package: {
         extractedBaseUrl: new URL(`${item.name}/extracted/`, base).href,

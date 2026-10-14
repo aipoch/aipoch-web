@@ -93,14 +93,14 @@ const RelatedCard = ({ useCase }: { useCase: UseCaseIndexEntry }) => {
       href={detailHref}
       className="group flex flex-col overflow-hidden border border-[#e4e4df] bg-white shadow-[0_1px_2px_rgba(16,17,15,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-12px_rgba(16,17,15,0.22)]"
     >
-      <div className="aspect-[626/292] overflow-hidden bg-[#e8e8e4]">
+      <div className={`bg-[#e8e8e4] ${useCase.preview?.image ? '' : 'aspect-[626/292]'}`}>
         {useCase.preview?.image ? (
           // biome-ignore lint/performance/noImgElement: local static preview asset, no Next image rewriting needed.
           <img
             src={useCase.preview.image}
             alt=""
             aria-hidden="true"
-            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="block h-auto w-full"
             loading="lazy"
             decoding="async"
           />
@@ -208,7 +208,7 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
               <img
                 src={heroImageUrl}
                 alt={useCase.title}
-                className="mx-auto max-h-[420px] w-auto max-w-full object-contain"
+                className="block h-auto w-full"
                 loading="lazy"
                 decoding="async"
               />

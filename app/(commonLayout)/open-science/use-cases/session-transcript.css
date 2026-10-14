@@ -26,6 +26,8 @@
   --color-message-user-text: var(--osp-message-user-text);
   --color-status-failure-surface: var(--color-rose-100);
   --color-status-failure-foreground: var(--color-rose-700);
+  --color-status-success-foreground: var(--color-emerald-700);
+  --color-status-warning-foreground: var(--color-amber-700);
   --color-sd-border: var(--osp-sd-border);
   --color-sd-ink: var(--osp-sd-ink);
   --color-sd-muted: var(--osp-sd-muted);

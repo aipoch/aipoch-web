@@ -14,14 +14,22 @@ import type { NormalizedActivity } from '@/lib/use-case-types'
 
 // Static port of WorkspaceActivityIcon: no executing phase exists in a replay, so the
 // spinner branch is gone and status/kind map directly to a terminal icon.
-export const ActivityIcon = ({ activity }: { activity: NormalizedActivity }) => {
+export const ActivityIcon = ({
+  activity,
+  failed
+}: {
+  activity: NormalizedActivity
+  /** A result-payload failure reported by the details builder (e.g. ok:false),
+   * for activities whose own status reads completed. */
+  failed?: boolean
+}) => {
   const iconProps = {
     className: 'size-3.5 shrink-0',
     strokeWidth: 2.2,
     'aria-hidden': true
   } as const
 
-  if (activity.status === 'failed') return <CircleAlert {...iconProps} />
+  if (failed ?? activity.status === 'failed') return <CircleAlert {...iconProps} />
   if (
     activity.status === 'declined' ||
     activity.status === 'cancelled' ||

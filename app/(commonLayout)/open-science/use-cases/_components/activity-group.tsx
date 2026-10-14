@@ -7,7 +7,7 @@ import type { NormalizedActivity, UseCaseAsset } from '@/lib/use-case-types'
 import { cn } from '@/lib/utils'
 import {
   formatActivityGroupElapsed,
-  formatActivityGroupTitle,
+  formatStaticGroupTitle,
   formatStepCount,
   getActivityGroupElapsedMs
 } from './activity-group-title'
@@ -43,7 +43,7 @@ export const SessionActivityGroup = ({
             <ChevronRight className="size-3.5" strokeWidth={2.2} aria-hidden="true" />
           </span>
           <span className="min-w-0 truncate text-left font-medium text-text-000">
-            {formatActivityGroupTitle(activities)}
+            {formatStaticGroupTitle(activities)}
           </span>
           <span className="ml-auto shrink-0 whitespace-nowrap text-[12px] tabular-nums text-text-000">
             {formatStepCount(activities)} ·{' '}

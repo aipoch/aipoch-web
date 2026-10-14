@@ -30,8 +30,14 @@ interface Row {
 
 const auditItems = (items: TranscriptItem[], rows: Map<string, Row>) => {
   for (const item of items) {
-    if (item.type !== 'activity-group') continue
-    for (const activity of item.activities as NormalizedActivity[]) {
+    const activities =
+      item.type === 'activity-group'
+        ? item.activities
+        : item.type === 'plan'
+          ? [item.activity]
+          : undefined
+    if (!activities) continue
+    for (const activity of activities as NormalizedActivity[]) {
       const tool = activity.providerToolName ?? '(unnamed)'
       const renderer = classifyActivityRenderer(activity)
       const key = `${tool}${renderer}`

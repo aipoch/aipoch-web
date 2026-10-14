@@ -1,4 +1,4 @@
-import { Check, CircleHelp } from 'lucide-react'
+import { Bot, Check, CircleHelp } from 'lucide-react'
 import type { TranscriptItem } from '@/lib/use-case-types'
 
 type ElicitationItem = Extract<TranscriptItem, { type: 'elicitation' }>
@@ -37,7 +37,32 @@ const asFields = (fields: unknown[]): ElicitationField[] =>
 
 // Mirror of the app's answered elicitation review: the selected option (or the
 // custom free-form answer) is highlighted with a primary check, everything
-// else renders as numbered, unselected rows.
+// else renders as numbered, unselected rows. Terminal cards prefix the title
+// (app: WorkspaceElicitationCard) and select questions end with the agent row.
+const AGENT_DECIDE_VALUE = 'Let the agent decide'
+
+// The trailing row of every select question: a Bot icon when unanswered as
+// agent-decided, a primary check when the recorded answer chose it.
+const AgentDecideRow = ({ selected }: { selected: boolean }) => (
+  <div
+    data-selected={selected ? 'true' : 'false'}
+    className={`flex w-full items-start gap-2 rounded-md px-1 py-1.5 text-left text-[13px] font-medium ${selected ? 'bg-bg-200' : ''}`}
+  >
+    <span
+      className={`mt-px grid size-5 shrink-0 place-items-center rounded-md ${
+        selected ? 'bg-primary text-primary-foreground' : 'bg-bg-200 text-text-100'
+      }`}
+    >
+      {selected ? (
+        <Check className="size-3" strokeWidth={2} aria-label="Selected" />
+      ) : (
+        <Bot className="size-3" strokeWidth={1.75} aria-hidden="true" />
+      )}
+    </span>
+    <span className="min-w-0 flex-1">{AGENT_DECIDE_VALUE}</span>
+  </div>
+)
+
 export const SessionElicitationCard = ({ item }: { item: ElicitationItem }) => {
   const fields = asFields(item.fields)
   const answers = item.state === 'answered' ? (item.answers ?? []) : []
@@ -45,6 +70,21 @@ export const SessionElicitationCard = ({ item }: { item: ElicitationItem }) => {
     answers.find((answer) => answer.fieldId === fieldId)?.value
   const isSelected = (answer: unknown, optionValue: string): boolean =>
     answer === optionValue || (Array.isArray(answer) && answer.includes(optionValue))
+  const terminalPrefix =
+    item.state === 'declined' ? 'Skipped · ' : item.state === 'cancelled' ? 'Cancelled · ' : ''
+
+  // A select question pairs with a free-text companion field (`<id>_custom`,
+  // kind text) that carries "Let the agent decide" or a custom answer (app:
+  // resolveAgentUserChoiceQuestions in shared/elicitation.ts). The companion
+  // renders inside its select group, never as its own fieldset.
+  const customCompanionFor = (field: ElicitationField): ElicitationField | undefined =>
+    fields.find((candidate) => candidate.id === `${field.id}_custom` && candidate.kind === 'text')
+  const isCustomCompanion = (field: ElicitationField): boolean =>
+    fields.some(
+      (candidate) =>
+        (candidate.kind === 'single-select' || candidate.kind === 'multi-select') &&
+        customCompanionFor(candidate)?.id === field.id
+    )
 
   return (
     <div className="px-4 pb-1 pt-3 md:px-6">
@@ -55,12 +95,17 @@ export const SessionElicitationCard = ({ item }: { item: ElicitationItem }) => {
               <CircleHelp className="size-3.5" strokeWidth={2} aria-hidden="true" />
             </span>
             <h3 className="min-w-0 flex-1 whitespace-pre-wrap break-words text-sm font-semibold leading-5 text-text-000">
+              {terminalPrefix}
               {item.message}
             </h3>
           </div>
           <div className="mt-3 space-y-4">
             {fields.map((field) => {
+              if (isCustomCompanion(field)) return null
               const answer = answerFor(field.id)
+              const companion = customCompanionFor(field)
+              const customAnswer = companion ? answerFor(companion.id) : undefined
+              const agentDecides = customAnswer === AGENT_DECIDE_VALUE
               return (
                 <fieldset key={field.id} className="space-y-2">
                   <legend className="text-sm font-medium text-text-000">{field.label}</legend>
@@ -103,6 +148,23 @@ export const SessionElicitationCard = ({ item }: { item: ElicitationItem }) => {
                           </div>
                         )
                       })}
+                      {companion ? <AgentDecideRow selected={agentDecides} /> : null}
+                      {companion &&
+                      typeof customAnswer === 'string' &&
+                      customAnswer &&
+                      !agentDecides ? (
+                        <div
+                          data-selected="true"
+                          className="flex w-full items-start gap-2 rounded-md bg-bg-200 px-1 py-1.5 text-left"
+                        >
+                          <span className="mt-px grid size-5 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                            <Check className="size-3" strokeWidth={2} aria-label="Selected" />
+                          </span>
+                          <span className="min-w-0 flex-1 break-words text-[13px] font-medium leading-[18px] text-text-000">
+                            {customAnswer}
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                   ) : typeof answer === 'string' && answer ? (
                     <div

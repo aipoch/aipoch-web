@@ -124,10 +124,18 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   // Unanswered: dashed free-form placeholder.
   await expect(page.getByText('Free-form answer')).toBeVisible()
 
-  // -- expand both activity groups ------------------------------------------------
+  // -- expand the activity groups ------------------------------------------------
   for (const groupButton of await page.getByRole('button', { name: /steps ·/ }).all()) {
     await groupButton.click()
   }
+
+  // -- plan block: standalone card, no group chrome, visible without clicks -------
+  const planSummary = page.getByText(/Coverage plan: collect inputs/)
+  await planSummary.scrollIntoViewIfNeeded()
+  await expect(planSummary).toBeVisible()
+  await expect(page.getByText('Collect coverage inputs', { exact: true }).first()).toBeVisible()
+  // Step updates never reach the transcript (app: workspace-conversation-items).
+  await expect(page.getByText('Plan step update')).toHaveCount(0)
 
   // -- per-renderer rows + detail sections -----------------------------------------
   const expandRow = async (name: string | RegExp) => {
@@ -148,20 +156,25 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   await expandRow(/^Skill\b.*mcp-literature/)
   await expect(page.getByText(/Coverage skill document body|Coverage Skill/).first()).toBeVisible()
 
-  // The first "Notebook run" row is the repl execution; its accessible name
-  // ends with the "done" meta label.
-  await expandRow(/^Notebook run done$/)
+  // The repl execution resolves to the Agent SDK display name; completed runs
+  // carry no "done" meta — figure and output-line counts lead instead.
+  await expandRow(/^Agent SDK/)
+  // Notebook outputs start collapsed behind their section toggles.
+  await page.locator('details').getByText('stdout', { exact: true }).click()
   await expect(page.getByText('coverage stdout line')).toBeVisible()
+  await page.locator('details').getByText('stderr', { exact: true }).click()
   await expect(page.getByText('coverage stderr warning')).toBeVisible()
+  // Figures render beside the row, visible even while its details collapse.
   await expect(page.locator('img[src^="blob:"]').first()).toBeVisible()
 
   await expandRow(/^Notebook run\b.*coverage_cell/)
+  await page.locator('details').getByText('Result', { exact: true }).click()
   await expect(page.getByText(/coverage_auc/)).toBeVisible()
 
   await expandRow(/^Read\b.*coverage_notes/)
   await expect(page.getByText(/read-file body line/)).toBeVisible()
 
-  await expandRow('Manage packages')
+  await expandRow('Installed 2 packages')
   await expect(page.getByText('pandas')).toBeVisible()
   await expect(page.getByText('scikit-learn')).toBeVisible()
 
@@ -182,21 +195,24 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   )
 
   // -- generic fallback + edge states -----------------------------------------------
-  await expandRow('Mystery tool')
+  // Unknown tools keep their raw provider identity as the row name.
+  await expandRow('mcp__acme__mystery_tool')
   await expect(page.getByText(/coverage_input/)).toBeVisible()
 
-  await expandRow('Failing tool')
+  await expandRow('mcp__acme__failing_tool')
   await expect(page.getByText('failed', { exact: true })).toBeVisible()
 
-  await expandRow('Declined tool')
-  await expect(page.getByRole('button', { name: 'Declined tool' })).toBeVisible()
+  await expandRow('mcp__acme__declined_tool')
+  await expect(page.getByRole('button', { name: 'mcp__acme__declined_tool' })).toBeVisible()
 
-  await expandRow('Truncated tool')
+  await expandRow('mcp__acme__truncated_tool')
   await expect(page.getByText(/Long payloads are shortened in the essential view/)).toHaveCount(0)
+  // Essential-tier payloads disclose the truncation below the details.
+  await expect(page.getByText('Output truncated', { exact: true })).toBeVisible()
   await expect(page.locator('pre').filter({ hasText: 'x'.repeat(30000) })).toBeVisible()
 
   // A tool with no payload renders as a one-line row with expansion disabled.
-  await expect(page.getByRole('button', { name: 'Empty tool' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'mcp__acme__empty_tool' })).toBeDisabled()
 
   // -- artifact gallery: 4 states -----------------------------------------------------
   // content-visibility renders offscreen rows lazily — bring the gallery into view first.
@@ -335,9 +351,9 @@ export async function verifyReplayLoading(page: Page, url: string) {
       workers.at(-1)?.onmessage({ data })
     }, data)
   await emit({ type: 'progress', progress: { stage: 'downloading', loaded: 20, total: 100 } })
-  await expect(page.getByRole('status')).toHaveText('Downloading research package…')
+  // The percent sits inside the status line since the skeleton redesign (#28).
+  await expect(page.getByRole('status')).toHaveText('Downloading research package… 20%')
   await expect(page.getByRole('progressbar')).toHaveAttribute('value', '20')
-  await expect(page.getByText('20%', { exact: true })).toBeVisible()
   await emit({ type: 'progress', progress: { stage: 'downloading', loaded: 30 } })
   await expect(page.getByRole('progressbar')).not.toHaveAttribute('value')
   for (const [stage, label] of [

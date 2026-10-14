@@ -19,7 +19,9 @@
       "bytes": 1368,
       "sha256": "8d0399c9934a0f44b2dee148dc4a6f90165381c7d2ce5a25427d4926bad6578f",
       "path": null
-    }
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
   },
   {
     "title": "Can AI Spot the Errors in a Spreadsheet",
@@ -42,7 +44,9 @@
       "bytes": 2727,
       "sha256": "f2c51f4436f8b35accd774dbf9a2068bf3db3178bb49d3e63601e7499455c8a6",
       "path": "Can AI Spot the Errors in a Spreadsheet/Can AI Spot the Errors in a Spreadsheet.md"
-    }
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
   },
   {
     "title": "Can GLP-1 Drugs Really Help Us Live Longer",
@@ -65,7 +69,9 @@
       "bytes": 6001,
       "sha256": "5b2991ecbfd90d4aa5c760bf81201be4b3c251de7c760f002794358cf3553352",
       "path": "Can GLP-1 Drugs Really Help Us Live Longer/Can GLP-1 Drugs Really Help Us Live Longer.md"
-    }
+    },
+    "catalog": "Health & Climate",
+    "catalog_name": "health-climate"
   },
   {
     "title": "First Flight vs. Evening Flight - Which Is More Reliable",
@@ -82,7 +88,9 @@
       "sha256": "b369898d150c4b5199f7b6f0014b2d2673e3d1c9dcdbc914745554341a51ddf1",
       "path": "First Flight vs. Evening Flight - Which Is More Reliable/First Flight vs. Evening Flight - Which Is More Reliable.science",
       "release_url": "https://github.com/aipoch/open-science-usecases/releases/download/completed-cases-2026-09-23/first-flight-vs-evening-flight.science"
-    }
+    },
+    "catalog": "Engineering & Technology",
+    "catalog_name": "engineering-technology"
   },
   {
     "title": "Hotter Years, Hotter Days",
@@ -105,7 +113,9 @@
       "bytes": 1465,
       "sha256": "3c9dfa3d243aae9992c19506a2415f2bced9be7d3c19d81493b8c0daa4c9f610",
       "path": "Hotter Years, Hotter Days/Hotter Years, Hotter Days.md"
-    }
+    },
+    "catalog": "Health & Climate",
+    "catalog_name": "health-climate"
   },
   {
     "title": "How Many Homes Could AI Data Centers Power",
@@ -128,7 +138,9 @@
       "bytes": 3163,
       "sha256": "7fc7339663bae1eab5f2ca9c9530c617aaf94624c34c75d6e8d30ee039ee8acc",
       "path": "How Many Homes Could AI Data Centers Power/How Many Homes Could AI Data Centers Power.md"
-    }
+    },
+    "catalog": "Engineering & Technology",
+    "catalog_name": "engineering-technology"
   },
   {
     "title": "Our Nearest Exoplanet - How Long Is the Trip",
@@ -151,7 +163,9 @@
       "bytes": 846,
       "sha256": "3bcf672f5070ea16f25012683bd38b892f71afcaa864f329d20c2ef40f77d8c0",
       "path": "Our Nearest Exoplanet - How Long Is the Trip/Our Nearest Exoplanet - How Long Is the Trip.md"
-    }
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
   },
   {
     "title": "Which Planet Is Most Like Earth—and Who Decides",
@@ -174,7 +188,9 @@
       "bytes": 774,
       "sha256": "6ab4942985dcc183497d14aa93a9278afc5275c19894254cc35a8ca39f2b02ae",
       "path": "Which Planet Is Most Like Earth—and Who Decides/Which Planet Is Most Like Earth—and Who Decides.md"
-    }
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
   },
   {
     "title": "Why Do Coffee and Sleep Studies Disagree",
@@ -197,6 +213,8 @@
       "bytes": 5573,
       "sha256": "304006a3ad0de43be54cac5428408889878a68b9bc802ddc696999f0712160a9",
       "path": "Why Do Coffee and Sleep Studies Disagree/Why Do Coffee and Sleep Studies Disagree.md"
-    }
+    },
+    "catalog": "Health & Climate",
+    "catalog_name": "health-climate"
   }
 ]

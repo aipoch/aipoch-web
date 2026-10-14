@@ -1,8 +1,10 @@
-import type { UseCaseSession } from '@/lib/use-case-types'
+import type { NormalizedActivity, UseCaseSession } from '@/lib/use-case-types'
 import { SessionActivityGroup } from './activity-group'
 import { SessionElicitationCard } from './elicitation-card'
 import { FilePreviewProvider } from './file-preview'
 import { SessionMessageItem } from './message-item'
+import { PlanCard } from './plan-card'
+import { projectGeneratePlanActivity } from './plan-projection'
 
 // The "Completed" footer is a turn-level marker in the app: it appears once at
 // the end of each turn (the last assistant message before the next user
@@ -21,6 +23,24 @@ const turnFinalMessageIds = (items: UseCaseSession['items']): Set<string> => {
   }
   flush()
   return ids
+}
+
+// Standalone plan block: the app's plan-activity header plus the ported card
+// body; no group or row chrome around it.
+const SessionPlanItem = ({ activity }: { activity: NormalizedActivity }) => {
+  const projection = projectGeneratePlanActivity(activity)
+  return (
+    <div className="px-4 pb-0.5 pt-2.5 md:px-6">
+      <div className="w-full overflow-hidden rounded-[14px] bg-bg-200/70 px-1.5 py-1">
+        <div className="flex items-center gap-2 py-[5px] pl-1.5 pr-2.5 text-[13px]">
+          <span className="min-w-0 truncate text-left font-medium text-text-000">
+            {projection.heading}
+          </span>
+        </div>
+        <PlanCard projection={projection} />
+      </div>
+    </div>
+  )
 }
 
 // Read-only replay of one exported Open-Science session. The centered column matches the app's
@@ -46,6 +66,13 @@ export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
               return (
                 <div key={item.id} className={rowClassName}>
                   <SessionActivityGroup activities={item.activities} assets={session.assets} />
+                </div>
+              )
+            }
+            if (item.type === 'plan') {
+              return (
+                <div key={item.id} className={rowClassName}>
+                  <SessionPlanItem activity={item.activity} />
                 </div>
               )
             }

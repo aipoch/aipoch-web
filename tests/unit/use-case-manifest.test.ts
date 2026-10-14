@@ -35,6 +35,34 @@ describe('use-case manifest normalization', () => {
     expect(cases[3].introductionUrl).toBeUndefined()
   })
 
+  test('maps the catalog taxonomy and treats empty strings as uncategorized', () => {
+    const cases = parseUseCaseManifest(manifest, url)
+    // catalog is the display label, catalog_name the kebab-case key.
+    expect(cases[0]).toMatchObject({ catalog: 'Science', catalogKey: 'science' })
+
+    const [uncategorized] = parseUseCaseManifest(
+      [{ ...structuredClone(manifest[0]), catalog: '', catalog_name: '' }],
+      url
+    )
+    expect(uncategorized.catalog).toBeUndefined()
+    expect(uncategorized.catalogKey).toBeUndefined()
+
+    // A label without a key still filters: the key derives from the label.
+    const [labelOnly] = parseUseCaseManifest(
+      [{ ...structuredClone(manifest[0]), catalog: 'Curiosity Lab', catalog_name: '' }],
+      url
+    )
+    expect(labelOnly).toMatchObject({ catalog: 'Curiosity Lab', catalogKey: 'curiosity-lab' })
+
+    // Non-kebab keys stay a hard validation error.
+    expect(() =>
+      parseUseCaseManifest(
+        [{ ...structuredClone(manifest[0]), catalog: 'Science', catalog_name: 'Not Kebab' }],
+        url
+      )
+    ).toThrow('catalog_name')
+  })
+
   test('uses the case name and encodes the file name as one URL segment', () => {
     const [entry] = parseUseCaseManifest(
       [{ ...manifest[0], cover: { ...manifest[0].cover, file_name: '图 #1?100%.png' } }],
