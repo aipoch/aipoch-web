@@ -28,12 +28,11 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
       session.current = null
     }
   }, [url, filename])
-  const busy = ['downloading', 'sending', 'canceling'].includes(state.phase)
+  const busy = ['checking', 'opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
   const downloading = state.phase === 'downloading'
   const sending = state.phase === 'sending'
   const progressing = downloading || sending
-  const needsApp =
-    state.phase === 'unsupported' || (state.phase === 'error' && state.action === 'open')
+  const needsApp = state.needsApp
   const total = state.total ?? (downloading ? packageInfo.sizeBytes : undefined)
   const percent =
     total && total > 0 && state.loaded !== undefined
@@ -42,11 +41,19 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   const progressText = percent !== undefined ? `${percent}%` : '—%'
   const progressLabel = downloading ? 'Downloading .science package' : 'Sending to Open-Science'
   const label =
-    state.phase === 'canceling'
-      ? 'Canceling…'
-      : state.phase === 'received'
-        ? 'Sent to Open-Science'
-        : 'Continue in Open-Science'
+    state.phase === 'checking'
+      ? 'Checking Open-Science…'
+      : state.phase === 'opening'
+        ? 'Opening Open-Science…'
+        : state.phase === 'canceling'
+          ? 'Canceling…'
+          : state.phase === 'received'
+            ? 'Sent to Open-Science'
+            : state.action === 'open'
+              ? 'Open Open-Science'
+              : state.needsApp
+                ? 'Try again'
+                : 'Continue in Open-Science'
 
   return (
     <section
@@ -120,12 +127,6 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         >
           {state.message}
         </p>
-        {needsApp ? (
-          <p>
-            If you have not installed Open-Science yet, download Open-Science first. Otherwise, open
-            the app and try again.
-          </p>
-        ) : null}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {needsApp ? (
             <a

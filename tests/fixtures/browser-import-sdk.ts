@@ -5,6 +5,8 @@ import type {
 
 // Browser component tests only: no custom protocol, crypto, receiver or desktop process.
 const state = {
+  checks: 0,
+  availability: 'available' as 'available' | 'unavailable',
   prepares: 0,
   sends: 0,
   cancels: 0,
@@ -17,6 +19,10 @@ const state = {
 }
 Object.assign(window, { importTest: state })
 export const waitForBrowserMock = async () => {}
+export const checkBrowserImportAvailability = async () => {
+  state.checks++
+  return { status: state.availability }
+}
 export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
   state.prepares++
   state.blobSize = blob.size
@@ -42,7 +48,9 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
         state.fail = (timeout = false) => {
           cleanup()
           reject(
-            timeout ? new DOMException('Timed out', 'TimeoutError') : new TypeError('Network error')
+            timeout
+              ? Object.assign(new Error('Readiness failed'), { code: 'timeout' })
+              : new TypeError('Network error')
           )
         }
       })

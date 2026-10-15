@@ -1,4 +1,5 @@
 import { http, passthrough } from 'msw'
+import { browserImportHandlers } from './browser-import'
 import { contentHandlers, downloadHandlers } from './content'
 import { leaderboardHandlers } from './leaderboards'
 import { json, missing } from './shared'
@@ -12,6 +13,7 @@ const fallbackHandlers = (origin: string) => [
 ]
 /** Read-only interception is identical in the browser and Next server. */
 export const interceptionHandlers = (origin: string) => [
+  ...browserImportHandlers(origin),
   ...skillHandlers(origin),
   ...contentHandlers(origin),
   ...leaderboardHandlers(origin),

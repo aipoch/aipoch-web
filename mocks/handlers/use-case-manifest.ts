@@ -15,6 +15,7 @@ export const useCaseManifestHandlers = (origin: string) => {
   let requests = 0
   let notModified = 0
   let lastValidator: string | null = null
+  let discoveryMode = 'available'
   let packageMode = 'normal'
   let packageDelayMs = 0
   let packageRequests = 0
@@ -57,11 +58,13 @@ export const useCaseManifestHandlers = (origin: string) => {
         requests,
         notModified,
         lastValidator,
-        packageRequests
+        packageRequests,
+        discoveryMode
       })
     ),
     http.put(`${origin}/__mock/use-case-manifest`, async ({ request }) => {
       const update = (await request.json()) as {
+        discoveryMode?: string
         mode?: string
         titleSuffix?: string
         delayMs?: number
@@ -69,6 +72,10 @@ export const useCaseManifestHandlers = (origin: string) => {
         packageDelayMs?: number
       }
       if (
+        (update.discoveryMode !== undefined &&
+          !['available', 'unavailable', 'incompatible', 'timeout'].includes(
+            update.discoveryMode
+          )) ||
         (update.mode !== undefined &&
           !['normal', 'empty', 'error', 'invalid'].includes(update.mode)) ||
         (update.titleSuffix !== undefined && typeof update.titleSuffix !== 'string') ||
@@ -82,6 +89,7 @@ export const useCaseManifestHandlers = (origin: string) => {
           (!Number.isInteger(update.delayMs) || update.delayMs < 0 || update.delayMs > 5000))
       )
         return new HttpResponse(null, { status: 400 })
+      discoveryMode = update.discoveryMode ?? 'available'
       mode = update.mode ?? 'normal'
       titleSuffix = update.titleSuffix ?? ''
       delayMs = update.delayMs ?? 0

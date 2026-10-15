@@ -1,9 +1,13 @@
 import { waitForBrowserMock } from '@/mocks/ready'
 import type {
   BrowserImportTransfer,
+  checkBrowserImportAvailability as CheckBrowserImportAvailability,
   prepareBrowserImport as PrepareBrowserImport
 } from '@/vendor/open-science/browser-import'
-import { prepareBrowserImport } from '@/vendor/open-science/browser-import.mjs'
+import {
+  checkBrowserImportAvailability,
+  prepareBrowserImport
+} from '@/vendor/open-science/browser-import.mjs'
 
 const MAX_BYTES = 2 * 1024 ** 3
 const RECEIVER_IDLE_MS = 110_000
@@ -12,6 +16,8 @@ type DownloadProgress = { loaded: number; total?: number }
 export type ImportState = {
   phase:
     | 'idle'
+    | 'checking'
+    | 'opening'
     | 'downloading'
     | 'ready'
     | 'sending'
@@ -23,6 +29,7 @@ export type ImportState = {
   action?: 'prepare' | 'open'
   loaded?: number
   total?: number
+  needsApp?: boolean
 }
 export const INITIAL_IMPORT_STATE: ImportState = {
   phase: 'idle',
@@ -34,15 +41,25 @@ class DownloadError extends Error {}
 
 export function scienceImportFilename(filename: string): string {
   if (!/\.science$/i.test(filename)) throw new DownloadError('Choose a .science research package.')
-  // CDN titles can contain punctuation that the desktop filename contract forbids.
-  const stem = filename
-    .slice(0, -8)
-    // biome-ignore lint/suspicious/noControlCharactersInRegex: Match the upstream safe-filename contract.
-    .replace(/[\x00-\x1f\x7f/\\:*?"<>|\u202a-\u202e\u2066-\u2069]/gu, '_')
-    .trim()
-    .replace(/^[.\s]+/, '')
-    .slice(0, 152)
-  return `${stem || 'research-package'}.science`
+  // Normalize before downloading; reserve room for the suffix in both SDK limits.
+  let stem =
+    filename
+      .slice(0, -8)
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: Match the upstream safe-filename contract.
+      .replace(/[\x00-\x1f\x7f/\\:*?"<>|\u202a-\u202e\u2066-\u2069]/gu, '_')
+      .trim()
+      .replace(/^[.\s]+/, '') || 'research-package'
+  if (/^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/iu.test(stem)) stem = `_${stem}`
+  const encoder = new TextEncoder()
+  let safe = ''
+  let bytes = 0
+  for (const character of stem) {
+    const size = encoder.encode(character).byteLength
+    if (safe.length + character.length > 152 || bytes + size > 247) break
+    safe += character
+    bytes += size
+  }
+  return `${safe}.science`
 }
 
 export async function downloadSciencePackage(
@@ -110,6 +127,7 @@ const supportsImport = () =>
   typeof globalThis.AbortSignal?.timeout === 'function'
 
 type Dependencies = {
+  availability: typeof CheckBrowserImportAvailability
   download: typeof downloadSciencePackage
   prepare: typeof PrepareBrowserImport
   launch: (url: string) => void
@@ -124,6 +142,7 @@ export function createScienceImport(
   dependencies: Partial<Dependencies> = {}
 ) {
   const deps: Dependencies = {
+    availability: checkBrowserImportAvailability as typeof CheckBrowserImportAvailability,
     download: downloadSciencePackage,
     // The upstream package normally pairs these through its exports.types entry.
     prepare: prepareBrowserImport as typeof PrepareBrowserImport,
@@ -134,6 +153,7 @@ export function createScienceImport(
     supported: supportsImport,
     ...dependencies
   }
+  let filename: string
   let blob: Blob | undefined
   let transfer: BrowserImportTransfer | undefined
   let controller: AbortController | undefined
@@ -150,61 +170,113 @@ export function createScienceImport(
   }
   const freshTransfer = () => {
     if (!blob) throw new Error('No prepared package')
-    transfer = deps.prepare(blob, { filename: scienceImportFilename(source.filename) })
+    transfer = deps.prepare(blob, { filename })
     activeAt = deps.now()
   }
   const session = {
     async prepareAndOpen(): Promise<void> {
-      await session.prepare()
-      // Async downloads may exhaust browser activation; open() also remains a direct-click retry.
-      await session.open()
-    },
-    async prepare() {
       if (busy || disposed || received || blob) return
+      // Only the operation that prepared this Blob may automatically launch it.
+      if (await session.prepare()) await session.open()
+    },
+    async prepare(): Promise<boolean> {
+      if (busy || disposed || received || blob) return false
       if (!deps.supported()) {
         emit({
           phase: 'unsupported',
+          action: 'prepare',
+          needsApp: true,
           message:
             'Browser import requires HTTPS and a supported browser. Download the package and open it in Open-Science instead.'
         })
-        return
+        return false
+      }
+      try {
+        filename = scienceImportFilename(source.filename)
+      } catch {
+        emit({ phase: 'error', action: 'prepare', message: 'Choose a .science research package.' })
+        return false
       }
       busy = true
       controller = new AbortController()
-      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(120_000)])
-      emit({ phase: 'downloading', message: 'Downloading research package…', loaded: 0 })
+      const operation = controller
+      let stage: 'checking' | 'downloading' | 'preparing' = 'checking'
+      let signal = operation.signal
+      emit({ phase: 'checking', message: 'Checking Open-Science…' })
       try {
         await waitForBrowserMock()
         signal.throwIfAborted()
-        const downloaded = await deps.download(source, {
-          signal,
-          onProgress: (progress) => {
-            if (!signal.aborted)
-              emit({ phase: 'downloading', message: 'Downloading research package…', ...progress })
-          }
-        })
+        const availability = await deps.availability({ signal })
         signal.throwIfAborted()
-        if (disposed) return
+        if (availability.status !== 'available') {
+          emit(
+            availability.status === 'aborted'
+              ? {
+                  phase: 'idle',
+                  action: 'prepare',
+                  message: 'Check canceled. Try again when you are ready.'
+                }
+              : {
+                  phase: availability.status === 'unsupported-browser' ? 'unsupported' : 'error',
+                  action: 'prepare',
+                  needsApp: true,
+                  message:
+                    "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first."
+                }
+          )
+          return false
+        }
+        stage = 'downloading'
+        // The download budget is independent of discovery and receiver readiness.
+        signal = AbortSignal.any([operation.signal, AbortSignal.timeout(120_000)])
+        emit({ phase: 'downloading', message: 'Downloading .science package…', loaded: 0 })
+        const downloaded = await deps.download(
+          { ...source, filename },
+          {
+            signal,
+            onProgress: (progress) => {
+              if (!signal.aborted)
+                emit({
+                  phase: 'downloading',
+                  message: 'Downloading .science package…',
+                  ...progress
+                })
+            }
+          }
+        )
+        signal.throwIfAborted()
+        if (disposed) return false
         blob = downloaded
+        // Parameter/SDK failures retain the downloaded bytes and never trigger another download.
+        stage = 'preparing'
         freshTransfer()
         emit({
           phase: 'ready',
           message: 'Package ready. Open Open-Science to continue.',
           action: 'open'
         })
+        return true
       } catch (error) {
-        clear()
+        const canceled = operation.signal.aborted
         emit({
-          phase: controller.signal.aborted ? 'idle' : 'error',
-          action: 'prepare',
-          message: controller.signal.aborted
-            ? 'Download canceled. Prepare the package to try again.'
-            : error instanceof DownloadError
-              ? error.message
-              : signal.aborted
-                ? 'The download timed out. Try again or use the regular download.'
-                : 'Could not download the package. Check your connection and try again, or use the regular download.'
+          phase: canceled ? 'idle' : 'error',
+          action: blob ? 'open' : 'prepare',
+          needsApp: stage === 'checking' && !canceled,
+          message: canceled
+            ? stage === 'checking'
+              ? 'Check canceled. Try again when you are ready.'
+              : 'Download canceled. Prepare the package to try again.'
+            : stage === 'preparing'
+              ? 'Could not prepare the transfer. Try opening Open-Science again, or use the regular download.'
+              : stage === 'checking'
+                ? "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first."
+                : error instanceof DownloadError
+                  ? error.message
+                  : signal.aborted
+                    ? 'The download timed out. Try again or use the regular download.'
+                    : 'Could not download the package. Check your connection and try again, or use the regular download.'
         })
+        return false
       } finally {
         busy = false
         controller = undefined
@@ -215,21 +287,20 @@ export function createScienceImport(
       busy = true
       controller = new AbortController()
       const signal = controller.signal
-      emit({
-        phase: 'sending',
-        message:
-          'Waiting for Open-Science. Allow the browser to open the app and access your local network.',
-        loaded: 0,
-        total: blob.size
-      })
+      let launched = false
+      emit({ phase: 'opening', message: 'Opening Open-Science…' })
       try {
         if (!transfer || deps.now() - activeAt >= RECEIVER_IDLE_MS) freshTransfer()
         if (!transfer) throw new Error('No transfer')
         // Launch before send; a direct-click retry restores activation if auto-launch was blocked.
         deps.launch(transfer.url)
+        launched = true
         activeAt = deps.now()
         const receipt = await transfer.send({
           signal,
+          readinessAttempts: 5,
+          attemptTimeoutMs: 2000,
+          readyTimeoutMs: 15000,
           onProgress: ({ sentBytes, totalBytes }) => {
             activeAt = deps.now()
             if (!signal.aborted)
@@ -249,21 +320,23 @@ export function createScienceImport(
           message: 'File sent to Open-Science. Please confirm the import in the app.'
         })
       } catch (error) {
-        // The pinned SDK exposes Error messages rather than typed error codes.
-        const timeout =
-          error instanceof Error &&
-          (error.name === 'TimeoutError' || error.message.includes('did not become ready'))
-        const invalidReceiver =
-          error instanceof Error &&
-          /receiver identity|Invalid local|acknowledge/.test(error.message)
-        if (signal.aborted || timeout || invalidReceiver) transfer = undefined
+        // Readiness failures are structured; other transport failures remain retryable.
+        const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+        const readinessFailure = [
+          'timeout',
+          'readiness-exhausted',
+          'incompatible',
+          'unsupported-browser'
+        ].includes(String(code))
+        if (signal.aborted || code === 'timeout' || code === 'incompatible') transfer = undefined
         emit({
           phase: signal.aborted ? 'ready' : 'error',
           action: 'open',
+          needsApp: !signal.aborted,
           message: signal.aborted
             ? 'Transfer canceled. Open Open-Science again to retry with the prepared package.'
-            : timeout
-              ? 'Could not open Open-Science. Open the app, allow external apps and local network access, then retry. The app may also be waiting for your confirmation.'
+            : readinessFailure || !launched
+              ? 'Could not open Open-Science. Open the app, allow external apps and local network access, then try again.'
               : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
         })
       } finally {

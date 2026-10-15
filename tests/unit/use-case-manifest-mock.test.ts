@@ -98,3 +98,25 @@ test('serves extracted metadata and referenced objects from the same package', a
   expect(await asset?.text()).toBe('Sample coverage_report.md')
   expect((await getResponse(handlers, new Request(`${base}objects/missing`)))?.status).toBe(404)
 })
+
+test('discovery scenarios are adapter-owned and validate control input', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const control = `${origin}/__mock/use-case-manifest`
+  for (const discoveryMode of ['available', 'unavailable', 'timeout', 'incompatible']) {
+    const updated = await getResponse(
+      handlers,
+      new Request(control, { method: 'PUT', body: JSON.stringify({ discoveryMode }) })
+    )
+    expect(updated?.status).toBe(200)
+    expect(await (await getResponse(handlers, new Request(control)))?.json()).toMatchObject({
+      discoveryMode,
+      packageRequests: 0
+    })
+  }
+  const invalid = await getResponse(
+    handlers,
+    new Request(control, { method: 'PUT', body: JSON.stringify({ discoveryMode: 'installed' }) })
+  )
+  expect(invalid?.status).toBe(400)
+})

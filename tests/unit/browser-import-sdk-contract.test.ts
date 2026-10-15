@@ -1,0 +1,209 @@
+import { afterAll, afterEach, expect, spyOn, test } from 'bun:test'
+import { createHmac } from 'node:crypto'
+import { scienceImportFilename } from '../../lib/science-package/browser-import'
+import type {
+  checkBrowserImportAvailability as Check,
+  prepareBrowserImport as Prepare
+} from '../../vendor/open-science/browser-import'
+import {
+  checkBrowserImportAvailability as checkImplementation,
+  prepareBrowserImport as prepareImplementation
+} from '../../vendor/open-science/browser-import.mjs'
+
+// Exercise the actual pinned SDK with deterministic HTTP responses, never a desktop process.
+const checkBrowserImportAvailability = checkImplementation as typeof Check
+const prepareBrowserImport = prepareImplementation as typeof Prepare
+const fetchSpy = spyOn(
+  globalThis as { fetch: (url: RequestInfo | URL, init?: RequestInit) => Promise<Response> },
+  'fetch'
+)
+afterEach(() => fetchSpy.mockReset())
+afterAll(() => fetchSpy.mockRestore())
+const origin = 'https://research.example'
+const prepare = () =>
+  prepareBrowserImport(new Blob(['hello']), { filename: 'study.science', origin })
+const stall = (signal?: AbortSignal | null) =>
+  new Promise<never>((_resolve, reject) => {
+    if (!signal) throw new Error('Missing SDK request signal')
+    signal.throwIfAborted()
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+  })
+
+for (const [name, response, status] of [
+  [
+    'compatible',
+    () => Response.json({ service: 'open-science-browser-import', version: 1 }),
+    'available'
+  ],
+  [
+    'wrong version',
+    () => Response.json({ service: 'open-science-browser-import', version: 2 }),
+    'incompatible'
+  ],
+  ['HTTP failure', () => Response.json({}, { status: 503 }), 'incompatible'],
+  ['invalid JSON', () => new Response('{'), 'incompatible'],
+  [
+    'unreachable',
+    () => {
+      throw new TypeError('Network or CORS')
+    },
+    'unavailable'
+  ],
+  [
+    'permission denied',
+    () => {
+      throw new DOMException('Denied', 'NotAllowedError')
+    },
+    'unavailable'
+  ]
+] as const) {
+  test(`official discovery: ${name}`, async () => {
+    fetchSpy.mockImplementation(async () => response())
+    expect(await checkBrowserImportAvailability({ origin })).toEqual({ status })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(String(fetchSpy.mock.calls[0][0])).toBe(
+      'http://127.0.0.1:49151/v1/browser-import/capabilities'
+    )
+    expect(fetchSpy.mock.calls[0][1]).toMatchObject({
+      method: 'GET',
+      credentials: 'omit',
+      redirect: 'error'
+    })
+  })
+}
+
+test('official discovery bounds body reads, supports cancellation and detects missing browser APIs', async () => {
+  fetchSpy.mockImplementation(async (_url, init) =>
+    Object.assign(new Response(), { json: () => stall(init?.signal) })
+  )
+  expect(await checkBrowserImportAvailability({ origin, timeoutMs: 20 })).toEqual({
+    status: 'timeout'
+  })
+  const controller = new AbortController()
+  const pending = checkBrowserImportAvailability({ origin, signal: controller.signal })
+  controller.abort()
+  expect(await pending).toEqual({ status: 'aborted' })
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto')
+  try {
+    Reflect.deleteProperty(globalThis, 'crypto')
+    expect(await checkBrowserImportAvailability({ origin })).toEqual({
+      status: 'unsupported-browser'
+    })
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'crypto', descriptor)
+  }
+})
+
+test('official readiness stops at five two-second attempts with one-second gaps', async () => {
+  const starts: number[] = []
+  const ends: number[] = []
+  fetchSpy.mockImplementation(async (_url, init) => {
+    starts.push(performance.now())
+    try {
+      return await stall(init?.signal)
+    } finally {
+      ends.push(performance.now())
+    }
+  })
+  await expect(
+    prepare().send({ readinessAttempts: 5, attemptTimeoutMs: 2000, readyTimeoutMs: 15000 })
+  ).rejects.toMatchObject({ code: 'readiness-exhausted' })
+  expect(starts).toHaveLength(5)
+  for (let i = 0; i < 5; i++) {
+    expect(ends[i] - starts[i]).toBeGreaterThanOrEqual(1950)
+    expect(ends[i] - starts[i]).toBeLessThan(2600)
+    if (i) {
+      expect(starts[i] - ends[i - 1]).toBeGreaterThanOrEqual(950)
+      expect(starts[i] - ends[i - 1]).toBeLessThan(1600)
+    }
+  }
+  expect(ends[4] - starts[0]).toBeLessThan(15000)
+}, 20000)
+
+for (const stage of ['headers', 'body', 'gap']) {
+  test(`official total readiness deadline interrupts ${stage}`, async () => {
+    fetchSpy.mockImplementation(async (_url, init) => {
+      if (stage === 'gap') throw new TypeError('Unavailable')
+      if (stage === 'headers') return stall(init?.signal)
+      return Object.assign(new Response(), { json: () => stall(init?.signal) })
+    })
+    const start = performance.now()
+    await expect(
+      prepare().send({ readyTimeoutMs: 50, attemptTimeoutMs: 2000, readinessAttempts: 5 })
+    ).rejects.toMatchObject({ code: 'timeout' })
+    expect(performance.now() - start).toBeLessThan(500)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+}
+
+test('official cancellation interrupts the retry gap with no subsequent attempts', async () => {
+  const controller = new AbortController()
+  fetchSpy.mockRejectedValue(new TypeError('Unavailable'))
+  const pending = prepare().send({ signal: controller.signal })
+  const timer = setTimeout(() => controller.abort(), 20)
+  try {
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+  } finally {
+    clearTimeout(timer)
+  }
+  expect(fetchSpy).toHaveBeenCalledTimes(1)
+})
+
+test('official identity errors stop immediately without sending any bytes', async () => {
+  fetchSpy.mockResolvedValue(
+    Response.json({ offset: 0, accepted: false, chunkBytes: 4194304, proof: 'forged' })
+  )
+  await expect(prepare().send()).rejects.toMatchObject({ code: 'incompatible' })
+  expect(fetchSpy).toHaveBeenCalledTimes(1)
+  expect(fetchSpy.mock.calls[0][1]?.body).toBeUndefined()
+  expect(new Headers(fetchSpy.mock.calls[0][1]?.headers).has('Authorization')).toBe(false)
+})
+
+test('official readiness budget ends before transfer; progress and received are separate from import', async () => {
+  const transfer = prepare()
+  const secret = new URL(transfer.url).searchParams.get('secret') ?? ''
+  const proof = (text: string) =>
+    createHmac('sha256', Buffer.from(secret, 'hex')).update(text).digest('hex')
+  const progress: object[] = []
+  fetchSpy.mockImplementation(async (input) => {
+    const url = new URL(String(input))
+    if (url.pathname.endsWith('/ready')) {
+      expect(progress).toHaveLength(0)
+      return Response.json({
+        offset: 0,
+        accepted: false,
+        chunkBytes: 4194304,
+        proof: proof(`open-science-import-v1:${url.searchParams.get('challenge')}:0:0`)
+      })
+    }
+    if (url.pathname.endsWith('/chunk')) {
+      // This exceeds readiness's 50ms budget. Its timers must already have been disposed.
+      await Bun.sleep(100)
+      expect(progress).toHaveLength(0)
+      return Response.json({ offset: 5, proof: proof('offset:5') })
+    }
+    expect(progress).toEqual([{ sentBytes: 5, totalBytes: 5 }])
+    return Response.json({ received: true, proof: proof('received:5') }, { status: 202 })
+  })
+  const receipt = await transfer.send({
+    readyTimeoutMs: 50,
+    onProgress: (value: object) => progress.push(value)
+  })
+  expect(receipt).toEqual({ received: true })
+  expect(receipt).not.toHaveProperty('imported')
+  expect(fetchSpy).toHaveBeenCalledTimes(3)
+})
+
+for (const input of [
+  'CON.science',
+  'aux.notes.science',
+  'COM¹.science',
+  `${'研'.repeat(100)}.science`,
+  `${'😀'.repeat(100)}.science`
+]) {
+  test(`normalized filename satisfies the official validator: ${input.slice(0, 15)}`, () => {
+    const filename = scienceImportFilename(input)
+    const transfer = prepareBrowserImport(new Blob(['hello']), { filename, origin })
+    expect(new URL(transfer.url).searchParams.get('name')).toBe(filename)
+  })
+}

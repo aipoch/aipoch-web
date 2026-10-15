@@ -25,13 +25,26 @@ export async function verifyImportPreparation(
       page.getByRole('link', { name: 'Download research package', exact: true })
     ).toHaveCount(1)
     await page.screenshot({ path: screenshot })
+    const initialPackages = (await (await fetch(controls)).json()).packageRequests
+    for (const discoveryMode of ['unavailable', 'incompatible', 'timeout']) {
+      await update({ discoveryMode })
+      await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
+      await expect(composer.getByRole('alert')).toHaveText(
+        "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first."
+      )
+      const link = composer.getByRole('link', { name: 'Download Open-Science', exact: true })
+      await expect(link).toHaveAttribute('href', '/open-science/download')
+      await expect(link).toHaveAttribute('target', '_blank')
+      expect((await (await fetch(controls)).json()).packageRequests).toBe(initialPackages)
+      expect(page.url()).toBe(url)
+    }
     for (const [packageMode, message] of [
       ['error', 'HTTP 503'],
       ['empty', 'empty'],
       ['oversized', '2 GiB']
     ]) {
       await update({ packageMode })
-      await composer.getByRole('button', { name: 'Continue in Open-Science', exact: true }).click()
+      await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
       await expect(composer.getByRole('alert')).toContainText(message)
       await expect(
         composer.getByRole('button', { name: 'Continue in Open-Science', exact: true })
@@ -39,7 +52,7 @@ export async function verifyImportPreparation(
     }
     await update({ packageDelayMs: 1200 })
     const before = (await (await fetch(controls)).json()).packageRequests
-    await composer.getByRole('button', { name: 'Continue in Open-Science', exact: true }).click()
+    await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
     await expect(composer.getByRole('status')).toContainText('Downloading')
     const busyButton = composer.getByRole('button', {
       name: /^Downloading \.science package:/
@@ -59,7 +72,7 @@ export async function verifyImportPreparation(
       .poll(async () => (await (await fetch(controls)).json()).packageRequests)
       .toBe(before + 1)
     // Stop before completion: the SDK-substitute browser suite covers automatic launch.
-    await composer.getByRole('button', { name: 'Continue in Open-Science', exact: true }).click()
+    await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
     await expect(busyButton).toBeDisabled()
     await composer.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(composer.getByRole('status')).toContainText('Download canceled')

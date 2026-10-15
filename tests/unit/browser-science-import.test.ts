@@ -32,11 +32,23 @@ const setup = () => {
   )
   const prepare = mock((_blob: Blob) => ({ url: 'open-science://test-secret', send }))
   const download = mock(async () => blob)
+  const availability = mock(
+    async (): Promise<{
+      status:
+        | 'available'
+        | 'unavailable'
+        | 'timeout'
+        | 'incompatible'
+        | 'unsupported-browser'
+        | 'aborted'
+    }> => ({ status: 'available' })
+  )
   const launch = mock(() => {
     events.push('launch')
   })
   let time = 0
   const session = createScienceImport(info, (state) => states.push(state), {
+    availability,
     download,
     prepare,
     launch,
@@ -45,6 +57,7 @@ const setup = () => {
   })
   return {
     session,
+    availability,
     states,
     receipt,
     blob,
@@ -170,7 +183,7 @@ test('timeout explains permission and readiness uncertainty and renews the trans
   const s = setup()
   await s.session.prepare()
   const sending = s.session.open()
-  s.receipt.reject(new DOMException('Timed out', 'TimeoutError'))
+  s.receipt.reject(Object.assign(new Error('Arbitrary localized message'), { code: 'timeout' }))
   await sending
   expect(s.states.at(-1)?.message).toContain('allow external apps and local network access')
   expect(s.states.at(-1)?.message).not.toContain('not installed')
@@ -339,4 +352,132 @@ test('dispose during a download ignores the late Blob and all later progress', a
   await preparing
   expect(s.states).toHaveLength(count)
   expect(s.prepare).not.toHaveBeenCalled()
+})
+
+for (const status of [
+  'unavailable',
+  'timeout',
+  'incompatible',
+  'unsupported-browser',
+  'aborted'
+] as const) {
+  test(`discovery ${status} never downloads and can be checked again`, async () => {
+    const s = setup()
+    s.availability.mockResolvedValueOnce({ status })
+    await s.session.prepareAndOpen()
+    expect(s.states[0].phase).toBe('checking')
+    expect(s.download).not.toHaveBeenCalled()
+    expect(s.launch).not.toHaveBeenCalled()
+    expect(s.states.at(-1)?.action).toBe('prepare')
+    if (status !== 'aborted')
+      expect(s.states.at(-1)?.message).toBe(
+        "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first."
+      )
+    await s.session.prepare()
+    expect(s.availability).toHaveBeenCalledTimes(2)
+    expect(s.states.at(-1)?.phase).toBe('ready')
+  })
+}
+
+test('checking blocks duplicates, cancellation and unmount abort discovery', async () => {
+  for (const dispose of [false, true]) {
+    const s = setup()
+    const pending = deferred<{ status: 'available' }>()
+    s.availability.mockImplementationOnce(() => pending.promise)
+    const preparing = s.session.prepareAndOpen()
+    await Promise.resolve()
+    await Promise.resolve()
+    await s.session.prepareAndOpen()
+    expect(s.availability).toHaveBeenCalledTimes(1)
+    if (dispose) s.session.dispose()
+    else s.session.cancel()
+    const count = s.states.length
+    pending.resolve({ status: 'available' })
+    await preparing
+    expect(s.download).not.toHaveBeenCalled()
+    expect(s.launch).not.toHaveBeenCalled()
+    if (dispose) expect(s.states).toHaveLength(count)
+  }
+})
+
+test('opening waits for actual progress and configures the official readiness budgets', async () => {
+  const s = setup()
+  await s.session.prepare()
+  const pending = s.session.open()
+  expect(s.states.at(-1)).toMatchObject({ phase: 'opening' })
+  expect(s.states.at(-1)?.loaded).toBeUndefined()
+  expect(s.send.mock.calls[0][0]).toMatchObject({
+    readinessAttempts: 5,
+    attemptTimeoutMs: 2000,
+    readyTimeoutMs: 15000
+  })
+  s.receipt.resolve({ received: true })
+  await pending
+})
+
+test('transfer creation failure retains bytes and is not reported as a download failure', async () => {
+  const s = setup()
+  s.prepare.mockImplementationOnce(() => {
+    throw new Error('Invalid filename or secret URL')
+  })
+  await s.session.prepareAndOpen()
+  expect(s.launch).not.toHaveBeenCalled()
+  expect(s.states.at(-1)).toMatchObject({ phase: 'error', action: 'open' })
+  expect(s.states.at(-1)?.message).toContain('prepare')
+  expect(s.states.at(-1)?.message).not.toContain('Could not download')
+  s.send.mockImplementationOnce(async () => ({ received: true }))
+  await s.session.open()
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.states.at(-1)?.phase).toBe('received')
+})
+
+test('portable filenames bound UTF-16 and UTF-8 without splitting Unicode', () => {
+  for (const input of [
+    'CON.science',
+    'aux.notes.science',
+    'COM¹.science',
+    `${'研究'.repeat(100)}.science`,
+    `${'😀'.repeat(100)}.science`
+  ]) {
+    const name = scienceImportFilename(input)
+    expect(name.endsWith('.science')).toBe(true)
+    expect(name.length).toBeLessThanOrEqual(160)
+    expect(new TextEncoder().encode(name).byteLength).toBeLessThanOrEqual(255)
+    expect(name).not.toMatch(/^(con|aux|com¹)\./i)
+    expect(new TextDecoder().decode(new TextEncoder().encode(name))).toBe(name)
+  }
+})
+
+for (const code of ['readiness-exhausted', 'incompatible', 'unsupported-browser'] as const) {
+  test(`structured ${code} provides opening guidance without parsing the message`, async () => {
+    const s = setup()
+    await s.session.prepare()
+    s.send.mockRejectedValueOnce(
+      Object.assign(new Error('Different language and no keywords'), { code })
+    )
+    await s.session.open()
+    expect(s.states.at(-1)?.message).toBe(
+      'Could not open Open-Science. Open the app, allow external apps and local network access, then try again.'
+    )
+    s.send.mockImplementationOnce(async () => ({ received: true }))
+    await s.session.open()
+    expect(s.download).toHaveBeenCalledTimes(1)
+    expect(s.prepare).toHaveBeenCalledTimes(code === 'incompatible' ? 2 : 1)
+  })
+}
+
+test('filename validation precedes discovery and normalization precedes download', async () => {
+  const availability = mock(async () => ({ status: 'available' as const }))
+  const download = mock(async () => new Blob(['x']))
+  const prepare = mock(() => ({ url: '#safe', send: async () => ({ received: true as const }) }))
+  const dependencies = { availability, download, prepare, supported: () => true }
+  await createScienceImport({ ...info, filename: 'report.pdf' }, () => {}, dependencies).prepare()
+  expect(availability).not.toHaveBeenCalled()
+  expect(download).not.toHaveBeenCalled()
+  await createScienceImport({ ...info, filename: 'CON.science' }, () => {}, dependencies).prepare()
+  expect(download).toHaveBeenCalledWith(
+    expect.objectContaining({ filename: '_CON.science' }),
+    expect.anything()
+  )
+  expect(prepare).toHaveBeenCalledWith(expect.any(Blob), { filename: '_CON.science' })
 })

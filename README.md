@@ -159,64 +159,83 @@ loads from `<manifest directory>/<case name>/extracted/`.
 
 ### Import a replay into Open-Science
 
-The composer below each replay downloads the complete `.science` file into a
-browser-held Blob after **Continue in Open-Science** is clicked. The button shows
-download and send percentages in the button without progress bars. Status and
-installation guidance stay below the composer. Download percentages use the
-response length or the resource manifest size; unknown totals show **—%**.
-Once the Blob is ready,
-the website automatically attempts the SDK protocol launch and starts sending.
-Asynchronous downloads can exhaust browser user activation; automatic protocol
-launch is best effort. After failure, clicking **Continue in Open-Science** again
-launches synchronously with the retained Blob, without another download. The
-composer shows installation guidance and a **Download Open-Science** link when
-sending fails or browser import is unsupported.
+The composer below each replay first calls the official
+`checkBrowserImportAvailability` when **Continue in Open-Science** is clicked.
+Discovery checks one local endpoint; it does not launch the app or prove that it is
+installed. Local-network access may trigger a browser permission prompt. On
+`unavailable`, `timeout`, `incompatible` or `unsupported-browser`, the composer
+keeps the original page open, offers **Try again** and a manual **Download
+Open-Science** link, and does not download the package. Cancellation is retryable.
+Users can open the app manually and check again; there is no automatic popup.
 
-Receipt means only that the desktop received the file; the user must still review
-and confirm the import there. The composer text area and research tools are
-disabled; no prompt text is sent.
+After discovery succeeds, the website downloads the full `.science` Blob, prepares
+an SDK transfer, sets `window.location.href = transfer.url`, then calls `send()`.
+Automatic launch after an asynchronous download is best effort. A direct-click
+**Open Open-Science** fallback reuses the held Blob, without another download.
+**Checking Open-Science…** and **Opening Open-Science…** are separate states.
+The pinned SDK has no readiness-stage callback; sending percentages start only after its
+first acknowledged-chunk progress callback, never from a timer. Until then the
+button remains in the opening state. Download and sending percentages appear in
+the compact button without progress bars; unknown download totals show **—%**.
+Permission guidance and status remain immediately below the composer. The existing
+42px transcript-to-composer spacing is preserved.
 
-The pinned SDK cannot probe a running app before downloading, configure exactly
-five readiness attempts spaced one second apart, or bypass native receipt consent.
-These requirements are pending the [upstream capability request](https://github.com/aipoch/open-science/pull/3493#issuecomment-6119384385).
-No pre-download detection or automatic download-page redirect is implemented.
-Do not interpret connection failure as proof that the app is not installed, scan
-ports, or replace the SDK transport. Its existing readiness timeout and retry
-policy remain in effect until an upstream version exposes the required controls.
+`send()` explicitly uses five readiness attempts, a 2,000ms per-attempt budget and
+a 15,000ms overall readiness budget. The official SDK waits 1,000ms between failed
+attempts (up to about 14 seconds for five full attempts). The readiness deadline
+ends after the handshake and does not limit the file transfer. Recovery uses
+structured error codes, not English error matching. A failed probe or launch does
+not prove the app is uninstalled.
 
-- Keep ordinary downloads available. Browser transfer requires a nonempty
+Receipt means only that the desktop received the file. The pinned desktop source
+automatically receives and validates it before destination selection; the user
+must still confirm import there. The website only reports **File sent to
+Open-Science. Please confirm the import in the app.** The composer text area and
+research tools remain disabled; no prompt text is sent.
+
+- Keep ordinary package downloads available. Browser transfer requires a nonempty
   `.science` file no larger than 2 GiB, HTTPS (or loopback for development), Web
-  Crypto and `AbortSignal.any/timeout`. Permission to open external apps and
-  access the local network may be required. A timeout does not prove the app is
-  absent. Downloads have a two-minute timeout and can be canceled.
-- Downloads await MSW readiness and use the existing manifest package URL.
-  Package hosts must permit cross-origin fetches. A representative production
-  package on `statics.aipoch.com` returned `Access-Control-Allow-Origin: *` on
-  2026-10-12; other configured hosts, including GitHub releases, may differ.
-  The GitHub release CORS recheck could not complete because the network request
-  timed out; its cross-origin download path is not verified.
-  The replay route currently has no repository-defined CSP. If a deployment
-  adds CSP, retain existing restrictions and explicitly permit the download
-  origins and `http://127.0.0.1:*` in `connect-src`.
-- Retain the Blob for retry. Transient failures reuse the SDK transfer while
-  it is live; cancellation, readiness timeout, invalid receiver or expiry use
-  a new transfer on the next user click. **Start a new transfer** also allows
-  explicit recovery without another download. Unmount aborts pending work and
-  releases references. Transfer URLs contain credentials and are never rendered,
-  logged or persisted by this integration.
-- SDK source is pinned under [`vendor/open-science`](vendor/open-science/UPSTREAM.md)
-  because the npm package was unavailable at integration time. Protocol and
-  crypto implementation come from that upstream SDK; no website transport is
-  reimplemented. An installed desktop build supporting that protocol is required.
+  Crypto and `AbortSignal.any/timeout`. Downloads check HTTP status and size, have
+  a two-minute budget and can be canceled. File names are normalized before
+  download to the SDK's 160 UTF-16 code unit / 255 UTF-8 byte limits, retaining
+  `.science`, avoiding Windows device names and truncating only at code points.
+- Discovery and downloads await MSW readiness. In mock development the official
+  discovery request is intercepted; adapter-owned `discoveryMode` selects
+  `available`, `unavailable`, `incompatible` or `timeout`. Package scenarios cover
+  HTTP 503, empty, oversized and delayed responses. Transport HTTP calls are
+  rejected in mock development so they cannot reach a real receiver.
+- Package hosts must permit cross-origin fetches. Production CORS was not verified
+  in this update. The replay route has no repository-defined CSP. If deployment
+  adds CSP, retain other restrictions and allow the download origins and
+  `http://127.0.0.1:*` in `connect-src`; this change does not modify deployment policy.
+- Retain the Blob for retry. Transient failures and exhausted readiness attempts
+  reuse a still-live transfer; cancellation, readiness timeout, incompatible
+  receiver or expiry create a new transfer on the next user click. **Start a new
+  transfer** allows explicit recovery. Transfer-creation errors retain bytes and
+  are distinct from download failures. Unmount aborts work and releases references.
+  Transfer URLs contain secrets and are never rendered, logged or persisted.
+- The public npm registry returned 404 on 2026-10-15. The official SDK is vendored
+  from commit `49848625912937bb5050d061d71966a42cf4b4e0`; source, types and hashes
+  are documented in [`vendor/open-science/UPSTREAM.md`](vendor/open-science/UPSTREAM.md).
+  The website does not implement or modify its crypto, authentication or transport.
+  An installed desktop build supporting discovery and automatic receipt is required.
+  This pin has no independent app-launch export. Users open the app themselves
+  after discovery fails; the website does not synthesize protocol URLs or empty
+  transfers. Only APIs present in the pinned commit are used.
 
 Run `bun test --isolate tests/unit/browser-science-import.test.ts
-tests/unit/browser-import-provenance.test.ts` for state/size/provenance checks,
-`bun test tests/integration/browser-science-import.test.ts` for the actual React
-composer with a test-only SDK substitute in Chromium on desktop/mobile, and
-`bun run test:mock` for Next SSR/browser downloads and MSW failure scenarios.
-The component harness uses harmless hash navigation instead of a custom protocol.
-These checks do **not** validate real desktop receipt, OS protocol registration,
-native permission prompts or final desktop import.
+ tests/unit/browser-import-sdk-contract.test.ts tests/unit/browser-import-provenance.test.ts`
+for lifecycle, filename, size, provenance and actual SDK HTTP/timing contract checks.
+The contract tests execute the pinned SDK with deterministic HTTP responses,
+including five real two-second attempts and one-second gaps, overall deadline,
+cancellation, authenticated receipt and transfer continuing beyond readiness time.
+Run `bun test tests/integration/browser-science-import.test.ts` for the React
+composer in Chromium desktop/mobile with a test-only SDK substitute and harmless
+hash navigation. `bun run test:mock` exercises Next SSR/browser interception,
+probe failures/recovery, package downloads, cancellation and sitemap output.
+These checks do **not** constitute desktop integration: installed OS protocol
+registration, native permissions, real desktop import and production CORS are
+not verified. No desktop instance or shared Open-Science data is used.
 
 ## Docker Compose
 

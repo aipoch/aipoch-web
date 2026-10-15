@@ -69,6 +69,7 @@ test('composer automatically launches after download and preserves explicit retr
         name: 'Continue in Open-Science',
         exact: true
       })
+      const openButton = page.getByRole('button', { name: 'Open Open-Science', exact: true })
       const snapshot = () =>
         page.evaluate(() => {
           const state = (window as unknown as TestWindow).importTest
@@ -81,8 +82,21 @@ test('composer automatically launches after download and preserves explicit retr
             blobSize: state.blobSize
           }
         })
-      const count = downloads
+      await page.evaluate(() => {
+        ;(window as unknown as TestWindow).importTest.availability = 'unavailable'
+      })
       await continueButton.click()
+      await expect(page.getByRole('alert')).toHaveText(
+        "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first."
+      )
+      await expect(
+        page.getByRole('link', { name: 'Download Open-Science', exact: true })
+      ).toBeVisible()
+      await page.evaluate(() => {
+        ;(window as unknown as TestWindow).importTest.availability = 'available'
+      })
+      const count = downloads
+      await page.getByRole('button', { name: 'Try again', exact: true }).click()
       const downloading = page.getByRole('button', {
         name: /^Downloading \.science package:/
       })
@@ -110,7 +124,7 @@ test('composer automatically launches after download and preserves explicit retr
         .toBe(false)
       await cdp.detach()
       finishDownload()
-      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
+      await expect(page.getByRole('status')).toContainText('Opening Open-Science')
       unitExpect(downloads).toBe(count + 1)
       unitExpect(await snapshot()).toMatchObject({
         activation: false,
@@ -118,8 +132,11 @@ test('composer automatically launches after download and preserves explicit retr
         blobSize: 64 * 1024,
         sends: 1
       })
+      const opening = page.getByRole('button', { name: 'Opening Open-Science…', exact: true })
+      await expect(opening).toBeDisabled()
+      await expect(opening).not.toContainText('%')
+      await opening.dispatchEvent('click')
       const busy = page.getByRole('button', { name: /^Sending to Open-Science:/ })
-      await busy.dispatchEvent('click')
       unitExpect((await snapshot()).sends).toBe(1)
       await page.evaluate(() =>
         (window as unknown as TestWindow).importTest.progress({ sentBytes: 3, totalBytes: 7 })
@@ -129,12 +146,12 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('status')).not.toContainText('%')
       await page.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(page.getByRole('status')).toContainText('Transfer canceled')
-      await continueButton.click()
+      await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       unitExpect((await snapshot()).activation).toBe(true)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.fail())
       await expect(page.getByRole('alert')).toContainText('not acknowledged')
-      await continueButton.click()
+      await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.fail(true))
       await expect(page.getByRole('alert')).toContainText('Could not open Open-Science')
@@ -142,16 +159,15 @@ test('composer automatically launches after download and preserves explicit retr
         'placeholder',
         'What would you explore next? Import this session to continue in Open-Science.'
       )
-      await expect(page.getByText(/If you have not installed Open-Science yet/)).toBeVisible()
       await expect(
         page.getByRole('link', { name: 'Download Open-Science', exact: true })
       ).toHaveAttribute('href', '/open-science/download')
-      await continueButton.click()
+      await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(3)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish(false))
       await expect(page.getByRole('alert')).toContainText('not acknowledged')
       await page.getByRole('button', { name: 'Start a new transfer' }).click()
-      await continueButton.click()
+      await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(4)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
       await expect(page.getByRole('status')).toHaveText(
@@ -166,7 +182,7 @@ test('composer automatically launches after download and preserves explicit retr
       await continueButton.click()
       await expect(downloading).toContainText('50%')
       finishDownload()
-      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
+      await expect(page.getByRole('status')).toContainText('Opening Open-Science')
       await page.evaluate(() => (window as unknown as TestWindow).unmountImport())
       unitExpect((await snapshot()).cancels).toBe(1)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
