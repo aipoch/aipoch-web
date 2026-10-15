@@ -30,20 +30,23 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   }, [url, filename])
   const busy = ['downloading', 'sending', 'canceling'].includes(state.phase)
   const downloading = state.phase === 'downloading'
+  const sending = state.phase === 'sending'
+  const progressing = downloading || sending
   const needsApp =
     state.phase === 'unsupported' || (state.phase === 'error' && state.action === 'open')
+  const total = state.total ?? (downloading ? packageInfo.sizeBytes : undefined)
   const percent =
-    state.total && state.loaded !== undefined
-      ? Math.min(100, Math.floor((state.loaded / state.total) * 100))
+    total && total > 0 && state.loaded !== undefined
+      ? Math.min(100, Math.floor((state.loaded / total) * 100))
       : undefined
+  const progressText = percent !== undefined ? `${percent}%` : '—%'
+  const progressLabel = downloading ? 'Downloading .science package' : 'Sending to Open-Science'
   const label =
-    state.phase === 'sending'
-      ? 'Sending to Open-Science…'
-      : state.phase === 'canceling'
-        ? 'Canceling…'
-        : state.phase === 'received'
-          ? 'Sent to Open-Science'
-          : 'Continue in Open-Science'
+    state.phase === 'canceling'
+      ? 'Canceling…'
+      : state.phase === 'received'
+        ? 'Sent to Open-Science'
+        : 'Continue in Open-Science'
 
   return (
     <section
@@ -53,11 +56,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
       <div className="rounded-2xl border border-[#d8d9d2] bg-white px-4 py-3 shadow-[0_4px_24px_-12px_rgba(16,17,15,0.16)] sm:px-5">
         <textarea
           aria-label="Continue this research in the desktop app"
-          placeholder={
-            needsApp
-              ? 'If you have not installed Open-Science yet, download Open-Science first. Otherwise, open the app and try again.'
-              : 'What would you explore next? Import this session to continue in Open-Science.'
-          }
+          placeholder="What would you explore next? Import this session to continue in Open-Science."
           disabled
           rows={3}
           className="block min-h-28 w-full resize-none border-0 bg-transparent text-[15px] leading-7 text-[#777872] placeholder:text-[#777872] disabled:cursor-default disabled:opacity-100 focus:outline-none"
@@ -79,7 +78,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           </div>
           <button
             type="button"
-            aria-label={downloading ? 'Downloading .science package' : undefined}
+            aria-label={progressing ? `${progressLabel}: ${progressText}` : undefined}
             disabled={busy || !state.action}
             onClick={() => {
               if (state.action === 'prepare') void session.current?.prepareAndOpen()
@@ -87,23 +86,11 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
             }}
             className="inline-flex min-h-10 w-full items-center justify-center gap-3 rounded-xl bg-[#10110f] px-5 py-1 text-sm font-semibold text-white transition-colors hover:bg-[#34352f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default sm:w-auto sm:min-w-56"
           >
-            {downloading ? (
+            {progressing ? (
               <span className="flex w-full flex-col items-center gap-1">
-                <span className="flex w-full items-center gap-2">
-                  <progress
-                    aria-label="Package download"
-                    value={percent}
-                    max={100}
-                    className="h-1.5 min-w-0 flex-1 accent-white"
-                  />
-                  <span className="shrink-0 text-xs leading-4 tabular-nums">
-                    {percent !== undefined
-                      ? `${percent}%`
-                      : `${Math.round((state.loaded ?? 0) / 1024)} KB`}
-                  </span>
-                </span>
+                <span className="text-sm leading-4 tabular-nums">{progressText}</span>
                 <small className="text-[11px] font-normal leading-4 text-white/80">
-                  Downloading .science package
+                  {progressLabel}
                 </small>
               </span>
             ) : (
@@ -115,12 +102,10 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           </button>
         </div>
       </div>
-      {state.phase !== 'received' ? (
-        <p className="mt-1.5 text-xs leading-5 text-[#777872]">
-          You may need to allow your browser to open Open-Science and access your local network.
-          Keep this page open until the file is sent.
-        </p>
-      ) : null}
+      <p className="mt-1.5 text-xs leading-5 text-[#777872]">
+        You may need to allow your browser to open Open-Science and access your local network. Keep
+        this page open until the file is sent.
+      </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <p
           role={state.phase === 'error' ? 'alert' : 'status'}
@@ -128,21 +113,18 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           className={
             state.phase === 'error'
               ? 'text-status-failure-foreground'
-              : downloading || !state.message
+              : !state.message
                 ? 'sr-only'
                 : undefined
           }
         >
           {state.message}
-          {percent !== undefined && busy ? ` ${percent}%` : ''}
         </p>
-        {busy && !downloading ? (
-          <progress
-            aria-label="Package transfer"
-            value={percent}
-            max={100}
-            className="block h-1.5 w-full accent-[#10110f]"
-          />
+        {needsApp ? (
+          <p>
+            If you have not installed Open-Science yet, download Open-Science first. Otherwise, open
+            the app and try again.
+          </p>
         ) : null}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {needsApp ? (

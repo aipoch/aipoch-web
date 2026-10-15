@@ -7,7 +7,7 @@ root.render(
     packageInfo={{
       url: '/package.science',
       filename: 'test.science',
-      sizeBytes: 64 * 1024,
+      sizeBytes: new URLSearchParams(window.location.search).has('unknownSize') ? 0 : 64 * 1024,
       sha256: ''
     }}
   />

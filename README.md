@@ -161,7 +161,10 @@ loads from `<manifest directory>/<case name>/extracted/`.
 
 The composer below each replay downloads the complete `.science` file into a
 browser-held Blob after **Continue in Open-Science** is clicked. The button shows
-download progress above **Downloading .science package**. Once the Blob is ready,
+download and send percentages in the button without progress bars. Status and
+installation guidance stay below the composer. Download percentages use the
+response length or the resource manifest size; unknown totals show **—%**.
+Once the Blob is ready,
 the website automatically attempts the SDK protocol launch and starts sending.
 Asynchronous downloads can exhaust browser user activation; automatic protocol
 launch is best effort. After failure, clicking **Continue in Open-Science** again

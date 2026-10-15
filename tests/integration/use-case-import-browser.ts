@@ -42,12 +42,15 @@ export async function verifyImportPreparation(
     await composer.getByRole('button', { name: 'Continue in Open-Science', exact: true }).click()
     await expect(composer.getByRole('status')).toContainText('Downloading')
     const busyButton = composer.getByRole('button', {
-      name: 'Downloading .science package',
-      exact: true
+      name: /^Downloading \.science package:/
     })
     await expect(busyButton).toBeDisabled()
-    await expect(busyButton.getByRole('progressbar')).not.toHaveAttribute('value')
+    await expect(busyButton).toContainText('0%')
+    await expect(composer.getByRole('progressbar')).toHaveCount(0)
+    await expect(composer.getByRole('status')).toBeVisible()
+    await expect(composer.getByRole('status')).not.toContainText('%')
     await expect(busyButton.locator('small')).toHaveText('Downloading .science package')
+    await composer.scrollIntoViewIfNeeded()
     await page.screenshot({ path: screenshot.replace('.png', '-downloading.png') })
     await busyButton.dispatchEvent('click')
     await composer.getByRole('button', { name: 'Cancel', exact: true }).click()

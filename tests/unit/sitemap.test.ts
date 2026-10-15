@@ -98,13 +98,13 @@ describe('sitemap', () => {
         new Date(date)
       )
     }
-    // Preserve the October 12 replay template date.
+    // Track the October 15 replay composer update independently of the gallery.
     for (const path of [
       '/open-science/use-cases/nvda-all-at-once-or-four-weeks/replay',
       '/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle/replay'
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
-        new Date('2026-10-12')
+        new Date('2026-10-15')
       )
     }
   })

@@ -26,6 +26,7 @@ test('composer automatically launches after download and preserves explicit retr
   unitExpect(build.success).toBe(true)
   const javascript = await build.outputs[0].text()
   let downloads = 0
+  let includeContentLength = true
   let finishDownload = () => {}
   const server = createServer((request, response) => {
     const path = request.url
@@ -38,7 +39,7 @@ test('composer automatically launches after download and preserves explicit retr
       downloads++
       response.writeHead(200, {
         'Content-Type': 'application/octet-stream',
-        'Content-Length': String(64 * 1024)
+        ...(includeContentLength ? { 'Content-Length': String(64 * 1024) } : {})
       })
       response.flushHeaders()
       response.write(new Uint8Array(32 * 1024))
@@ -83,14 +84,14 @@ test('composer automatically launches after download and preserves explicit retr
       const count = downloads
       await continueButton.click()
       const downloading = page.getByRole('button', {
-        name: 'Downloading .science package',
-        exact: true
+        name: /^Downloading \.science package:/
       })
       await expect(downloading).toBeDisabled()
-      await expect(downloading.getByRole('progressbar')).toHaveAttribute('value', '50')
       await expect(downloading).toContainText('50%')
       await expect(downloading.locator('small')).toHaveText('Downloading .science package')
-      await expect(page.getByRole('progressbar')).toHaveCount(1)
+      await expect(page.getByRole('progressbar')).toHaveCount(0)
+      await expect(page.getByRole('status')).toBeVisible()
+      await expect(page.getByRole('status')).not.toContainText('%')
       unitExpect((await snapshot()).prepares).toBe(0)
       // Read through CDP: Playwright page.evaluate itself grants synthetic activation.
       const cdp = await page.context().newCDPSession(page)
@@ -117,13 +118,15 @@ test('composer automatically launches after download and preserves explicit retr
         blobSize: 64 * 1024,
         sends: 1
       })
-      const busy = page.getByRole('button', { name: 'Sending to Open-Science…' })
+      const busy = page.getByRole('button', { name: /^Sending to Open-Science:/ })
       await busy.dispatchEvent('click')
       unitExpect((await snapshot()).sends).toBe(1)
       await page.evaluate(() =>
         (window as unknown as TestWindow).importTest.progress({ sentBytes: 3, totalBytes: 7 })
       )
-      await expect(page.getByRole('progressbar')).toHaveAttribute('value', '42')
+      await expect(busy).toContainText('42%')
+      await expect(page.getByRole('progressbar')).toHaveCount(0)
+      await expect(page.getByRole('status')).not.toContainText('%')
       await page.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(page.getByRole('status')).toContainText('Transfer canceled')
       await continueButton.click()
@@ -137,8 +140,9 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('alert')).toContainText('Could not open Open-Science')
       await expect(page.getByRole('textbox')).toHaveAttribute(
         'placeholder',
-        /download Open-Science first/
+        'What would you explore next? Import this session to continue in Open-Science.'
       )
+      await expect(page.getByText(/If you have not installed Open-Science yet/)).toBeVisible()
       await expect(
         page.getByRole('link', { name: 'Download Open-Science', exact: true })
       ).toHaveAttribute('href', '/open-science/download')
@@ -154,18 +158,33 @@ test('composer automatically launches after download and preserves explicit retr
         'File sent to Open-Science. Please confirm the import in the app.'
       )
       await expect(page.getByRole('button', { name: 'Sent to Open-Science' })).toBeDisabled()
+      await expect(page.getByText(/You may need to allow your browser/)).toBeVisible()
       await expect(page.getByText('Import successful', { exact: true })).toHaveCount(0)
       unitExpect(downloads).toBe(count + 1)
       // Unmount during a new send must abort it without late React updates.
       await page.goto(origin)
       await continueButton.click()
-      await expect(downloading.getByRole('progressbar')).toHaveAttribute('value', '50')
+      await expect(downloading).toContainText('50%')
       finishDownload()
       await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
       await page.evaluate(() => (window as unknown as TestWindow).unmountImport())
       unitExpect((await snapshot()).cancels).toBe(1)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
       await expect(page.getByRole('region')).toHaveCount(0)
+      // No Content-Length: use manifest size when known, otherwise do not invent a percentage.
+      includeContentLength = false
+      for (const [suffix, percentage] of [
+        ['', '50%'],
+        ['?unknownSize=1', '—%']
+      ]) {
+        await page.goto(`${origin}${suffix}`)
+        await continueButton.click()
+        await expect(downloading).toContainText(percentage)
+        await expect(page.getByRole('progressbar')).toHaveCount(0)
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+        await expect(page.getByRole('status')).toContainText('Download canceled')
+      }
+      includeContentLength = true
       unitExpect(errors).toEqual([])
       await page.close()
     }
