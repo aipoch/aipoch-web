@@ -1,3 +1,5 @@
+import { isMobileDevice } from '@/lib/browser-device'
+
 export const OPEN_SCIENCE_DOWNLOAD_MANIFEST_URL =
   'https://statics.aipoch.com/open-science/app/stable/version.json'
 export const OPEN_SCIENCE_RELEASES_URL = 'https://github.com/aipoch/open-science/releases/latest'
@@ -126,12 +128,7 @@ export function getOpenScienceRecommendedDownloadKeys(
   maxTouchPoints = 0
 ): DownloadKey[] {
   const isMac = /macintosh|mac os x/i.test(userAgent)
-  // Desktop-mode iPads can use a Mac user agent while retaining touch input.
-  if (
-    !manifest ||
-    /android|iphone|ipad|ipod|mobile|windows phone/i.test(userAgent) ||
-    (isMac && maxTouchPoints > 1)
-  ) {
+  if (!manifest || isMobileDevice(userAgent, maxTouchPoints)) {
     return []
   }
 

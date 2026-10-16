@@ -305,3 +305,9 @@ export const mockManifest = (origin: string) => ({
     ])
   )
 })
+
+// Official browser-import discovery v1; read-only and unrelated to package receipt.
+export const browserImportCapabilities: { service: string; version: number } = {
+  service: 'open-science-browser-import',
+  version: 1
+}

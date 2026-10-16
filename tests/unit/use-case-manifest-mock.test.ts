@@ -2,6 +2,30 @@ import { expect, test } from 'bun:test'
 import { getResponse } from 'msw'
 import { useCaseManifestHandlers } from '../../mocks/handlers/use-case-manifest'
 
+test('package import mock supports HTTP failure, empty and oversized responses without changing replay', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const prefix = `${origin}/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/`
+  const packageUrl = `${prefix}Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.science`
+  for (const packageMode of ['error', 'empty', 'oversized', 'normal']) {
+    await getResponse(
+      handlers,
+      new Request(`${origin}/__mock/use-case-manifest`, {
+        method: 'PUT',
+        body: JSON.stringify({ packageMode })
+      })
+    )
+    const response = await getResponse(handlers, new Request(packageUrl))
+    expect(response?.status).toBe(packageMode === 'error' ? 503 : 200)
+    if (packageMode === 'empty') expect((await response?.blob())?.size).toBe(0)
+    if (packageMode === 'oversized')
+      expect(Number(response?.headers.get('content-length'))).toBeGreaterThan(2 * 1024 ** 3)
+    expect(
+      (await getResponse(handlers, new Request(`${prefix}extracted/session.json`)))?.status
+    ).toBe(200)
+  }
+})
+
 test('mock object storage supports conditional GET, updates, empty data and failure', async () => {
   const origin = 'http://127.0.0.1:3203'
   const handlers = useCaseManifestHandlers(origin)
@@ -73,4 +97,26 @@ test('serves extracted metadata and referenced objects from the same package', a
   const asset = await getResponse(handlers, new Request(`${base}${reportPath}`))
   expect(await asset?.text()).toBe('Sample coverage_report.md')
   expect((await getResponse(handlers, new Request(`${base}objects/missing`)))?.status).toBe(404)
+})
+
+test('discovery scenarios are adapter-owned and validate control input', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const control = `${origin}/__mock/use-case-manifest`
+  for (const discoveryMode of ['available', 'unavailable', 'timeout', 'incompatible']) {
+    const updated = await getResponse(
+      handlers,
+      new Request(control, { method: 'PUT', body: JSON.stringify({ discoveryMode }) })
+    )
+    expect(updated?.status).toBe(200)
+    expect(await (await getResponse(handlers, new Request(control)))?.json()).toMatchObject({
+      discoveryMode,
+      packageRequests: 0
+    })
+  }
+  const invalid = await getResponse(
+    handlers,
+    new Request(control, { method: 'PUT', body: JSON.stringify({ discoveryMode: 'installed' }) })
+  )
+  expect(invalid?.status).toBe(400)
 })

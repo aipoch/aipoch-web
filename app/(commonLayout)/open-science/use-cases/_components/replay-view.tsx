@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from 'react'
 import type { PackageProgress } from '@/lib/science-package/archive'
 import { loadReplay, type ReplayState } from '@/lib/science-package/load'
 import type { UseCasePackage } from '@/lib/use-case-types'
+import { ImportComposer } from './import-composer'
 import { SessionTranscript } from './session-transcript'
 
 const TopBar = ({ slug, packageUrl }: { slug: string; packageUrl?: string }) => (
@@ -150,7 +151,10 @@ export const ReplayView = ({
           </button>
         </div>
       ) : state.status === 'ready' ? (
-        <SessionTranscript session={state.data} />
+        <>
+          <SessionTranscript session={state.data} />
+          {packageInfo ? <ImportComposer packageInfo={packageInfo} /> : null}
+        </>
       ) : state.status === 'loading' ? (
         <ReplayProgress progress={state.progress} />
       ) : null}

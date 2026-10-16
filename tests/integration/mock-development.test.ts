@@ -4,6 +4,7 @@ import { createServer } from 'node:net'
 import { join } from 'node:path'
 import { expect as browserExpect, chromium, devices } from '@playwright/test'
 import manifestSample from '../../mocks/fixtures/use-case-manifest.json'
+import { verifyImportPreparation } from './use-case-import-browser'
 import {
   verifyPreviewSwitching,
   verifyReplayCoverage,
@@ -81,6 +82,31 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('prepares browser-held science imports with retry, cancellation and download fallback on desktop and mobile', async () => {
+    const importArtifacts = join(process.cwd(), '.codex/browser-import-2026-10-12')
+    mkdirSync(importArtifacts, { recursive: true })
+    const browser = await chromium.launch()
+    try {
+      for (const device of ['desktop', 'mobile']) {
+        const page = await browser.newPage(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 1000 } }
+        )
+        try {
+          await verifyImportPreparation(
+            page,
+            `${web}/open-science/use-cases/${manifestSample[0].name}/replay`,
+            api,
+            join(importArtifacts, `science-import-${device}.png`),
+            device === 'mobile'
+          )
+        } finally {
+          await page.close()
+        }
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 120000)
   test('server-renders both GitHub counts and loads independent browser-intercepted results', async () => {
     const html = await renderedHtml(await fetch(web))
     expect(html.match(/aria-label="Open-Science on GitHub, 3\.5K stars"/g)).toHaveLength(1)
@@ -265,7 +291,7 @@ describe('mock development end to end', () => {
           `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-13T00:00:00.000Z</lastmod>`
         )
         expect(sitemap).toContain(
-          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-15T00:00:00.000Z</lastmod>`
+          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-16T00:00:00.000Z</lastmod>`
         )
         const detailHtml = await (await fetch(`${web}/open-science/use-cases/${item.name}`)).text()
         expect(detailHtml).toContain(`href="/open-science/use-cases/${item.name}/replay"`)
