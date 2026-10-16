@@ -124,31 +124,43 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         </span>
       </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
-        <p
-          role={state.phase === 'error' ? 'alert' : 'status'}
-          aria-live="polite"
-          className={
-            state.phase === 'error'
-              ? 'text-status-failure-foreground'
-              : !state.message
-                ? 'sr-only'
-                : undefined
-          }
-        >
-          {state.message}{' '}
-          {state.phase === 'received' ? (
-            <span>
-              Clicked Cancel by mistake?{' '}
-              <button
-                type="button"
-                onClick={() => void session.current?.retryImport()}
-                className="font-medium text-[#10110f] underline underline-offset-4"
-              >
-                Retry the import.
-              </button>
-            </span>
+        <div className="flex items-center gap-x-4">
+          <p
+            role={state.phase === 'error' ? 'alert' : 'status'}
+            aria-live="polite"
+            className={
+              state.phase === 'error'
+                ? 'text-status-failure-foreground'
+                : !state.message
+                  ? 'sr-only'
+                  : undefined
+            }
+          >
+            {state.message}{' '}
+            {state.phase === 'received' ? (
+              <span>
+                Clicked Cancel by mistake?{' '}
+                <button
+                  type="button"
+                  onClick={() => void session.current?.retryImport()}
+                  className="font-medium text-[#10110f] underline underline-offset-4"
+                >
+                  Retry the import.
+                </button>
+              </span>
+            ) : null}
+          </p>
+          {busy ? (
+            <button
+              type="button"
+              disabled={state.phase === 'canceling'}
+              onClick={() => session.current?.cancel()}
+              className="min-h-10 shrink-0 whitespace-nowrap font-medium text-[#10110f] underline underline-offset-4 disabled:opacity-50"
+            >
+              Cancel
+            </button>
           ) : null}
-        </p>
+        </div>
         {state.launchError ? (
           <p role="alert" className="text-status-failure-foreground">
             {state.launchError}
@@ -187,16 +199,6 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
             >
               Download Open-Science
             </a>
-          ) : null}
-          {busy ? (
-            <button
-              type="button"
-              disabled={state.phase === 'canceling'}
-              onClick={() => session.current?.cancel()}
-              className="min-h-10 font-medium text-[#10110f] underline underline-offset-4 disabled:opacity-50"
-            >
-              Cancel
-            </button>
           ) : null}
           {state.action === 'resume' ? (
             <button

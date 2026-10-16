@@ -62,6 +62,17 @@ export async function verifyImportPreparation(
     await expect(composer.getByRole('progressbar')).toHaveCount(0)
     await expect(composer.getByRole('status')).toBeVisible()
     await expect(composer.getByRole('status')).not.toContainText('%')
+    const statusBox = await composer.getByRole('status').boundingBox()
+    const cancelBox = await composer
+      .getByRole('button', { name: 'Cancel', exact: true })
+      .boundingBox()
+    expect(statusBox && cancelBox).toBeTruthy()
+    if (statusBox && cancelBox) {
+      expect(cancelBox.x).toBeGreaterThanOrEqual(statusBox.x + statusBox.width)
+      expect(
+        Math.abs(statusBox.y + statusBox.height / 2 - cancelBox.y - cancelBox.height / 2)
+      ).toBeLessThan(2)
+    }
     await expect(busyButton.locator('small')).toHaveText('Downloading .science package')
     await composer.scrollIntoViewIfNeeded()
     await page.screenshot({ path: screenshot.replace('.png', '-downloading.png') })
