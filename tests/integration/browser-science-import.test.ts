@@ -177,7 +177,7 @@ test('composer automatically launches after download and preserves explicit retr
       await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(3)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.getByRole('status')).toContainText(
         'File sent to Open-Science. Please confirm the import in the app.'
       )
       await expect(openButton).toBeEnabled()
@@ -188,13 +188,15 @@ test('composer automatically launches after download and preserves explicit retr
         ...receivedSnapshot,
         appLaunches: receivedSnapshot.appLaunches + 2
       })
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.getByRole('status')).toContainText(
         'File sent to Open-Science. Please confirm the import in the app.'
       )
       await expect(page.getByText(/You may need to allow your browser/)).toBeVisible()
       await expect(page.getByText('Import successful', { exact: true })).toHaveCount(0)
       unitExpect(downloads).toBe(count + 1)
-      const retryImport = page.getByRole('button', { name: 'Retry the import.', exact: true })
+      const retryImport = page
+        .getByRole('status')
+        .getByRole('button', { name: 'Retry the import.', exact: true })
       await expect(retryImport).toBeVisible()
       await expect(retryImport).toHaveClass(/underline/)
       const beforeRetry = await snapshot()
@@ -272,7 +274,7 @@ test('composer automatically launches after download and preserves explicit retr
       await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
-      await expect(page.getByRole('status')).toHaveText(
+      await expect(page.getByRole('status')).toContainText(
         'File sent to Open-Science. Please confirm the import in the app.'
       )
       // No Content-Length: use manifest size when known, otherwise do not invent a percentage.

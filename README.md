@@ -206,8 +206,8 @@ Receipt means only that the desktop received the file.
 The received-state **Open Open-Science** button remains clickable and synchronously
 calls the official `launchOpenScience()` entry point. It does not download,
 prepare a transfer or send the file again; the receipt confirmation remains visible.
-Only after receipt, **Clicked Cancel by mistake? Retry the import.** appears beneath
-the composer. Its underlined retry button explicitly starts the same complete flow
+Only after receipt, **Clicked Cancel by mistake? Retry the import.** follows the
+receipt confirmation beneath the composer. Its underlined retry button explicitly starts the same complete flow
 as **Continue in Open-Science**: check availability, download, prepare, launch and send.
 The retry hint is hidden while the new attempt runs; the main app-launch button
 continues to open the app without resending.

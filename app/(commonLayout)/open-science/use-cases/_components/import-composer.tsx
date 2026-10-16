@@ -121,19 +121,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           {state.phase === 'opening' || state.action === 'resume'
             ? 'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.'
             : 'You may need to allow your browser to open Open-Science and access your local network. Keep this page open until the file is sent.'}
-        </span>{' '}
-        {state.phase === 'received' ? (
-          <span>
-            Clicked Cancel by mistake?{' '}
-            <button
-              type="button"
-              onClick={() => void session.current?.retryImport()}
-              className="font-medium text-[#10110f] underline underline-offset-4"
-            >
-              Retry the import.
-            </button>
-          </span>
-        ) : null}
+        </span>
       </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <p
@@ -147,7 +135,19 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
                 : undefined
           }
         >
-          {state.message}
+          {state.message}{' '}
+          {state.phase === 'received' ? (
+            <span>
+              Clicked Cancel by mistake?{' '}
+              <button
+                type="button"
+                onClick={() => void session.current?.retryImport()}
+                className="font-medium text-[#10110f] underline underline-offset-4"
+              >
+                Retry the import.
+              </button>
+            </span>
+          ) : null}
         </p>
         {state.launchError ? (
           <p role="alert" className="text-status-failure-foreground">
