@@ -75,6 +75,7 @@ test('composer automatically launches after download and preserves explicit retr
           const state = (window as unknown as TestWindow).importTest
           return {
             prepares: state.prepares,
+            checks: state.checks,
             sends: state.sends,
             appLaunches: state.appLaunches,
             cancels: state.cancels,
@@ -151,7 +152,7 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('status')).not.toContainText('%')
       await page.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(page.getByRole('status')).toContainText('Transfer canceled')
-      await expect(page.getByText('Clicked Cancel by mistake? Retry the import.')).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Retry the import.' })).toHaveCount(0)
       await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       unitExpect((await snapshot()).activation).toBe(true)
@@ -193,6 +194,22 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByText(/You may need to allow your browser/)).toBeVisible()
       await expect(page.getByText('Import successful', { exact: true })).toHaveCount(0)
       unitExpect(downloads).toBe(count + 1)
+      const retryImport = page.getByRole('button', { name: 'Retry the import.', exact: true })
+      await expect(retryImport).toBeVisible()
+      await expect(retryImport).toHaveClass(/underline/)
+      const beforeRetry = await snapshot()
+      await retryImport.click()
+      await expect(downloading).toContainText('50%')
+      await expect(retryImport).toHaveCount(0)
+      unitExpect(downloads).toBe(count + 2)
+      unitExpect((await snapshot()).checks).toBe(beforeRetry.checks + 1)
+      finishDownload()
+      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
+      unitExpect((await snapshot()).prepares).toBe(beforeRetry.prepares + 1)
+      unitExpect((await snapshot()).sends).toBe(beforeRetry.sends + 1)
+      unitExpect((await snapshot()).appLaunches).toBe(beforeRetry.appLaunches)
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
+      await expect(retryImport).toBeVisible()
       // Unmount during a new send must abort it without late React updates.
       await page.goto(origin)
       await continueButton.click()

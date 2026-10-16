@@ -71,6 +71,26 @@ const setup = () => {
   }
 }
 
+test('explicit retry after receipt repeats the complete import flow once and guards disposal', async () => {
+  const s = setup()
+  await s.session.retryImport()
+  expect(s.download).not.toHaveBeenCalled()
+  const pending = s.session.prepareAndOpen()
+  s.receipt.resolve({ received: true })
+  await pending
+  await Promise.all([s.session.retryImport(), s.session.retryImport()])
+  expect(s.availability).toHaveBeenCalledTimes(2)
+  expect(s.download).toHaveBeenCalledTimes(2)
+  expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.launch).toHaveBeenCalledTimes(2)
+  expect(s.send).toHaveBeenCalledTimes(2)
+  expect(s.launchApp).not.toHaveBeenCalled()
+  expect(s.states.at(-1)?.phase).toBe('received')
+  s.session.dispose()
+  await s.session.retryImport()
+  expect(s.download).toHaveBeenCalledTimes(2)
+})
+
 test('received files offer standalone launch without another download or transfer', async () => {
   const s = setup()
   s.session.openApp()

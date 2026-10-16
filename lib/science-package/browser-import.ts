@@ -178,6 +178,14 @@ export function createScienceImport(
     transfer = deps.prepare(blob, { filename })
   }
   const session = {
+    async retryImport() {
+      // Only an explicit retry after receipt starts another complete import attempt.
+      if (!received || busy || disposed) return
+      received = false
+      clear()
+      emit(INITIAL_IMPORT_STATE)
+      await session.prepareAndOpen()
+    },
     openApp() {
       // Receipt is final for this file; a later click only requests the standalone app launch.
       if (!received || busy || disposed) return

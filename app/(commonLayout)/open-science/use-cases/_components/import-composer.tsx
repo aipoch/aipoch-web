@@ -122,7 +122,18 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
             ? 'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.'
             : 'You may need to allow your browser to open Open-Science and access your local network. Keep this page open until the file is sent.'}
         </span>{' '}
-        <span>Clicked Cancel by mistake? Retry the import.</span>
+        {state.phase === 'received' ? (
+          <span>
+            Clicked Cancel by mistake?{' '}
+            <button
+              type="button"
+              onClick={() => void session.current?.retryImport()}
+              className="font-medium text-[#10110f] underline underline-offset-4"
+            >
+              Retry the import.
+            </button>
+          </span>
+        ) : null}
       </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <p
