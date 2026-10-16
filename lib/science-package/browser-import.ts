@@ -232,7 +232,7 @@ export function createScienceImport(
       try {
         await waitForBrowserMock()
         signal.throwIfAborted()
-        const availability = await deps.availability({ signal })
+        const availability = await deps.availability({ signal, timeoutMs: 5000 })
         signal.throwIfAborted()
         if (availability.status !== 'available') {
           emit(

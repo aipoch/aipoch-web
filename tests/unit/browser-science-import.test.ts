@@ -440,6 +440,10 @@ test('checking blocks duplicates, cancellation and unmount abort discovery', asy
     await Promise.resolve()
     await s.session.prepareAndOpen()
     expect(s.availability).toHaveBeenCalledTimes(1)
+    expect(s.availability).toHaveBeenCalledWith({
+      signal: expect.any(AbortSignal),
+      timeoutMs: 5000
+    })
     if (dispose) s.session.dispose()
     else s.session.cancel()
     const count = s.states.length

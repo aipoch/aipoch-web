@@ -160,7 +160,8 @@ loads from `<manifest directory>/<case name>/extracted/`.
 ### Import a replay into Open-Science
 
 The composer below each replay first calls the official
-`checkBrowserImportAvailability({ signal })` on the SDK default discovery port when **Continue in Open-Science** is clicked.
+`checkBrowserImportAvailability({ signal, timeoutMs: 5000 })` on the SDK default
+discovery port with a five-second probe budget when **Continue in Open-Science** is clicked.
 Discovery checks one local endpoint; it does not launch the app or prove that it is
 installed. Local-network access may trigger a browser permission prompt. On
 `unavailable`, `timeout`, `incompatible` or `unsupported-browser`, the composer
