@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'bun:test'
+import { isMobileDevice } from '../../lib/browser-device'
 import {
   createScienceImport,
   downloadSciencePackage,
@@ -48,12 +49,14 @@ const setup = () => {
     events.push('launch')
   })
   const launchApp = mock(() => {})
+  const mobile = mock(() => false)
   const session = createScienceImport(info, (state) => states.push(state), {
     availability,
     download,
     prepare,
     launch,
     launchApp,
+    mobile,
     supported: () => true
   })
   return {
@@ -67,9 +70,33 @@ const setup = () => {
     prepare,
     download,
     launch,
-    launchApp
+    launchApp,
+    mobile
   }
 }
+
+test('mobile clicks show desktop guidance before any discovery, download or launch', async () => {
+  const s = setup()
+  s.mobile.mockReturnValue(true)
+  await s.session.prepareAndOpen()
+  await s.session.prepareAndOpen()
+  expect(s.states.at(-1)).toEqual({
+    phase: 'unsupported',
+    action: 'prepare',
+    message: 'Please continue on a desktop computer.'
+  })
+  for (const operation of [s.availability, s.download, s.prepare, s.send, s.launch, s.launchApp])
+    expect(operation).not.toHaveBeenCalled()
+})
+
+test('mobile detection covers phones and desktop-mode iPads without rejecting desktop touch PCs', () => {
+  for (const userAgent of ['Android', 'iPhone', 'iPad', 'iPod', 'Windows Phone'])
+    expect(isMobileDevice(userAgent)).toBe(true)
+  expect(isMobileDevice('Macintosh; Intel Mac OS X', 5)).toBe(true)
+  expect(isMobileDevice('Macintosh; Intel Mac OS X', 0)).toBe(false)
+  expect(isMobileDevice('Windows NT 10.0', 10)).toBe(false)
+  expect(isMobileDevice('X11; Linux x86_64', 0)).toBe(false)
+})
 
 test('explicit retry after receipt repeats the complete import flow once and guards disposal', async () => {
   const s = setup()

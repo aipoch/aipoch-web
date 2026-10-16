@@ -59,8 +59,16 @@ test('composer automatically launches after download and preserves explicit retr
   const origin = `http://127.0.0.1:${address.port}`
   const browser = await chromium.launch()
   try {
-    for (const device of ['desktop', 'mobile']) {
-      const page = await browser.newPage(device === 'mobile' ? devices['Pixel 5'] : {})
+    for (const device of ['desktop', 'narrow-desktop', 'mobile', 'iphone']) {
+      const page = await browser.newPage(
+        device === 'mobile'
+          ? devices['Pixel 5']
+          : device === 'iphone'
+            ? devices['iPhone 13']
+            : device === 'narrow-desktop'
+              ? { viewport: { width: 393, height: 851 } }
+              : {}
+      )
       page.setDefaultTimeout(5000)
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
@@ -84,6 +92,25 @@ test('composer automatically launches after download and preserves explicit retr
             blobSize: state.blobSize
           }
         })
+      if (device === 'mobile' || device === 'iphone') {
+        const before = downloads
+        await expect(page.getByRole('alert')).toHaveCount(0)
+        await continueButton.click()
+        await continueButton.click()
+        await expect(page.getByRole('alert')).toHaveText('Please continue on a desktop computer.')
+        await expect(page.getByRole('alert')).toHaveClass(/text-status-warning-foreground/)
+        unitExpect(downloads).toBe(before)
+        unitExpect(await snapshot()).toMatchObject({
+          checks: 0,
+          prepares: 0,
+          sends: 0,
+          appLaunches: 0
+        })
+        await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(0)
+        unitExpect(errors).toEqual([])
+        await page.close()
+        continue
+      }
       await page.evaluate(() => {
         ;(window as unknown as TestWindow).importTest.availability = 'unavailable'
       })

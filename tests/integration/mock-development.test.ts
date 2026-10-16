@@ -96,7 +96,8 @@ describe('mock development end to end', () => {
             page,
             `${web}/open-science/use-cases/${manifestSample[0].name}/replay`,
             api,
-            join(importArtifacts, `science-import-${device}.png`)
+            join(importArtifacts, `science-import-${device}.png`),
+            device === 'mobile'
           )
         } finally {
           await page.close()

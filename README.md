@@ -159,6 +159,12 @@ loads from `<manifest directory>/<case name>/extracted/`.
 
 ### Import a replay into Open-Science
 
+Browser import is desktop-only. On phones and tablets (including desktop-mode
+iPads), clicking **Continue in Open-Science** shows the warning **Please continue
+on a desktop computer.** beneath the composer, without discovery, download or
+protocol launch. Device detection is shared with the desktop installer recommendations;
+a narrow desktop window remains supported. Ordinary package downloads remain available.
+
 The composer below each replay first calls the official
 `checkBrowserImportAvailability({ signal, timeoutMs: 5000 })` on the SDK default
 discovery port with a five-second probe budget when **Continue in Open-Science** is clicked.

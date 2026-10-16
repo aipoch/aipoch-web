@@ -7,7 +7,7 @@ export const browserImportHandlers = (origin: string) => [
     const response = await fetch(`${origin}/__mock/use-case-manifest`, { signal: request.signal })
     const { discoveryMode } = (await response.json()) as { discoveryMode: string }
     if (discoveryMode === 'unavailable') return HttpResponse.error()
-    if (discoveryMode === 'timeout') await delay(3000)
+    if (discoveryMode === 'timeout') await delay(6000)
     return HttpResponse.json({
       ...browserImportCapabilities,
       version: discoveryMode === 'incompatible' ? 2 : browserImportCapabilities.version

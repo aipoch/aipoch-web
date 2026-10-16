@@ -1,3 +1,4 @@
+import { isMobileDevice } from '@/lib/browser-device'
 import { waitForBrowserMock } from '@/mocks/ready'
 import type {
   BrowserImportTransfer,
@@ -139,6 +140,7 @@ type Dependencies = {
   launch: (url: string) => void
   launchApp: () => void
   supported: () => boolean
+  mobile: () => boolean
 }
 
 /** Owns bytes and credentials outside React state. Never publishes a transfer URL or raw error. */
@@ -157,6 +159,9 @@ export function createScienceImport(
     },
     launchApp: launchOpenScience,
     supported: supportsImport,
+    mobile: () =>
+      typeof navigator !== 'undefined' &&
+      isMobileDevice(navigator.userAgent, navigator.maxTouchPoints),
     ...dependencies
   }
   let filename: string
@@ -207,6 +212,14 @@ export function createScienceImport(
     },
     async prepare(): Promise<boolean> {
       if (busy || disposed || received || blob) return false
+      if (deps.mobile()) {
+        emit({
+          phase: 'unsupported',
+          action: 'prepare',
+          message: 'Please continue on a desktop computer.'
+        })
+        return false
+      }
       if (!deps.supported()) {
         emit({
           phase: 'unsupported',

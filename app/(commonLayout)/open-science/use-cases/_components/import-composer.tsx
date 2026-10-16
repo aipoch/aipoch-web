@@ -126,14 +126,16 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <div className="flex items-center gap-x-4">
           <p
-            role={state.phase === 'error' ? 'alert' : 'status'}
+            role={state.phase === 'error' || state.phase === 'unsupported' ? 'alert' : 'status'}
             aria-live="polite"
             className={
               state.phase === 'error'
                 ? 'text-status-failure-foreground'
-                : !state.message
-                  ? 'sr-only'
-                  : undefined
+                : state.phase === 'unsupported'
+                  ? 'text-status-warning-foreground'
+                  : !state.message
+                    ? 'sr-only'
+                    : undefined
             }
           >
             {state.message}{' '}
