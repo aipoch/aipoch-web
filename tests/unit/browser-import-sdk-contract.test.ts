@@ -7,6 +7,7 @@ import type {
 } from '../../vendor/open-science/browser-import'
 import {
   checkBrowserImportAvailability as checkImplementation,
+  launchOpenScience,
   prepareBrowserImport as prepareImplementation
 } from '../../vendor/open-science/browser-import.mjs'
 
@@ -20,6 +21,22 @@ const fetchSpy = spyOn(
 afterEach(() => fetchSpy.mockReset())
 afterAll(() => fetchSpy.mockRestore())
 const origin = 'https://research.example'
+test('official standalone launch only requests navigation and makes no HTTP requests', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'location')
+  const destinations: string[] = []
+  Object.defineProperty(globalThis, 'location', {
+    configurable: true,
+    value: { assign: (url: string) => destinations.push(url) }
+  })
+  try {
+    launchOpenScience()
+    expect(destinations).toEqual(['open-science://open'])
+    expect(fetchSpy).not.toHaveBeenCalled()
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'location', original)
+    else Reflect.deleteProperty(globalThis, 'location')
+  }
+})
 const prepare = () =>
   prepareBrowserImport(new Blob(['hello']), { filename: 'study.science', origin })
 const stall = (signal?: AbortSignal | null) =>

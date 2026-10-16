@@ -76,6 +76,7 @@ test('composer automatically launches after download and preserves explicit retr
           return {
             prepares: state.prepares,
             sends: state.sends,
+            appLaunches: state.appLaunches,
             cancels: state.cancels,
             activation: state.activation,
             launchedBeforeSend: state.launchedBeforeSend,
@@ -177,7 +178,17 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('status')).toHaveText(
         'File sent to Open-Science. Please confirm the import in the app.'
       )
-      await expect(page.getByRole('button', { name: 'Sent to Open-Science' })).toBeDisabled()
+      await expect(openButton).toBeEnabled()
+      const receivedSnapshot = await snapshot()
+      await openButton.click()
+      await openButton.click()
+      unitExpect(await snapshot()).toEqual({
+        ...receivedSnapshot,
+        appLaunches: receivedSnapshot.appLaunches + 2
+      })
+      await expect(page.getByRole('status')).toHaveText(
+        'File sent to Open-Science. Please confirm the import in the app.'
+      )
       await expect(page.getByText(/You may need to allow your browser/)).toBeVisible()
       await expect(page.getByText('Import successful', { exact: true })).toHaveCount(0)
       unitExpect(downloads).toBe(count + 1)

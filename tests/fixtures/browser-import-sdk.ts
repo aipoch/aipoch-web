@@ -10,6 +10,7 @@ const state = {
   availability: 'available' as 'available' | 'unavailable',
   prepares: 0,
   sends: 0,
+  appLaunches: 0,
   cancels: 0,
   blobSize: 0,
   activation: false,
@@ -21,6 +22,9 @@ const state = {
 }
 Object.assign(window, { importTest: state })
 export const waitForBrowserMock = async () => {}
+export const launchOpenScience = () => {
+  state.appLaunches++
+}
 export const checkBrowserImportAvailability = async () => {
   state.checks++
   return { status: state.availability }

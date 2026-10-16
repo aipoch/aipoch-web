@@ -6,6 +6,7 @@ import type {
 } from '@/vendor/open-science/browser-import'
 import {
   checkBrowserImportAvailability,
+  launchOpenScience,
   prepareBrowserImport
 } from '@/vendor/open-science/browser-import.mjs'
 
@@ -25,7 +26,8 @@ export type ImportState = {
     | 'error'
     | 'unsupported'
   message: string
-  action?: 'prepare' | 'open' | 'resume'
+  action?: 'prepare' | 'open' | 'resume' | 'launch'
+  launchError?: string
   loaded?: number
   total?: number
   needsApp?: boolean
@@ -34,6 +36,11 @@ export const INITIAL_IMPORT_STATE: ImportState = {
   phase: 'idle',
   message: '',
   action: 'prepare'
+}
+const RECEIVED_IMPORT_STATE: ImportState = {
+  phase: 'received',
+  action: 'launch',
+  message: 'File sent to Open-Science. Please confirm the import in the app.'
 }
 
 class DownloadError extends Error {}
@@ -130,6 +137,7 @@ type Dependencies = {
   download: typeof downloadSciencePackage
   prepare: typeof PrepareBrowserImport
   launch: (url: string) => void
+  launchApp: () => void
   supported: () => boolean
 }
 
@@ -147,6 +155,7 @@ export function createScienceImport(
     launch: (url) => {
       window.location.href = url
     },
+    launchApp: launchOpenScience,
     supported: supportsImport,
     ...dependencies
   }
@@ -169,6 +178,20 @@ export function createScienceImport(
     transfer = deps.prepare(blob, { filename })
   }
   const session = {
+    openApp() {
+      // Receipt is final for this file; a later click only requests the standalone app launch.
+      if (!received || busy || disposed) return
+      try {
+        deps.launchApp()
+        emit(RECEIVED_IMPORT_STATE)
+      } catch {
+        emit({
+          ...RECEIVED_IMPORT_STATE,
+          launchError:
+            'Could not request opening Open-Science. Allow external apps in your browser, then try again.'
+        })
+      }
+    },
     async prepareAndOpen(): Promise<void> {
       if (busy || disposed || received || blob) return
       // Only the operation that prepared this Blob may automatically launch it.
@@ -321,10 +344,7 @@ export function createScienceImport(
         if (receipt.received !== true) throw new Error('Missing receipt')
         received = true
         clear()
-        emit({
-          phase: 'received',
-          message: 'File sent to Open-Science. Please confirm the import in the app.'
-        })
+        emit(RECEIVED_IMPORT_STATE)
       } catch (error) {
         // Readiness failures are structured; other transport failures remain retryable.
         const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined

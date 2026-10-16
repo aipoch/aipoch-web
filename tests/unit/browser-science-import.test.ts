@@ -47,11 +47,13 @@ const setup = () => {
   const launch = mock(() => {
     events.push('launch')
   })
+  const launchApp = mock(() => {})
   const session = createScienceImport(info, (state) => states.push(state), {
     availability,
     download,
     prepare,
     launch,
+    launchApp,
     supported: () => true
   })
   return {
@@ -64,9 +66,42 @@ const setup = () => {
     send,
     prepare,
     download,
-    launch
+    launch,
+    launchApp
   }
 }
+
+test('received files offer standalone launch without another download or transfer', async () => {
+  const s = setup()
+  s.session.openApp()
+  expect(s.launchApp).not.toHaveBeenCalled()
+  const pending = s.session.prepareAndOpen()
+  s.receipt.resolve({ received: true })
+  await pending
+  expect(s.states.at(-1)).toMatchObject({ phase: 'received', action: 'launch' })
+  s.session.openApp()
+  s.session.openApp()
+  expect(s.launchApp).toHaveBeenCalledTimes(2)
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.prepare).toHaveBeenCalledTimes(1)
+  expect(s.send).toHaveBeenCalledTimes(1)
+  expect(s.launch).toHaveBeenCalledTimes(1)
+  s.launchApp.mockImplementationOnce(() => {
+    throw new Error('Untrusted launch error')
+  })
+  s.session.openApp()
+  expect(s.states.at(-1)).toMatchObject({
+    phase: 'received',
+    action: 'launch',
+    message: 'File sent to Open-Science. Please confirm the import in the app.',
+    launchError: expect.stringContaining('Could not request opening Open-Science')
+  })
+  s.session.openApp()
+  expect(s.states.at(-1)?.launchError).toBeUndefined()
+  s.session.dispose()
+  s.session.openApp()
+  expect(s.launchApp).toHaveBeenCalledTimes(4)
+})
 
 test('explicit preparation and manual launch remain available for retries', async () => {
   const s = setup()

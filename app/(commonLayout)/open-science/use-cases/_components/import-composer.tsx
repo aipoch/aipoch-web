@@ -51,7 +51,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           : state.phase === 'canceling'
             ? 'Canceling…'
             : state.phase === 'received'
-              ? 'Sent to Open-Science'
+              ? 'Open Open-Science'
               : state.action === 'resume'
                 ? 'I’ve opened Open-Science'
                 : state.action === 'open'
@@ -96,6 +96,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
               if (state.action === 'prepare') void session.current?.prepareAndOpen()
               else if (state.action === 'resume') void session.current?.resume()
               else if (state.action === 'open') void session.current?.open()
+              else if (state.action === 'launch') session.current?.openApp()
             }}
             className="inline-flex min-h-10 w-full items-center justify-center gap-3 rounded-xl bg-[#10110f] px-5 py-1 text-sm font-semibold text-white transition-colors hover:bg-[#34352f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default sm:w-auto sm:min-w-56"
           >
@@ -134,6 +135,11 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         >
           {state.message}
         </p>
+        {state.launchError ? (
+          <p role="alert" className="text-status-failure-foreground">
+            {state.launchError}
+          </p>
+        ) : null}
         {waitingTimedOut ? (
           <p aria-live="polite">
             If Open-Science does not open,{' '}

@@ -202,8 +202,11 @@ Below the timeout message, a direct package-download link explains how to double
 the `.science` file or choose **Open with → Open-Science**. An app-download link
 lets users install Open-Science first if needed.
 
-Receipt means only that the desktop received the file. The pinned desktop source
-automatically receives and validates it before destination selection; the user
+Receipt means only that the desktop received the file.
+The received-state **Open Open-Science** button remains clickable and synchronously
+calls the official `launchOpenScience()` entry point. It does not download,
+prepare a transfer or send the file again; the receipt confirmation remains visible.
+The pinned desktop source automatically receives and validates it before destination selection; the user
 must still confirm import there. The website only reports **File sent to
 Open-Science. Please confirm the import in the app.** The composer text area and
 research tools remain disabled; no prompt text is sent.

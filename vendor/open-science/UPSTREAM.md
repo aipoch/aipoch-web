@@ -19,7 +19,7 @@ rejection regex. Executable source, types and license are otherwise unchanged:
 | browser-import.d.ts | f41624c56001328d04e348975095dd476f6cfd364552f959a312c726c286d07b |
 | LICENSE | b038148f912bdd6e61e33e56214d02c4d8a9640f7a637e21dfcf939332816979 |
 
-Import `checkBrowserImportAvailability` and `prepareBrowserImport` from
+Import `checkBrowserImportAvailability`, `prepareBrowserImport` and `launchOpenScience` from
 `@/vendor/open-science/browser-import.mjs`.
 The SDK is bundled as a source dependency; no protocol code is reimplemented.
 This also keeps the existing Docker dependency-install layer usable without
