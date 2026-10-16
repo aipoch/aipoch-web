@@ -117,9 +117,12 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         </div>
       </div>
       <p className="mt-1.5 text-xs leading-5 text-[#777872]">
-        {state.phase === 'opening' || state.action === 'resume'
-          ? 'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.'
-          : 'You may need to allow your browser to open Open-Science and access your local network. Keep this page open until the file is sent.'}
+        <span>
+          {state.phase === 'opening' || state.action === 'resume'
+            ? 'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.'
+            : 'You may need to allow your browser to open Open-Science and access your local network. Keep this page open until the file is sent.'}
+        </span>{' '}
+        <span>Clicked Cancel by mistake? Retry the import.</span>
       </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <p

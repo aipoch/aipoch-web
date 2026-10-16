@@ -151,6 +151,7 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('status')).not.toContainText('%')
       await page.getByRole('button', { name: 'Cancel', exact: true }).click()
       await expect(page.getByRole('status')).toContainText('Transfer canceled')
+      await expect(page.getByText('Clicked Cancel by mistake? Retry the import.')).toBeVisible()
       await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       unitExpect((await snapshot()).activation).toBe(true)
