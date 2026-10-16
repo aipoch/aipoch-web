@@ -14,7 +14,7 @@ test('mock object storage supports conditional GET, updates, empty data and fail
   expect(first.status).toBe(200)
   const etag = first.headers.get('etag') as string
   const data = await first.json()
-  expect(data).toHaveLength(9)
+  expect(data).toHaveLength(15)
   const unchanged = await request('/use-case-manifest/manifest.json', {
     headers: { 'If-None-Match': etag }
   })

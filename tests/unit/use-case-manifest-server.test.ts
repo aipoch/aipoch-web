@@ -27,7 +27,7 @@ test('production ignores the development manifest even when the mock flag is set
   const fetcher = mock(async (_input: unknown) => Response.json(manifest))
   globalThis.fetch = fetcher as unknown as typeof fetch
   const { fetchUseCaseList } = await import('../../service/open-science-use-cases.server')
-  expect(await fetchUseCaseList()).toHaveLength(9)
+  expect(await fetchUseCaseList()).toHaveLength(15)
   expect(fetcher.mock.calls[0][0]).toBe(
     'https://assets.example.test/open-science/usecases/manifest.json'
   )
@@ -41,7 +41,7 @@ test('uses the configured static origin for the manifest and resources outside m
     '../../service/open-science-use-cases.server'
   )
   const entries = await fetchUseCaseList()
-  expect(entries).toHaveLength(9)
+  expect(entries).toHaveLength(15)
   // List loading fetches only the manifest, never Markdown, covers, or archives.
   expect(fetcher).toHaveBeenCalledTimes(1)
   expect(fetcher.mock.calls[0][0]).toBe(
@@ -93,7 +93,7 @@ test('maps manifest details without inventing dates or reports', async () => {
   expect(detail?.coverImage).toContain('Can%20a%20Simple')
   expect(detail?.package?.filename).toBe(manifest[0].case.file_name)
   expect(await fetchUseCaseDetail('missing')).toBeNull()
-  expect(await fetchUseCaseList()).toHaveLength(9)
+  expect(await fetchUseCaseList()).toHaveLength(15)
   expect(afterResponse).toHaveBeenCalled()
 })
 

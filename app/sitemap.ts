@@ -17,11 +17,11 @@ import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
-const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-13'
+const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-15'
 // Track overview and replay template changes separately from the gallery.
-const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-13'
-// Replay message attachment kinds widened on October 15.
-const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-15'
+const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-16'
+// Direct overview/replay visits retain their return fallback across history traversal.
+const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-16'
 const AGENT_SKILLS_LIST_LAST_MODIFIED = '2026-09-23'
 
 // Disable cache, regenerate on every request

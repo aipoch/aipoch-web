@@ -1,23 +1,23 @@
 'use client'
 
 import { Download } from 'lucide-react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import type { PackageProgress } from '@/lib/science-package/archive'
 import { loadReplay, type ReplayState } from '@/lib/science-package/load'
 import type { UseCasePackage } from '@/lib/use-case-types'
 import { SessionTranscript } from './session-transcript'
+import { UseCaseBackLink } from './use-case-navigation'
 
 const TopBar = ({ slug, packageUrl }: { slug: string; packageUrl?: string }) => (
   <div className="sticky top-[var(--nav-h)] z-10 border-b border-[#dfdfda] bg-[#fafaf8]/90 backdrop-blur-sm">
     <div className="mx-auto flex min-h-[47px] w-full max-w-4xl flex-wrap items-center gap-3 px-4 py-2.5 md:px-6">
-      <Link
+      <UseCaseBackLink
         href={`/open-science/use-cases/${slug}`}
         className="shrink-0 text-[13px] font-medium text-[#575853] transition-colors hover:text-[#10110f]"
       >
         ← Back to overview
-      </Link>
+      </UseCaseBackLink>
       {packageUrl ? (
         <a
           href={packageUrl}

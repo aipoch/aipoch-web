@@ -10,6 +10,7 @@ import { fetchUseCaseAssetText } from '@/service/open-science-use-case-assets'
 import { fetchUseCaseDetail, fetchUseCaseList } from '@/service/open-science-use-cases.server'
 import { ShareRow } from '../_components/share-row'
 import { UseCaseActions } from '../_components/use-case-actions'
+import { UseCaseBackLink } from '../_components/use-case-navigation'
 
 // Markdown styles come from app/globals.css → session-transcript.css; do not
 // re-import that file here — Turbopack panics compiling it as a page CSS entry.
@@ -144,12 +145,12 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
     <main id="top" className={`-mt-[var(--nav-h)] flex-1 ${surfaceClass} text-[#10110f]`}>
       <section className="pt-[var(--nav-h)]">
         <div className={`${shellClass} pb-12 pt-14 lg:pt-16`}>
-          <Link
+          <UseCaseBackLink
             href="/open-science/use-cases"
             className="text-[13px] font-medium text-[#73746e] transition-colors hover:text-[#10110f]"
           >
             ← Use Cases
-          </Link>
+          </UseCaseBackLink>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#90908a]">
             {category ? (

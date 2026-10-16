@@ -202,7 +202,7 @@ describe('mock development end to end', () => {
           .evaluate((image) => (image as HTMLImageElement).naturalWidth)
       ).toBeGreaterThan(0)
       await page.getByRole('link', { name: 'Load more use cases', exact: true }).click()
-      expect(await page.locator('main img').count()).toBe(9)
+      expect(await page.locator('main img').count()).toBe(12)
       await page.goto(`${web}/open-science/use-cases/${manifestSample[0].name}`)
       await page.getByText('Local sample introduction.', { exact: true }).waitFor()
       // Shared typography must apply during SSR, even without client JavaScript.
@@ -262,10 +262,10 @@ describe('mock development end to end', () => {
       const sitemap = (await (await fetch(`${web}/sitemap.xml`)).text()).replace(/>\s+</g, '><')
       for (const item of manifestSample) {
         expect(sitemap).toContain(
-          `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-13T00:00:00.000Z</lastmod>`
+          `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-16T00:00:00.000Z</lastmod>`
         )
         expect(sitemap).toContain(
-          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-15T00:00:00.000Z</lastmod>`
+          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-16T00:00:00.000Z</lastmod>`
         )
         const detailHtml = await (await fetch(`${web}/open-science/use-cases/${item.name}`)).text()
         expect(detailHtml).toContain(`href="/open-science/use-cases/${item.name}/replay"`)
@@ -481,6 +481,219 @@ describe('mock development end to end', () => {
   }, 120000)
 
   for (const mobile of [false, true]) {
+    test(`direct case return links keep their fallback after browser Back on ${mobile ? 'mobile' : 'desktop'}`, async () => {
+      const browser = await chromium.launch()
+      try {
+        const context = await browser.newContext(
+          mobile ? devices['Pixel 5'] : { viewport: { width: 1440, height: 700 } }
+        )
+        const page = await context.newPage()
+        page.setDefaultTimeout(15000)
+        const galleryUrl = `${web}/open-science/use-cases`
+        const detailUrl = `${galleryUrl}/${manifestSample[0].name}`
+        for (const [directUrl, parentUrl, label] of [
+          [detailUrl, galleryUrl, '← Use Cases'],
+          [`${detailUrl}/replay`, detailUrl, '← Back to overview']
+        ]) {
+          // The entry before this direct visit is deliberately outside the case routes.
+          await page.goto(`${web}/agent-skills/list`)
+          await page.goto(directUrl)
+          await page.waitForFunction(() => Boolean(window.history.state?.__aipochNavigation))
+          const backLink = page.getByRole('link', { name: label, exact: true })
+          await backLink.click()
+          await browserExpect(page).toHaveURL(parentUrl)
+          await page.goBack()
+          await browserExpect(page).toHaveURL(directUrl)
+          await backLink.click()
+          // Visiting the parent and then going Back must not invent a parent behind this entry.
+          await browserExpect(page).toHaveURL(parentUrl)
+          await page.goBack()
+          await page.reload()
+          await backLink.click()
+          await browserExpect(page).toHaveURL(parentUrl)
+        }
+      } finally {
+        await browser.close()
+      }
+    }, 90000)
+
+    test(`gallery navbar starts a fresh list visit on ${mobile ? 'mobile' : 'desktop'}`, async () => {
+      const browser = await chromium.launch()
+      try {
+        const context = await browser.newContext(
+          mobile ? devices['Pixel 5'] : { viewport: { width: 1440, height: 700 } }
+        )
+        const page = await context.newPage()
+        page.setDefaultTimeout(15000)
+        await page.goto(`${web}/open-science/use-cases`)
+        const grid = page.getByTestId('use-case-grid')
+        const expandGallery = async () => {
+          await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+          // Lazy covers can move the sentinel after the first scroll, especially on mobile.
+          await browserExpect
+            .poll(async () => {
+              const count = await grid.getByRole('link').count()
+              if (count <= 6)
+                await page
+                  .getByRole('link', { name: 'Load more use cases' })
+                  .scrollIntoViewIfNeeded()
+              return count
+            })
+            .toBeGreaterThan(6)
+        }
+        await expandGallery()
+        expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300)
+        const refreshes: string[] = []
+        page.on('request', (request) => {
+          const url = new URL(request.url())
+          if (url.pathname === '/open-science/use-cases' && request.isNavigationRequest())
+            refreshes.push(request.url())
+        })
+        if (mobile) await page.getByRole('button', { name: 'Open menu', exact: true }).click()
+        await page
+          .getByRole('link', { name: 'Use Cases', exact: true })
+          .filter({ visible: true })
+          .click()
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(grid.getByRole('link')).toHaveCount(6)
+        await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+        await browserExpect.poll(() => refreshes.length).toBeGreaterThan(0)
+        // Resetting must also update saved history so a later reload does not revive old rows.
+        await page.reload()
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(grid.getByRole('link')).toHaveCount(6)
+        await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+        // Published pagination URLs also reset, even when their category key is unchanged.
+        await page.goto(`${web}/open-science/use-cases?page=2`)
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(grid.getByRole('link')).toHaveCount(12)
+        if (mobile) await page.getByRole('button', { name: 'Open menu', exact: true }).click()
+        await page
+          .getByRole('link', { name: 'Use Cases', exact: true })
+          .filter({ visible: true })
+          .click()
+        await browserExpect(page).toHaveURL(`${web}/open-science/use-cases`)
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(grid.getByRole('link')).toHaveCount(6)
+        // Equivalent first-page URLs and anchors must not retain a prior expanded view.
+        for (const suffix of ['?page=1', '#use-case-grid']) {
+          await page.goto(`${web}/open-science/use-cases${suffix}`)
+          await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+          await expandGallery()
+          if (mobile) await page.getByRole('button', { name: 'Open menu', exact: true }).click()
+          await page
+            .getByRole('link', { name: 'Use Cases', exact: true })
+            .filter({ visible: true })
+            .click()
+          await browserExpect(page).toHaveURL(`${web}/open-science/use-cases`)
+          await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+          await browserExpect(grid.getByRole('link')).toHaveCount(6)
+          await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+          await page.reload()
+          await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+          await browserExpect(grid.getByRole('link')).toHaveCount(6)
+          await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+        }
+        // A fresh navbar visit from a detail must not erase the original list's history.
+        await expandGallery()
+        const card = grid.getByRole('link').nth(6)
+        const detailPath = await card.getAttribute('href')
+        await card.click()
+        await browserExpect(page).toHaveURL(`${web}${detailPath}`)
+        if (mobile) await page.getByRole('button', { name: 'Open menu', exact: true }).click()
+        await page
+          .getByRole('link', { name: 'Use Cases', exact: true })
+          .filter({ visible: true })
+          .click()
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(grid.getByRole('link')).toHaveCount(6)
+        await browserExpect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(3)
+        await page.goBack()
+        await browserExpect(page).toHaveURL(`${web}${detailPath}`)
+        await page.getByRole('link', { name: '← Use Cases', exact: true }).click()
+        await browserExpect(page).toHaveURL(`${web}/open-science/use-cases`)
+        await browserExpect.poll(() => grid.getByRole('link').count()).toBeGreaterThan(6)
+      } finally {
+        await browser.close()
+      }
+    }, 120000)
+
+    test(`gallery restores filtered reading position through browser and page Back on ${mobile ? 'mobile' : 'desktop'}`, async () => {
+      const browser = await chromium.launch()
+      try {
+        const context = await browser.newContext(
+          mobile ? devices['Pixel 5'] : { viewport: { width: 1440, height: 700 } }
+        )
+        const page = await context.newPage()
+        page.setDefaultTimeout(15000)
+        await page.goto(`${web}/open-science/use-cases?category=science`)
+        const grid = page.getByTestId('use-case-grid')
+        await page.getByRole('link', { name: 'Load more use cases' }).scrollIntoViewIfNeeded()
+        await browserExpect(grid.locator('h2')).toHaveCount(10)
+        const card = grid.getByRole('link', { name: 'Extended Gallery Case 4', exact: true })
+        await card.scrollIntoViewIfNeeded()
+        // Let the visible covers settle before recording the actual departure position.
+        await browserExpect
+          .poll(() =>
+            grid
+              .locator('img')
+              .evaluateAll((images) =>
+                images.every((image) => (image as HTMLImageElement).complete)
+              )
+          )
+          .toBe(true)
+        await card.scrollIntoViewIfNeeded()
+        const listUrl = page.url()
+        await card.evaluate((element) =>
+          element.addEventListener(
+            'click',
+            () => {
+              sessionStorage.setItem('test-gallery-departure-y', String(window.scrollY))
+            },
+            { once: true }
+          )
+        )
+        await card.click()
+        const originalY = await page.evaluate(() =>
+          Number(sessionStorage.getItem('test-gallery-departure-y'))
+        )
+        expect(originalY).toBeGreaterThan(500)
+        await browserExpect(page.locator('main h1')).toHaveText('Extended Gallery Case 4', {
+          timeout: 30000
+        })
+        await page.reload()
+        await page.goBack()
+        await browserExpect(page).toHaveURL(listUrl)
+        await browserExpect(grid.locator('h2')).toHaveCount(10)
+        await browserExpect
+          .poll(() => page.evaluate((y) => Math.abs(window.scrollY - y), originalY))
+          .toBeLessThan(3)
+        await page.goForward()
+        await browserExpect(page.locator('main h1')).toHaveText('Extended Gallery Case 4')
+        await page.getByRole('link', { name: '← Use Cases', exact: true }).click()
+        await browserExpect(page).toHaveURL(listUrl)
+        await browserExpect(grid.locator('h2')).toHaveCount(10)
+        await browserExpect
+          .poll(() => page.evaluate((y) => Math.abs(window.scrollY - y), originalY))
+          .toBeLessThan(3)
+        await browserExpect(page.getByRole('link', { name: /^Science/ })).toHaveAttribute(
+          'aria-current',
+          'true'
+        )
+
+        // A new direct detail visit must not reuse a previous gallery's filter or history.
+        await page.goto(`${web}/open-science/use-cases/${manifestSample[0].name}`)
+        await page.getByRole('link', { name: '← Use Cases', exact: true }).click()
+        await browserExpect(page).toHaveURL(`${web}/open-science/use-cases`)
+        await browserExpect(page.getByRole('link', { name: /All areas/ })).toHaveAttribute(
+          'aria-current',
+          'true'
+        )
+      } finally {
+        await browser.close()
+      }
+    }, 90000)
+
     test(`gallery appends cases on scroll with ${mobile ? 'mobile' : 'desktop'} layout and no browser manifest fetch`, async () => {
       const browser = await chromium.launch()
       try {
@@ -525,17 +738,24 @@ describe('mock development end to end', () => {
           // #36: cards preserve the cover image's natural proportions.
           expect(geometry.imageRatio).toBeCloseTo(geometry.naturalRatio ?? 0, 2)
         }
-        await page.getByRole('link', { name: 'Load more use cases' }).scrollIntoViewIfNeeded()
+        // Each scroll into view loads one batch; loop until all batches arrive.
+        const loadMore = page.getByRole('link', { name: 'Load more use cases' })
+        for (let attempt = 0; attempt < 4; attempt++) {
+          if (!(await loadMore.isVisible().catch(() => false))) break
+          await loadMore.scrollIntoViewIfNeeded()
+          await page.waitForTimeout(300)
+        }
         await browserExpect(grid.locator('h2')).toHaveText(manifestSample.map((item) => item.title))
         await browserExpect(page.getByText('All use cases loaded', { exact: true })).toBeVisible()
-        await browserExpect(page.getByRole('status')).toContainText('Showing 9 of 9 use cases')
+        await browserExpect(page.getByRole('status')).toContainText('Showing 15 of 15 use cases')
         expect(
           new Set(
             await grid
               .locator('a')
               .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
           ).size
-        ).toBe(9)
+        ).toBe(15)
+        // Expansion belongs to this history entry, without changing the route URL.
         expect(page.url()).toBe(`${web}/open-science/use-cases`)
         expect(requests.some((url) => url.includes('/use-case-manifest/manifest.json'))).toBe(false)
         expect(requests.some((url) => url.endsWith('.science'))).toBe(false)
@@ -544,14 +764,54 @@ describe('mock development end to end', () => {
           fullPage: true
         })
         await grid.getByRole('link', { name: manifestSample[6].title, exact: true }).click()
+        // The detail route's cold compile can exceed the default expect timeout in dev.
         await browserExpect(
           page.locator('main > section').first().getByRole('heading', { level: 1 })
-        ).toHaveText(manifestSample[6].title)
+        ).toHaveText(manifestSample[6].title, { timeout: 30000 })
+        // Back restores the expanded window from this visit's saved view state.
+        await page.goBack()
+        await browserExpect(grid.locator('h2')).toHaveText(manifestSample.map((item) => item.title))
+        expect(page.url()).toBe(`${web}/open-science/use-cases`)
       } finally {
         await browser.close()
       }
     }, 60000)
   }
+
+  test('gallery return survives the overview and replay chain with a direct replay fallback', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 700 } })
+      const listUrl = `${web}/open-science/use-cases?category=science&page=2`
+      await page.goto(listUrl)
+      const card = page.getByTestId('use-case-grid').getByRole('link').first()
+      const detailHref = await card.getAttribute('href')
+      if (!detailHref) throw new Error('Gallery card is missing its detail link')
+      const detailUrl = new URL(detailHref, web).href
+      await card.click()
+      await browserExpect(page).toHaveURL(detailUrl)
+      const replay = page.getByRole('link', { name: 'View the research session' }).first()
+      await replay.scrollIntoViewIfNeeded()
+      const detailY = await page.evaluate(() => window.scrollY)
+      await replay.click()
+      await page.getByRole('link', { name: '← Back to overview', exact: true }).click()
+      await browserExpect(page).toHaveURL(detailUrl)
+      await browserExpect
+        .poll(() => page.evaluate((y) => Math.abs(window.scrollY - y), detailY))
+        .toBeLessThan(3)
+      // Back to overview must remove the replay visit, not add a second overview visit.
+      await page.goBack()
+      await browserExpect(page).toHaveURL(listUrl)
+
+      await page.goto(`${detailUrl}/replay`)
+      await page.getByRole('link', { name: '← Back to overview', exact: true }).click()
+      await browserExpect(page).toHaveURL(detailUrl)
+      await page.getByRole('link', { name: '← Use Cases', exact: true }).click()
+      await browserExpect(page).toHaveURL(`${web}/open-science/use-cases`)
+    } finally {
+      await browser.close()
+    }
+  }, 90000)
 
   test('category strip filters via the URL and left-aligns with the gallery grid', async () => {
     const browser = await chromium.launch()
@@ -563,15 +823,21 @@ describe('mock development end to end', () => {
       const strip = page.getByRole('list', { name: 'Use case categories' })
       const allAreas = strip.getByRole('link', { name: /All areas/ })
       const science = strip.getByRole('link', { name: /^Science/ })
-      // Counts derive from the mock manifest catalog fields (science ×4).
-      await browserExpect(allAreas).toContainText('9')
-      await browserExpect(science).toContainText('4')
+      // Counts derive from the mock manifest catalog fields (science ×10).
+      await browserExpect(allAreas).toContainText('15')
+      await browserExpect(science).toContainText('10')
       await browserExpect(allAreas).toHaveAttribute('aria-current', 'true')
       await science.click()
       await page.waitForURL('**/open-science/use-cases?category=science')
       await browserExpect(science).toHaveAttribute('aria-current', 'true')
-      // The grid filters to the selected catalog.
-      await browserExpect(page.getByTestId('use-case-grid').locator('h2')).toHaveCount(4)
+      // The grid filters to the selected catalog (science has 10 entries now):
+      // the first batch shows, and no Health & Climate case appears.
+      await browserExpect(
+        page.getByTestId('use-case-grid').getByRole('link', { name: 'Extended Gallery Case 1' })
+      ).toBeVisible()
+      await browserExpect(
+        page.getByTestId('use-case-grid').getByRole('link', { name: /Can GLP-1/ })
+      ).toHaveCount(0)
       await page.getByRole('link', { name: /All areas/ }).click()
       await page.waitForURL('**/open-science/use-cases')
       // Unfiltered again: a Health & Climate card is back in the grid. (The
@@ -605,8 +871,22 @@ describe('mock development end to end', () => {
       const more = page.getByRole('link', { name: 'Load more use cases' })
       await more.focus()
       await more.press('Enter')
-      await browserExpect(page.getByTestId('use-case-grid').locator('h2')).toHaveCount(9)
+      await browserExpect(page.getByTestId('use-case-grid').locator('h2')).toHaveCount(12)
       expect(page.url()).toBe(`${web}/open-science/use-cases`)
+      await more.press('Enter')
+      await browserExpect(page.getByTestId('use-case-grid').locator('h2')).toHaveCount(15)
+      expect(page.url()).toBe(`${web}/open-science/use-cases`)
+      // Keyboard-only navigation must save the card position after loading extra rows.
+      const card = page.getByTestId('use-case-grid').getByRole('link').nth(7)
+      await card.focus()
+      const originalY = await page.evaluate(() => window.scrollY)
+      await card.press('Enter')
+      await browserExpect(page.locator('main h1').first()).toHaveText(manifestSample[7].title)
+      await page.goBack()
+      await browserExpect(page.getByTestId('use-case-grid').locator('h2')).toHaveCount(15)
+      await browserExpect
+        .poll(() => page.evaluate((y) => Math.abs(window.scrollY - y), originalY))
+        .toBeLessThan(3)
     } finally {
       await browser.close()
     }

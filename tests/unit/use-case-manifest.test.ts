@@ -15,7 +15,7 @@ afterEach(() => {
 describe('use-case manifest normalization', () => {
   test('maps the supplied schema without inventing export dates', () => {
     const cases = parseUseCaseManifest(manifest, url)
-    expect(cases).toHaveLength(9)
+    expect(cases).toHaveLength(15)
     expect(cases[0]).toMatchObject({
       slug: manifest[0].name,
       title: manifest[0].title,
@@ -419,19 +419,19 @@ describe('use-case manifest cache', () => {
       reason: 'initial-load',
       previousEtag: null,
       etag: '"v1"',
-      count: 9,
+      count: 15,
       httpStatus: 200,
       durationMs: expect.any(Number)
     })
 
     await cache.read(schedule)
-    expect(records('cache.hit')[0]).toMatchObject({ cacheStatus: 'hit', etag: '"v1"', count: 9 })
+    expect(records('cache.hit')[0]).toMatchObject({ cacheStatus: 'hit', etag: '"v1"', count: 15 })
     await tasks.shift()?.()
     expect(records('fetch.start')[1]).toMatchObject({ cacheStatus: 'hit', conditional: true })
     expect(records('cache.unchanged')[0]).toMatchObject({
       cacheStatus: 'unchanged',
       etag: '"v1"',
-      count: 9,
+      count: 15,
       httpStatus: 304,
       durationMs: expect.any(Number)
     })
