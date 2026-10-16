@@ -56,3 +56,89 @@ test('isTextPreviewArtifact matches text kinds and code extensions only', () => 
     expect(isTextPreviewArtifact(name, mimeType)).toBe(false)
   }
 })
+
+test('fetchTextWithLimit flags truncation when a CDN hides Content-Range', async () => {
+  const { fetchTextWithLimit } = await import(
+    '../../app/(commonLayout)/open-science/use-cases/_components/artifact-preview'
+  )
+  const originalFetch = globalThis.fetch
+  const mockFetch = (impl: () => Promise<Response>) => {
+    globalThis.fetch = impl as unknown as typeof fetch
+  }
+  try {
+    // 206 partial body of exactly `limit` bytes, Content-Range filtered out by
+    // CORS header exposure — more bytes exist, so it must read as truncated.
+    mockFetch(
+      async () =>
+        new Response(new Uint8Array(16), {
+          status: 206,
+          headers: { 'Content-Length': '16' }
+        })
+    )
+    const partial = await fetchTextWithLimit('https://cdn.example.test/big.json', 16)
+    expect(partial?.truncated).toBe(true)
+
+    // 206 clamped to a smaller file: fewer bytes than requested = complete.
+    mockFetch(
+      async () =>
+        new Response(new Uint8Array(8), {
+          status: 206,
+          headers: { 'Content-Length': '8' }
+        })
+    )
+    const complete = await fetchTextWithLimit('https://cdn.example.test/small.json', 16)
+    expect(complete?.truncated).toBe(false)
+
+    // 200 with the full oversized body (server ignored Range) still truncates.
+    mockFetch(async () => new Response(new Uint8Array(32), { status: 200 }))
+    const ignored = await fetchTextWithLimit('https://cdn.example.test/big.json', 16)
+    expect(ignored?.truncated).toBe(true)
+
+    // 206 with an exposed Content-Range total wins over the byte count.
+    mockFetch(
+      async () =>
+        new Response(new Uint8Array(16), {
+          status: 206,
+          headers: { 'Content-Range': 'bytes 0-15/16' }
+        })
+    )
+    const exactFit = await fetchTextWithLimit('https://cdn.example.test/exact.json', 16)
+    expect(exactFit?.truncated).toBe(false)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('fetchTextWithLimit surfaces the total size when the server discloses it', async () => {
+  const { fetchTextWithLimit, fetchFullText } = await import(
+    '../../app/(commonLayout)/open-science/use-cases/_components/artifact-preview'
+  )
+  const originalFetch = globalThis.fetch
+  const mockFetch = (impl: () => Promise<Response>) => {
+    globalThis.fetch = impl as unknown as typeof fetch
+  }
+  try {
+    mockFetch(
+      async () =>
+        new Response(new Uint8Array(16), {
+          status: 206,
+          headers: { 'Content-Range': 'bytes 0-15/4096' }
+        })
+    )
+    const ranged = await fetchTextWithLimit('https://cdn.example.test/big.txt', 16)
+    expect(ranged?.truncated).toBe(true)
+    expect(ranged?.total).toBe(4096)
+
+    // fetchFullText takes the whole body without a Range header.
+    let sawRange = false
+    mockFetch(async (_input?: unknown, init?: { headers?: Record<string, string> }) => {
+      sawRange = Boolean((init as { headers?: Record<string, string> })?.headers)
+      return new Response(new TextEncoder().encode('full body'), { status: 200 })
+    })
+    const full = await fetchFullText('https://cdn.example.test/big.txt')
+    expect(full).toBe('full body')
+    expect(sawRange).toBe(false)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

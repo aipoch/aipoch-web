@@ -42,7 +42,9 @@ const outputCandidateTexts = (output: unknown, depth = 0): string[] => {
     return [
       ...outputCandidateTexts(output.structuredContent, depth + 1),
       ...outputCandidateTexts(output.result, depth + 1),
-      ...outputCandidateTexts(output.content, depth + 1)
+      ...outputCandidateTexts(output.content, depth + 1),
+      // Some exports nest the MCP payload once more under an `output` key.
+      ...outputCandidateTexts(output.output, depth + 1)
     ]
   }
   return []

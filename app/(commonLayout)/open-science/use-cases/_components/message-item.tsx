@@ -16,6 +16,7 @@ import { CopyButton } from './copy-button'
 import { ExtensionPreservingFileName } from './extension-preserving-file-name'
 import { FileDownloadLink } from './file-download-link'
 import { previewKindFor, useFilePreview } from './file-preview'
+import { MessageAnnotationCards } from './message-annotation-cards'
 import { SessionMarkdown } from './session-markdown'
 
 type TranscriptMessage = Extract<TranscriptItem, { type: 'message' }>
@@ -41,40 +42,77 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const MessagePartsContent = ({
   parts,
   content,
+  mentions,
   className,
   ref
 }: {
   parts: unknown[]
   content: string
+  /** @-mentioned uploads with resolvable URLs; matching pills open a preview. */
+  mentions?: MessageUpload[]
   className?: string
   ref?: React.Ref<HTMLParagraphElement>
-}) => (
-  <p
-    ref={ref}
-    className={cn('whitespace-pre-wrap break-words [overflow-wrap:anywhere]', className)}
-  >
-    {parts.map((part, index) => {
-      if (!isRecord(part)) return null
-      if (part.type === 'text' && typeof part.text === 'string') {
-        return <span key={`text-${index}`}>{part.text}</span>
-      }
-      const pillText =
-        (typeof part.name === 'string' && part.name) ||
-        (typeof part.title === 'string' && part.title) ||
-        (isRecord(part.item) && typeof part.item.title === 'string' && part.item.title) ||
-        null
-      if (!pillText) return null
-      const prefix = part.type === 'skill' ? '/' : part.type === 'session' ? '#' : '@'
-      return (
-        <span key={`part-${index}`} className={mentionPillClassName}>
-          {prefix}
-          {pillText}
-        </span>
-      )
-    })}
-    {parts.length === 0 ? content : null}
-  </p>
-)
+}) => {
+  const openPreview = useFilePreview()
+  const mentionByName = new Map(
+    (mentions ?? []).flatMap((upload): [string, MessageUpload][] => {
+      const entries: [string, MessageUpload][] = [[upload.name, upload]]
+      if (upload.partName && upload.partName !== upload.name)
+        entries.push([upload.partName, upload])
+      return entries
+    })
+  )
+  return (
+    <p
+      ref={ref}
+      className={cn('whitespace-pre-wrap break-words [overflow-wrap:anywhere]', className)}
+    >
+      {parts.map((part, index) => {
+        if (!isRecord(part)) return null
+        if (part.type === 'text' && typeof part.text === 'string') {
+          return <span key={`text-${index}`}>{part.text}</span>
+        }
+        const pillText =
+          (typeof part.name === 'string' && part.name) ||
+          (typeof part.title === 'string' && part.title) ||
+          (isRecord(part.item) && typeof part.item.title === 'string' && part.item.title) ||
+          null
+        if (!pillText) return null
+        const prefix = part.type === 'skill' ? '/' : part.type === 'session' ? '#' : '@'
+        // @-mentioned files render as inline colored links (app style), not as
+        // separate chips — the message shows them exactly once.
+        const mention = mentionByName.get(pillText)
+        if (mention?.url) {
+          return (
+            <button
+              key={`part-${index}`}
+              type="button"
+              title={`Preview ${mention.name}`}
+              onClick={() =>
+                openPreview?.({
+                  name: mention.name,
+                  url: mention.url as string,
+                  mimeType: mention.mimeType
+                })
+              }
+              className="mx-0.5 inline-block max-w-[220px] truncate align-middle font-medium text-sd-link transition-colors hover:underline"
+            >
+              {prefix}
+              {pillText}
+            </button>
+          )
+        }
+        return (
+          <span key={`part-${index}`} className={mentionPillClassName}>
+            {prefix}
+            {pillText}
+          </span>
+        )
+      })}
+      {parts.length === 0 ? content : null}
+    </p>
+  )
+}
 
 const ArtifactCard = ({ artifact }: { artifact: MessageArtifact }) => {
   const openPreview = useFilePreview()
@@ -322,6 +360,7 @@ const CollapsibleUserMessage = ({ message }: { message: TranscriptMessage }) => 
         <MessagePartsContent
           parts={message.parts}
           content={message.content}
+          mentions={message.uploads?.filter((upload) => upload.mention)}
           className={contentClassName}
           ref={contentRef}
         />
@@ -359,24 +398,36 @@ export const SessionMessageItem = ({
   showTurnCompletion?: boolean
 }) => {
   if (message.role === 'user') {
+    // Mentioned files render inline in the text; only plain uploads get chips.
+    const chipUploads = message.uploads?.filter((upload) => !upload.mention)
+    const hasBubbleContent =
+      message.content.trim().length > 0 ||
+      (chipUploads?.length ?? 0) > 0 ||
+      (message.annotations?.length ?? 0) > 0 ||
+      (message.parts?.length ?? 0) > 0
     return (
       <div className="px-4 pb-1 pt-3 md:px-6">
         <div className="group flex flex-col items-end">
-          <div className="flex w-full max-w-full items-center justify-end gap-1">
-            <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
-              <CopyButton text={message.content} />
+          {hasBubbleContent ? (
+            <div className="flex w-full max-w-full items-center justify-end gap-1">
+              <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100">
+                <CopyButton text={message.content} />
+              </div>
+              <div className={userMessageBubbleClassName}>
+                {message.annotations?.length ? (
+                  <MessageAnnotationCards annotations={message.annotations} />
+                ) : null}
+                {chipUploads?.length ? (
+                  <div className="mb-1.5 flex flex-wrap items-start gap-1.5">
+                    {chipUploads.map((upload, index) => (
+                      <UploadChip key={`${upload.name}-${index}`} upload={upload} />
+                    ))}
+                  </div>
+                ) : null}
+                <CollapsibleUserMessage message={message} />
+              </div>
             </div>
-            <div className={userMessageBubbleClassName}>
-              {message.uploads?.length ? (
-                <div className="mb-1.5 flex flex-wrap items-start gap-1.5">
-                  {message.uploads.map((upload, index) => (
-                    <UploadChip key={`${upload.name}-${index}`} upload={upload} />
-                  ))}
-                </div>
-              ) : null}
-              <CollapsibleUserMessage message={message} />
-            </div>
-          </div>
+          ) : null}
           {Number.isFinite(message.createdAt) ? (
             <span className="mt-1 text-[11px] leading-4 text-text-000/70 tabular-nums">
               Sent · {formatCompleted(message.createdAt)}

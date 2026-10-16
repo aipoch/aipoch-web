@@ -1,4 +1,4 @@
-import type { UseCaseSession } from '@/lib/use-case-types'
+import type { MessageAnnotation, UseCaseSession } from '@/lib/use-case-types'
 import type { ActivityRenderer } from '../../app/(commonLayout)/open-science/use-cases/_components/activity-classify'
 
 /**
@@ -72,6 +72,73 @@ export const coverageFixtureSession: UseCaseSession = {
       status: 'complete',
       createdAt: 1790133045296,
       parts: [{ type: 'text', text: 'Run the renderer coverage scenario.' }]
+    },
+
+    // -- user message: PDF quote + area annotations, no bubble content -----------
+    {
+      type: 'message',
+      id: 'cov-user-annotations',
+      role: 'user',
+      content: '',
+      status: 'complete',
+      createdAt: 1790133045300,
+      uploads: [
+        {
+          id: 'cov-file-pdf-1',
+          name: 'coverage-paper.pdf',
+          mimeType: 'application/pdf',
+          size: 1024,
+          versionId: 'cov-pdf-ver-1'
+        }
+      ],
+      annotations: [
+        {
+          id: 'cov-an-quote',
+          kind: 'pdf',
+          note: 'Coverage annotation note',
+          source: { versionId: 'cov-pdf-ver-1', name: 'coverage-paper.pdf' },
+          selector: {
+            kind: 'text',
+            pageNumber: 6,
+            exact: 'Coverage quote sentence from the paper.'
+          }
+        },
+        {
+          id: 'cov-an-area',
+          kind: 'pdf',
+          source: { versionId: 'cov-pdf-ver-1', name: 'coverage-paper.pdf' },
+          selector: {
+            kind: 'region',
+            pageNumber: 23,
+            text: 'Coverage chart labels',
+            image: {
+              mimeType: 'image/png',
+              data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAusB9Wl6ZQAAAABJRU5ErkJggg=='
+            }
+          }
+        }
+      ] as unknown as MessageAnnotation[]
+    },
+
+    // -- user message: @-mentioned files as upload parts ---------------------------
+    {
+      type: 'message',
+      id: 'cov-user-mentions',
+      role: 'user',
+      content: '@coverage-notes.md compare with the draft.',
+      status: 'complete',
+      createdAt: 1790133045301,
+      parts: [
+        {
+          type: 'artifact',
+          source: 'upload',
+          name: 'coverage-notes.md',
+          mimeType: 'text/markdown',
+          path: 'upload-version:mock-project/mock-session/cov-file-1/cov-ver-1',
+          versionId: 'cov-ver-1'
+        },
+        { type: 'text', text: 'compare with the draft.' }
+      ]
     },
 
     // -- elicitation: answered via a listed option -----------------------------

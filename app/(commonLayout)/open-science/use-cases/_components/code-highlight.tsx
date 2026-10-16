@@ -49,11 +49,15 @@ const TokenLineContent = ({ line }: { line: TokenLine }) => (
 export const CodeHighlightContent = ({
   code: source,
   language,
-  lineNumbers = false
+  lineNumbers = false,
+  wrap = false
 }: {
   code: string
   language?: string
   lineNumbers?: boolean
+  /** Wrap long lines; required for huge single-line payloads that otherwise
+   * exceed the engine's paint width and vanish (minified JSON exports). */
+  wrap?: boolean
 }) => {
   const [highlighted, setHighlighted] = useState<{ key: string; result: HighlightResult } | null>(
     null
@@ -108,7 +112,7 @@ export const CodeHighlightContent = ({
           >
             {lineIndex + 1}
           </span>
-          <span className="whitespace-pre">
+          <span className={wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}>
             {tokens ? (
               <TokenLineContent line={tokens[lineIndex] ?? []} />
             ) : (

@@ -901,3 +901,22 @@ test('group titles and step counts follow notebook run evidence', () => {
   // All-completed groups keep the category clause summary.
   expect(formatStaticGroupTitle([completedRun])).toBe('Completed a Notebook run')
 })
+
+test('notebook run summaries nested under an extra output key still set the phase', () => {
+  // Some exports wrap the MCP payload as { output: "<json>" } — one level
+  // deeper than the structuredContent/result/content envelopes.
+  const details = buildActivityDetails(
+    activity({
+      providerToolName: 'mcp.open-science-notebook.notebook_execute',
+      status: 'completed',
+      executionInvocationId: 'inv-1',
+      input: { code: 'x = 1' },
+      output: {
+        output: '{"runId": "run-1", "executionInvocationId": "inv-1", "status": "failed"}'
+      }
+    }),
+    {}
+  )
+  expect(details.metaLabel).toBe('failed')
+  expect(details.failed).toBe(true)
+})

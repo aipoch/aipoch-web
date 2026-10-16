@@ -113,11 +113,12 @@ test('fetchTextWithLimit caps bytes, sends a Range request, and reports truncati
     ) as unknown as typeof fetch
     expect(await fetchTextWithLimit('https://cdn.test/missing.txt', 1024)).toBeUndefined()
 
-    // blob: URLs slice the blob client-side.
+    // blob: URLs slice the blob client-side and always know the full size.
     globalThis.fetch = mock(async () => new Response('y'.repeat(10))) as unknown as typeof fetch
     expect(await fetchTextWithLimit('blob:https://site.test/uuid', 4)).toEqual({
       text: 'yyyy',
-      truncated: true
+      truncated: true,
+      total: 10
     })
   } finally {
     globalThis.fetch = originalFetch

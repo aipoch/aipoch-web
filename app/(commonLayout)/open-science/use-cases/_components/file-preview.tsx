@@ -26,7 +26,7 @@ import {
   useState
 } from 'react'
 import { waitForBrowserMock } from '@/mocks/ready'
-import { fetchTextWithLimit } from './artifact-preview'
+import { fetchFullText, fetchTextWithLimit, formatByteSize } from './artifact-preview'
 import { AssetImage } from './asset-image'
 import { CodeHighlightContent } from './code-highlight'
 import { ExtensionPreservingFileName } from './extension-preserving-file-name'
@@ -205,10 +205,15 @@ const TextContent = ({ kind, name, text }: { kind: PreviewKind; name: string; te
   if (kind === 'markdown') return <SessionMarkdown content={text} />
   if (kind === 'csv') return <CsvPreview text={text} />
   const language = kind === 'json' ? 'json' : PREVIEW_LANGUAGE_BY_EXT[extensionOf(name)]
+  // Shiki on multi-MB single-line payloads (minified JSON exports) costs more
+  // than it adds, and a 20M-pixel-wide unbroken line exceeds the engine's
+  // paint width (renders blank) — huge loads render plain and wrap instead.
+  const huge = text.length > TEXT_HIGHLIGHT_CHAR_LIMIT
+  const highlight = huge ? undefined : language
   return (
     <pre className="max-h-[60vh] overflow-auto rounded-md border border-border-200 bg-bg-000 p-3 font-mono text-xs text-text-000">
-      <code className="block whitespace-pre">
-        <CodeHighlightContent code={text} language={language} lineNumbers />
+      <code className={`block ${huge ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}>
+        <CodeHighlightContent code={text} language={highlight} lineNumbers wrap={huge} />
       </code>
     </pre>
   )
@@ -310,8 +315,12 @@ const ImageContent = ({ file }: { file: PreviewFile }) => {
 const iconButtonClassName =
   'flex size-7 items-center justify-center rounded-md text-text-300 transition-colors hover:bg-bg-200 hover:text-text-000'
 
-// Text previews cap the payload; the dialog discloses truncation above the content.
-const TEXT_PREVIEW_BYTE_LIMIT = 256 * 1024
+// Text previews cap the payload; the dialog discloses truncation above the
+// content and offers an explicit full load. 1 MB keeps JSON/code/CSV files
+// readable inline without a perceptible fetch or highlight delay.
+const TEXT_PREVIEW_BYTE_LIMIT = 1024 * 1024
+// Beyond this the highlighter costs more than it adds; huge loads render plain.
+const TEXT_HIGHLIGHT_CHAR_LIMIT = 1024 * 1024
 
 const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () => void }) => {
   const kind = previewKindFor(file.name, file.mimeType)
@@ -320,9 +329,11 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
   const [textState, setTextState] = useState<{
     text?: string
     truncated?: boolean
+    totalBytes?: number
     pdfUrl?: string
     error?: string
   }>({})
+  const [loadingFull, setLoadingFull] = useState(false)
   const [copied, setCopied] = useState(false)
   const newTabUrl = kind === 'pdf' ? textState.pdfUrl : file.url
   // JSON parses here only to disclose invalid content; the raw text is shown either
@@ -365,7 +376,7 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
           setTextState({ error: 'Failed to load' })
           return
         }
-        setTextState({ text: result.text, truncated: result.truncated })
+        setTextState({ text: result.text, truncated: result.truncated, totalBytes: result.total })
       })
       .catch((error: unknown) => {
         if (!cancelled)
@@ -390,6 +401,20 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
   useEffect(() => {
     if (isPresent) panelRef.current?.focus()
   }, [isPresent])
+
+  const loadFullText = async () => {
+    if (loadingFull) return
+    setLoadingFull(true)
+    const text = await fetchFullText(file.url)
+    if (!isPresent) return
+    // An empty body for a file known to be truncated means a broken/cached
+    // response — stay on the retryable button instead of blanking the viewer.
+    if (text === undefined || (text.length === 0 && textState.truncated)) {
+      setLoadingFull(false)
+    } else {
+      setTextState({ text, truncated: false, totalBytes: textState.totalBytes })
+    }
+  }
 
   const copyText = async () => {
     if (textState.text === undefined) return
@@ -522,7 +547,19 @@ const FilePreviewDialog = ({ file, onClose }: { file: PreviewFile; onClose: () =
               <div className="space-y-2">
                 {textState.truncated ? (
                   <p role="status" className="text-[11px] text-text-300">
-                    Preview truncated — download for the full file.
+                    Preview truncated — showing the first {formatByteSize(TEXT_PREVIEW_BYTE_LIMIT)}
+                    {textState.totalBytes ? ` of ${formatByteSize(textState.totalBytes)}` : ''}.{' '}
+                    <button
+                      type="button"
+                      onClick={loadFullText}
+                      disabled={loadingFull}
+                      className="inline-flex items-center gap-1 font-medium text-text-100 underline underline-offset-2 transition-colors hover:text-text-000 disabled:opacity-60"
+                    >
+                      {loadingFull ? (
+                        <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      {loadingFull ? 'Loading…' : 'Load full content'}
+                    </button>
                   </p>
                 ) : null}
                 {jsonInvalid ? (

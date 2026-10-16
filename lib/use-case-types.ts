@@ -67,7 +67,77 @@ export interface MessageUpload {
   mimeType?: string
   size?: number
   url?: string
+  /** Raw export fields; extracted mode derives the content URL from them. */
+  id?: string
+  versionId?: string
+  /** True when the upload came from an @-mention part: it renders inline in
+   * the message text instead of as a chip above it. */
+  mention?: boolean
+  /** The part's own name, when it differs from the display name; used to
+   * match inline mention pills to this upload. */
+  partName?: string
 }
+
+/** A PDF text-quote card sent with a user message (app: SentAnnotationCards). */
+export interface MessagePdfQuoteAnnotation {
+  id: string
+  kind: 'quote'
+  /** e.g. "StoryScope.pdf · Page 6". */
+  source: string
+  /** The quoted text. */
+  content: string
+  /** The user's note attached to the annotation. */
+  note?: string
+  /** Preview URL of the source PDF, when resolvable from the package. */
+  url?: string
+}
+
+/** A PDF region card sent with a user message (app: SentAnnotationCards). */
+export interface MessagePdfAreaAnnotation {
+  id: string
+  kind: 'area'
+  /** e.g. "StoryScope.pdf · Page 23". */
+  source: string
+  /** The region's extracted text. */
+  content: string
+  /** Cropped region image. */
+  image?: { mimeType: string; data: string }
+  /** The region image was dropped to the session image budget (app notice). */
+  imageOmitted?: boolean
+  /** The user's note attached to the annotation. */
+  note?: string
+  /** Preview URL of the source PDF, when resolvable from the package. */
+  url?: string
+}
+
+/** Any annotation card sent with a user message (app: SentAnnotationCards). */
+export type MessageAnnotation =
+  | MessagePdfQuoteAnnotation
+  | MessagePdfAreaAnnotation
+  | Readonly<{
+      /** Quote from conversation text or a project file. */
+      id: string
+      kind: 'text'
+      content: string
+      source?: string
+      note?: string
+      url?: string
+    }>
+  | Readonly<{
+      /** A marked point on an image; number is its 1-based order among image
+       * points in the message (app: prepareImagePointAnnotations). */
+      id: string
+      kind: 'image-point'
+      number: number
+      /** Normalized 0–1 coordinates. */
+      x: number
+      y: number
+      /** Natural image size, when the export retained it (pixel display). */
+      naturalSize?: { width: number; height: number }
+      source?: string
+      note: string
+      url?: string
+    }>
 
 export type TranscriptItem =
   | {
@@ -81,6 +151,7 @@ export type TranscriptItem =
       parts?: unknown[]
       artifacts?: MessageArtifact[]
       uploads?: MessageUpload[]
+      annotations?: MessageAnnotation[]
     }
   | {
       type: 'elicitation'

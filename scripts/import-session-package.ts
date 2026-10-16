@@ -28,8 +28,11 @@ import { basename, join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { Parser as TarParser } from 'tar'
 import { matchToolName } from '../app/(commonLayout)/open-science/use-cases/_components/notebook-tool-names'
+import { encodeAssetFilename } from '../lib/science-package/parse'
 import type {
+  MessageAnnotation,
   MessageArtifact,
+  MessageUpload,
   NormalizedActivity,
   NormalizedOutput,
   NormalizedRun,
@@ -379,8 +382,12 @@ const importOne = (archivePath: string, slug: string): void => {
   const graphActivities = pkg.sessionFile.session.conversationGraph?.activities ?? []
   const activityItems: { ts: number; item: TranscriptItem }[] = []
   for (const activity of graphActivities) {
+    // sortIndex is trustworthy only on an epoch scale (see parse.ts): small
+    // sequence numbers would sort every activity ahead of all messages.
     const ts =
-      typeof activity.sortIndex === 'number' ? activity.sortIndex : Number(activity.createdAt)
+      typeof activity.sortIndex === 'number' && activity.sortIndex > 1_000_000_000_000
+        ? activity.sortIndex
+        : Number(activity.createdAt)
     // Keep in sync with lib/science-package/parse.ts: step updates never render
     // (their state lives in the plan card), generate_plan is a standalone item.
     const activityNames = [activity.providerToolName, activity.title]
@@ -521,6 +528,208 @@ const importOne = (archivePath: string, slug: string): void => {
     const messageArtifacts = artifactIds
       .map((id) => artifactByVersionId.get(id))
       .filter((artifact): artifact is MessageArtifact => Boolean(artifact))
+    // Keep in sync with lib/science-package/parse.ts: uploads, @-mention parts,
+    // and annotation cards. URLs resolve through the exported objects map.
+    const uploadContentUrl = (
+      projectId: unknown,
+      sessionId: unknown,
+      fileId: unknown,
+      versionId: unknown,
+      name: string
+    ): string | undefined => {
+      if (
+        typeof projectId !== 'string' ||
+        typeof sessionId !== 'string' ||
+        typeof fileId !== 'string' ||
+        typeof versionId !== 'string'
+      ) {
+        return undefined
+      }
+      const asset =
+        assets[`uploads/${projectId}/${sessionId}/${fileId}/versions/${versionId}/content`]
+      return asset ? `${asset.url}#${encodeAssetFilename(name)}` : undefined
+    }
+    const messageUploads = (
+      Array.isArray(message.uploads) ? (message.uploads as unknown[]) : []
+    ).flatMap((upload): MessageUpload[] => {
+      if (!upload || typeof upload !== 'object') return []
+      const record = upload as JsonObject
+      const name = record.originalName ?? record.name
+      if (typeof name !== 'string' || !name) return []
+      const versionId = typeof record.versionId === 'string' ? record.versionId : undefined
+      return [
+        {
+          name,
+          mimeType: typeof record.mimeType === 'string' ? record.mimeType : undefined,
+          size: typeof record.size === 'number' ? record.size : undefined,
+          url: uploadContentUrl(session.projectId, session.id, record.id, versionId, name),
+          versionId
+        }
+      ]
+    })
+    const uploadUrlByVersionId = new Map(
+      messageUploads
+        .filter((upload) => upload.versionId && upload.url)
+        .map((upload) => [upload.versionId as string, upload.url as string])
+    )
+    const uploadByVersionId = new Map(
+      messageUploads
+        .filter((upload) => upload.versionId)
+        .map((upload) => [upload.versionId as string, upload])
+    )
+    const partUploads = (Array.isArray(message.parts) ? message.parts : []).flatMap(
+      (part): MessageUpload[] => {
+        if (!part || typeof part !== 'object') return []
+        const record = part as JsonObject
+        if (record.type !== 'artifact' || record.source !== 'upload') return []
+        const name = record.originalName ?? record.name
+        if (typeof name !== 'string' || !name) return []
+        const versionId = typeof record.versionId === 'string' ? record.versionId : undefined
+        if (versionId && uploadByVersionId.has(versionId)) {
+          const existing = uploadByVersionId.get(versionId) as MessageUpload
+          existing.mention = true
+          existing.partName = typeof record.name === 'string' ? record.name : undefined
+          return []
+        }
+        const path = typeof record.path === 'string' ? record.path : undefined
+        const segments = path?.startsWith('upload-version:')
+          ? path.slice('upload-version:'.length).split('/')
+          : undefined
+        let url: string | undefined
+        if (segments?.length === 4) {
+          try {
+            const [projectId, sessionId, fileId, version] = segments.map((segment) =>
+              decodeURIComponent(segment)
+            )
+            url = uploadContentUrl(projectId, sessionId, fileId, version, name)
+          } catch {
+            // display-only mention
+          }
+        }
+        url ??= versionId ? uploadUrlByVersionId.get(versionId) : undefined
+        return [
+          {
+            name,
+            mimeType: typeof record.mimeType === 'string' ? record.mimeType : undefined,
+            url,
+            mention: true,
+            partName: typeof record.name === 'string' ? record.name : undefined
+          }
+        ]
+      }
+    )
+    const allUploads = [...messageUploads, ...partUploads]
+    let imagePointCount = 0
+    const messageAnnotations = (
+      Array.isArray(message.annotations) ? (message.annotations as unknown[]) : []
+    ).flatMap((annotation): MessageAnnotation[] => {
+      if (!annotation || typeof annotation !== 'object') return []
+      const record = annotation as JsonObject
+      const id = typeof record.id === 'string' && record.id ? record.id : undefined
+      if (!id) return []
+      const note =
+        typeof record.note === 'string' && record.note.trim() ? sanitize(record.note) : undefined
+      const source = record.source as JsonObject | undefined
+      const sourceVersionId =
+        source && typeof source === 'object' && typeof source.versionId === 'string'
+          ? source.versionId
+          : undefined
+      const sourceUrl = sourceVersionId ? uploadUrlByVersionId.get(sourceVersionId) : undefined
+
+      if (record.kind === 'text' && typeof record.quote === 'string' && record.quote.trim()) {
+        const fileName =
+          source && typeof source === 'object' && source.kind === 'project-file'
+            ? typeof source.name === 'string'
+              ? source.name
+              : typeof source.path === 'string'
+                ? source.path
+                : undefined
+            : undefined
+        return [
+          {
+            id,
+            kind: 'text',
+            content: sanitize(record.quote),
+            source: fileName,
+            note,
+            url: sourceUrl
+          }
+        ]
+      }
+      if (record.kind === 'image-point' && source && typeof source === 'object') {
+        const point = record.point as JsonObject | undefined
+        if (!point || typeof point !== 'object') return []
+        imagePointCount += 1
+        const naturalSize = record.naturalSize as JsonObject | undefined
+        return [
+          {
+            id,
+            kind: 'image-point',
+            number: imagePointCount,
+            x: typeof point.x === 'number' ? point.x : 0,
+            y: typeof point.y === 'number' ? point.y : 0,
+            naturalSize:
+              naturalSize &&
+              typeof naturalSize === 'object' &&
+              typeof naturalSize.width === 'number' &&
+              typeof naturalSize.height === 'number'
+                ? { width: naturalSize.width, height: naturalSize.height }
+                : undefined,
+            source: typeof source.name === 'string' ? source.name : undefined,
+            note: note ?? '',
+            url: sourceUrl
+          }
+        ]
+      }
+      if (record.kind !== 'pdf') return []
+      const selector = record.selector as JsonObject | undefined
+      if (!selector || typeof selector !== 'object' || !source || typeof source !== 'object') {
+        return []
+      }
+      const name = typeof source.name === 'string' ? source.name : 'PDF'
+      const page = typeof selector.pageNumber === 'number' ? selector.pageNumber : undefined
+      const sourceLabel = `${name}${page ? ` · Page ${page}` : ''}`
+      if (selector.kind === 'text' && typeof selector.exact === 'string' && selector.exact.trim()) {
+        return [
+          {
+            id,
+            kind: 'quote',
+            source: sourceLabel,
+            content: sanitize(selector.exact),
+            note,
+            url: sourceUrl
+          }
+        ]
+      }
+      if (selector.kind === 'region') {
+        const selectorImage = selector.image as JsonObject | undefined
+        const image =
+          selectorImage &&
+          typeof selectorImage === 'object' &&
+          typeof selectorImage.mimeType === 'string' &&
+          typeof selectorImage.data === 'string'
+            ? { mimeType: selectorImage.mimeType, data: selectorImage.data }
+            : undefined
+        return [
+          {
+            id,
+            kind: 'area',
+            source: sourceLabel,
+            content:
+              typeof selector.text === 'string' && selector.text.trim()
+                ? sanitize(selector.text)
+                : 'Selected area',
+            image,
+            ...(!image && selector.imageOmissionReason === 'session-budget'
+              ? { imageOmitted: true as const }
+              : {}),
+            note,
+            url: sourceUrl
+          }
+        ]
+      }
+      return []
+    })
     return {
       ts: Number(message.createdAt),
       item: {
@@ -532,7 +741,9 @@ const importOne = (archivePath: string, slug: string): void => {
         createdAt: Number(message.createdAt),
         completedAt: typeof message.completedAt === 'number' ? message.completedAt : undefined,
         parts: deep(message.parts) as unknown[] | undefined,
-        artifacts: messageArtifacts.length > 0 ? messageArtifacts : undefined
+        artifacts: messageArtifacts.length > 0 ? messageArtifacts : undefined,
+        uploads: allUploads.length > 0 ? allUploads : undefined,
+        annotations: messageAnnotations.length > 0 ? messageAnnotations : undefined
       }
     }
   })

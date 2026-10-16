@@ -54,12 +54,14 @@ const fetchTextPreview = (url: string): Promise<string | undefined> => {
 // Fetches at most `limit` bytes of a text resource. blob: URLs slice the blob;
 // http(s) sends a Range request (credentials omitted) and still caps client-side
 // when the server ignores it. `truncated` follows the byte count, or the
-// Content-Range total when the server answered 206.
+// Content-Range total when the server answered 206 and the header is readable
+// (it is not CORS-safelisted, so cross-origin it often is not); `total` carries
+// the real file size whenever the server disclosed it.
 export const fetchTextWithLimit = async (
   url: string,
   limit: number,
   signal?: AbortSignal
-): Promise<{ text: string; truncated: boolean } | undefined> => {
+): Promise<{ text: string; truncated: boolean; total?: number } | undefined> => {
   try {
     if (url.startsWith('blob:')) {
       const response = await fetch(url, { signal })
@@ -68,7 +70,11 @@ export const fetchTextWithLimit = async (
       const truncated = blob.size > limit
       const bytes = new Uint8Array(await blob.slice(0, limit).arrayBuffer())
       // A streaming decode withholds a partial UTF-8 character at the cut.
-      return { text: new TextDecoder().decode(bytes, { stream: truncated }), truncated }
+      return {
+        text: new TextDecoder().decode(bytes, { stream: truncated }),
+        truncated,
+        total: blob.size
+      }
     }
     const response = await fetch(url, {
       headers: { Range: `bytes=0-${limit - 1}` },
@@ -79,9 +85,33 @@ export const fetchTextWithLimit = async (
     const blob = await response.blob()
     const contentRange = response.headers.get('content-range')
     const total = contentRange ? Number(contentRange.split('/')[1]) : Number.NaN
-    const truncated = Number.isFinite(total) ? total > limit : blob.size > limit
+    // Cross-origin CDNs may answer 206 but hide Content-Range from JS (it is
+    // not a CORS-safelisted header); then only an exact-limit body tells us
+    // more bytes exist. A file exactly `limit` bytes is a harmless false hit.
+    const truncated = Number.isFinite(total) ? total > limit : blob.size >= limit
     const bytes = new Uint8Array(await blob.slice(0, limit).arrayBuffer())
-    return { text: new TextDecoder().decode(bytes, { stream: truncated }), truncated }
+    return {
+      text: new TextDecoder().decode(bytes, { stream: truncated }),
+      truncated,
+      total: Number.isFinite(total) ? total : undefined
+    }
+  } catch {
+    return undefined
+  }
+}
+
+// Fetches the complete text resource — the preview dialog's explicit
+// "load full content" action, after the capped preview proved truncated.
+// cache: 'reload' bypasses the HTTP cache so a cached partial (206) entry
+// from the preview fetch can never answer the full request.
+export const fetchFullText = async (
+  url: string,
+  signal?: AbortSignal
+): Promise<string | undefined> => {
+  try {
+    const response = await fetch(url, { credentials: 'omit', cache: 'reload', signal })
+    if (!response.ok) return undefined
+    return new TextDecoder().decode(new Uint8Array(await response.arrayBuffer()))
   } catch {
     return undefined
   }

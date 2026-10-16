@@ -324,15 +324,28 @@ test('links user message uploads to bundled blobs through UploadVersion records'
   const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'uploads')
   const message = result.session.items[0]
   expect(message.type === 'message' && message.uploads).toEqual([
-    { name: 'figure9-check.png', mimeType: 'image/png', size: png.length, url: 'science-asset:0' },
+    {
+      name: 'figure9-check.png',
+      mimeType: 'image/png',
+      size: png.length,
+      url: 'science-asset:0',
+      versionId: 'v1'
+    },
     // Display name prefers originalName over the stored safe filename.
     {
       name: 'xiao figure1 source.xlsx',
       mimeType: sheetMime,
       size: xlsx.length,
-      url: 'science-asset:1'
+      url: 'science-asset:1',
+      versionId: 'v2'
     },
-    { name: 'missing.txt', mimeType: undefined, size: undefined, url: undefined }
+    {
+      name: 'missing.txt',
+      mimeType: undefined,
+      size: undefined,
+      url: undefined,
+      versionId: 'v-absent'
+    }
   ])
   const assistant = result.session.items[1]
   expect(assistant.type === 'message' && assistant.uploads).toBeUndefined()
@@ -373,9 +386,16 @@ test('derives upload URLs from session identifiers in extracted mode', async () 
       name: 'figure9 check.png',
       mimeType: 'image/png',
       size: undefined,
-      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#figure9%20check.png'
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#figure9%20check.png',
+      versionId: 'ver-1'
     },
-    { name: 'no-version.txt', mimeType: undefined, size: undefined, url: undefined }
+    {
+      name: 'no-version.txt',
+      mimeType: undefined,
+      size: undefined,
+      url: undefined,
+      versionId: undefined
+    }
   ])
 })
 
@@ -458,4 +478,362 @@ test('essentialTruncated survives package parsing', async () => {
   const group = result.session.items.find((item) => item.type === 'activity-group')
   expect(group?.type === 'activity-group' && group.activities[0].essentialTruncated).toBe(true)
   expect(group?.type === 'activity-group' && group.activities[1].essentialTruncated).toBeUndefined()
+})
+
+test('activities with sequence sortIndex still interleave with messages by time', async () => {
+  // Some exports carry small sequence sortIndex values (107, 108, …) while
+  // messages use epoch ms — trusting sortIndex would hoist every activity to
+  // the top of the transcript.
+  const sample = buildSciencePackage('Sequence sortIndex', {
+    messages: [
+      { id: 'u1', role: 'user', content: 'q', createdAt: 1000 },
+      { id: 'a1', role: 'assistant', content: 'mid', createdAt: 3000 },
+      { id: 'a2', role: 'assistant', content: 'end', createdAt: 5000 }
+    ],
+    conversationGraph: {
+      activities: [
+        { id: 't1', title: 'Read', providerToolName: 'Read', sortIndex: 107, createdAt: 2000 },
+        { id: 't2', title: 'Read', providerToolName: 'Read', sortIndex: 108, createdAt: 4000 }
+      ]
+    }
+  })
+  const result = await parsePackage(new Blob([sample.bytes as BlobPart]), 'sortindex')
+  const timeline = result.session.items.map((item) =>
+    item.type === 'message'
+      ? `msg:${item.id}`
+      : item.type === 'activity-group'
+        ? `group:${item.activities.map((activity) => activity.id).join('+')}`
+        : item.type
+  )
+  expect(timeline).toEqual(['msg:u1', 'group:t1', 'msg:a1', 'group:t2', 'msg:a2'])
+})
+
+test('pdf annotations normalize into quote and area cards with resolvable urls', () => {
+  const session = {
+    title: 'Annotations',
+    createdAt: 1,
+    projectId: 'proj-1',
+    id: 'sess-1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '',
+        createdAt: 1,
+        uploads: [
+          { id: 'file-1', name: 'paper.pdf', mimeType: 'application/pdf', versionId: 'ver-1' }
+        ],
+        annotations: [
+          {
+            id: 'an1',
+            kind: 'pdf',
+            note: '解释这段内容。',
+            source: { versionId: 'ver-1', name: 'paper.pdf' },
+            selector: { kind: 'text', pageNumber: 6, exact: 'quoted sentence' }
+          },
+          {
+            id: 'an2',
+            kind: 'pdf',
+            source: { versionId: 'ver-1', name: 'paper.pdf' },
+            selector: {
+              kind: 'region',
+              pageNumber: 23,
+              text: 'chart labels',
+              image: { mimeType: 'image/png', data: 'QUJD' }
+            }
+          },
+          // Non-pdf and malformed annotations are ignored.
+          { id: 'an3', kind: 'image', selector: {}, source: {} },
+          { id: 'an4', kind: 'pdf' }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(session as never, 'ann', 'https://cdn.example.test/pkg/')
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.annotations).toEqual([
+    {
+      id: 'an1',
+      kind: 'quote',
+      source: 'paper.pdf · Page 6',
+      content: 'quoted sentence',
+      note: '解释这段内容。',
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#paper.pdf'
+    },
+    {
+      id: 'an2',
+      kind: 'area',
+      source: 'paper.pdf · Page 23',
+      content: 'chart labels',
+      image: { mimeType: 'image/png', data: 'QUJD' },
+      note: undefined,
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#paper.pdf'
+    }
+  ])
+})
+
+test('@-mentioned upload parts become previewable upload chips', () => {
+  const session = {
+    title: 'Mentions',
+    createdAt: 1,
+    projectId: 'proj-1',
+    id: 'sess-1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '@a.md@b.md compare these',
+        createdAt: 1,
+        parts: [
+          {
+            type: 'artifact',
+            source: 'upload',
+            name: 'a.md',
+            mimeType: 'text/markdown',
+            path: 'upload-version:proj-1/sess-1/file-a/ver-a',
+            versionId: 'ver-a'
+          },
+          {
+            type: 'artifact',
+            source: 'upload',
+            name: 'b.md',
+            path: 'upload-version:proj-1/sess-1/file-b/ver-b',
+            versionId: 'ver-b'
+          },
+          { type: 'text', text: 'compare these' }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(
+    session as never,
+    'mentions',
+    'https://cdn.example.test/pkg/'
+  )
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.uploads).toEqual([
+    {
+      name: 'a.md',
+      mimeType: 'text/markdown',
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-a/versions/ver-a/content#a.md',
+      mention: true,
+      partName: 'a.md'
+    },
+    {
+      name: 'b.md',
+      mimeType: undefined,
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-b/versions/ver-b/content#b.md',
+      mention: true,
+      partName: 'b.md'
+    }
+  ])
+})
+
+test('text quotes, image points, and budget-dropped area images survive parsing', () => {
+  const session = {
+    title: 'More annotations',
+    createdAt: 1,
+    projectId: 'proj-1',
+    id: 'sess-1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '',
+        createdAt: 1,
+        uploads: [{ id: 'file-1', name: 'photo.png', mimeType: 'image/png', versionId: 'ver-1' }],
+        annotations: [
+          {
+            id: 'an1',
+            kind: 'text',
+            quote: 'quoted conversation text',
+            note: 'why this?',
+            source: { kind: 'agent-message', sessionId: 'sess-1', messageId: 'm0' }
+          },
+          {
+            id: 'an2',
+            kind: 'text',
+            quote: 'quoted file text',
+            source: {
+              kind: 'project-file',
+              projectId: 'proj-1',
+              path: 'src/main.ts',
+              name: 'main.ts'
+            }
+          },
+          {
+            id: 'an3',
+            kind: 'image-point',
+            note: 'what is here',
+            source: { kind: 'upload-version', versionId: 'ver-1', name: 'photo.png' },
+            point: { x: 0.42, y: 0.18 },
+            naturalSize: { width: 800, height: 600 }
+          },
+          {
+            id: 'an4',
+            kind: 'pdf',
+            source: { versionId: 'ver-1', name: 'paper.pdf' },
+            selector: {
+              kind: 'region',
+              pageNumber: 4,
+              text: 'budget area text',
+              imageOmissionReason: 'session-budget'
+            }
+          }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(session as never, 'ann2', 'https://cdn.example.test/pkg/')
+  const message = result.session.items[0]
+  expect(message.type === 'message' && message.annotations).toEqual([
+    {
+      id: 'an1',
+      kind: 'text',
+      content: 'quoted conversation text',
+      source: undefined,
+      note: 'why this?',
+      url: undefined
+    },
+    {
+      id: 'an2',
+      kind: 'text',
+      content: 'quoted file text',
+      source: 'main.ts',
+      note: undefined,
+      url: undefined
+    },
+    {
+      id: 'an3',
+      kind: 'image-point',
+      number: 1,
+      x: 0.42,
+      y: 0.18,
+      naturalSize: { width: 800, height: 600 },
+      source: 'photo.png',
+      note: 'what is here',
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#photo.png'
+    },
+    {
+      id: 'an4',
+      kind: 'area',
+      source: 'paper.pdf · Page 4',
+      content: 'budget area text',
+      image: undefined,
+      imageOmitted: true,
+      note: undefined,
+      url: 'https://cdn.example.test/pkg/uploads/proj-1/sess-1/file-1/versions/ver-1/content#photo.png'
+    }
+  ])
+})
+
+test('upload-version refs join by versionId in any form, and uploads+parts dedupe', () => {
+  const session = {
+    title: 'Ref forms',
+    createdAt: 1,
+    projectId: 'proj-1',
+    id: 'sess-1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '',
+        createdAt: 1,
+        uploads: [
+          { id: 'file-1', name: 'shared.md', versionId: 'ver-shared' },
+          { id: 'file-2', name: 'by-id.md', versionId: 'ver-b' }
+        ],
+        parts: [
+          // Same file in uploads and parts: upgraded to inline mention, no duplicate.
+          {
+            type: 'artifact',
+            source: 'upload',
+            name: 'shared.md',
+            path: 'upload-version:proj-1/sess-1/file-1/ver-shared',
+            versionId: 'ver-shared'
+          },
+          // 1-segment ref: joins by versionId alone.
+          {
+            type: 'artifact',
+            source: 'upload',
+            name: 'by-id.md',
+            path: 'upload-version:ver-b',
+            versionId: 'ver-b'
+          },
+          // 3-segment ref without fileId: also joins by versionId.
+          {
+            type: 'artifact',
+            source: 'upload',
+            name: 'by-id-too.md',
+            path: 'upload-version:proj-1/sess-1/ver-b',
+            versionId: 'ver-b'
+          }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(session as never, 'refs', 'https://cdn.example.test/pkg/')
+  const message = result.session.items[0]
+  if (message.type !== 'message') throw new Error('expected a message')
+  // shared.md was upgraded to a mention in place; the two ver-b parts dedupe to
+  // one mention upload each by versionId.
+  const shared = message.uploads?.filter((upload) => upload.name === 'shared.md')
+  expect(shared).toHaveLength(1)
+  expect(shared?.[0]).toMatchObject({ mention: true, partName: 'shared.md' })
+  const byId = message.uploads?.filter((upload) => upload.name === 'by-id.md')
+  expect(byId).toHaveLength(1)
+  expect(byId?.[0]).toMatchObject({ mention: true, versionId: 'ver-b' })
+  expect(byId?.[0].url).toContain('uploads/proj-1/sess-1/file-2/versions/ver-b/content')
+  // The second ver-b part was folded into the same upload.
+  expect(message.uploads?.filter((upload) => upload.name === 'by-id-too.md')).toHaveLength(0)
+})
+
+test('annotations without an id are dropped like the app sanitizer', () => {
+  const session = {
+    title: 'Idless',
+    createdAt: 1,
+    projectId: 'p1',
+    id: 's1',
+    messages: [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'hi',
+        createdAt: 1,
+        annotations: [
+          { kind: 'text', quote: 'no id here', source: {} },
+          { id: '', kind: 'text', quote: 'empty id', source: {} },
+          { id: 'kept', kind: 'text', quote: 'has an id', source: {} },
+          {
+            id: 'area-no-text',
+            kind: 'pdf',
+            source: { name: 'paper.pdf' },
+            selector: { kind: 'region', pageNumber: 2 }
+          }
+        ]
+      }
+    ]
+  }
+  const result = parseExtractedSession(session as never, 'idless', 'https://cdn.example.test/pkg/')
+  const message = result.session.items[0]
+  if (message.type !== 'message') throw new Error('expected a message')
+  expect(message.annotations).toEqual([
+    {
+      id: 'kept',
+      kind: 'text',
+      content: 'has an id',
+      source: undefined,
+      note: undefined,
+      url: undefined
+    },
+    {
+      id: 'area-no-text',
+      kind: 'area',
+      source: 'paper.pdf · Page 2',
+      content: 'Selected area',
+      image: undefined,
+      note: undefined,
+      url: undefined
+    }
+  ])
 })
