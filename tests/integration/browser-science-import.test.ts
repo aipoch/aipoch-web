@@ -124,7 +124,7 @@ test('composer automatically launches after download and preserves explicit retr
         .toBe(false)
       await cdp.detach()
       finishDownload()
-      await expect(page.getByRole('status')).toContainText('Opening Open-Science')
+      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
       unitExpect(downloads).toBe(count + 1)
       unitExpect(await snapshot()).toMatchObject({
         activation: false,
@@ -132,12 +132,16 @@ test('composer automatically launches after download and preserves explicit retr
         blobSize: 64 * 1024,
         sends: 1
       })
-      const opening = page.getByRole('button', { name: 'Opening Open-Science…', exact: true })
+      const opening = page.getByRole('button', { name: 'Waiting for Open-Science…', exact: true })
       await expect(opening).toBeDisabled()
       await expect(opening).not.toContainText('%')
       await opening.dispatchEvent('click')
       const busy = page.getByRole('button', { name: /^Sending to Open-Science:/ })
       unitExpect((await snapshot()).sends).toBe(1)
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.phase('transferring'))
+      const starting = page.getByRole('button', { name: 'Sending to Open-Science…', exact: true })
+      await expect(starting).toBeDisabled()
+      await expect(starting).not.toContainText('%')
       await page.evaluate(() =>
         (window as unknown as TestWindow).importTest.progress({ sentBytes: 3, totalBytes: 7 })
       )
@@ -154,7 +158,7 @@ test('composer automatically launches after download and preserves explicit retr
       await openButton.click()
       unitExpect((await snapshot()).prepares).toBe(2)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.fail(true))
-      await expect(page.getByRole('alert')).toContainText('Could not open Open-Science')
+      await expect(page.getByRole('status')).toContainText('Open-Science has not connected yet')
       await expect(page.getByRole('textbox')).toHaveAttribute(
         'placeholder',
         'What would you explore next? Import this session to continue in Open-Science.'
@@ -162,13 +166,13 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(
         page.getByRole('link', { name: 'Download Open-Science', exact: true })
       ).toHaveAttribute('href', '/open-science/download')
-      await openButton.click()
-      unitExpect((await snapshot()).prepares).toBe(3)
+      await page.getByRole('button', { name: 'I’ve opened Open-Science', exact: true }).click()
+      unitExpect((await snapshot()).prepares).toBe(2)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish(false))
       await expect(page.getByRole('alert')).toContainText('not acknowledged')
       await page.getByRole('button', { name: 'Start a new transfer' }).click()
       await openButton.click()
-      unitExpect((await snapshot()).prepares).toBe(4)
+      unitExpect((await snapshot()).prepares).toBe(3)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
       await expect(page.getByRole('status')).toHaveText(
         'File sent to Open-Science. Please confirm the import in the app.'
@@ -182,11 +186,52 @@ test('composer automatically launches after download and preserves explicit retr
       await continueButton.click()
       await expect(downloading).toContainText('50%')
       finishDownload()
-      await expect(page.getByRole('status')).toContainText('Opening Open-Science')
+      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
       await page.evaluate(() => (window as unknown as TestWindow).unmountImport())
       unitExpect((await snapshot()).cancels).toBe(1)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
       await expect(page.getByRole('region')).toHaveCount(0)
+      // Accelerated fixture clock verifies UI recovery; actual SDK timing is tested separately.
+      await page.clock.install()
+      await page.clock.pauseAt(new Date(Date.now() + 1000))
+      await page.goto(origin)
+      await continueButton.click()
+      await expect(downloading).toContainText('50%')
+      finishDownload()
+      await expect(page.getByRole('status')).toContainText('Waiting for Open-Science')
+      await page.clock.runFor(16000)
+      await expect(
+        page.getByRole('button', { name: 'Waiting for Open-Science…', exact: true })
+      ).toBeDisabled()
+      await expect(
+        page.getByText(
+          'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.',
+          { exact: true }
+        )
+      ).toBeVisible()
+      unitExpect((await snapshot()).prepares).toBe(1)
+      unitExpect((await snapshot()).sends).toBe(1)
+      await page.clock.runFor(104000)
+      await expect(page.getByRole('status')).toHaveText(
+        'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
+      )
+      await page.evaluate(() => history.replaceState(null, '', '#manual-reconnect-marker'))
+      await page.getByRole('button', { name: 'I’ve opened Open-Science', exact: true }).click()
+      unitExpect(page.url()).toContain('#manual-reconnect-marker')
+      unitExpect((await snapshot()).prepares).toBe(1)
+      unitExpect((await snapshot()).sends).toBe(2)
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.fail(true))
+      await openButton.click()
+      unitExpect(page.url()).toContain('#test-import-1')
+      unitExpect((await snapshot()).prepares).toBe(1)
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+      await expect(page.getByRole('status')).toContainText('Transfer canceled')
+      await openButton.click()
+      unitExpect((await snapshot()).prepares).toBe(2)
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
+      await expect(page.getByRole('status')).toHaveText(
+        'File sent to Open-Science. Please confirm the import in the app.'
+      )
       // No Content-Length: use manifest size when known, otherwise do not invent a percentage.
       includeContentLength = false
       for (const [suffix, percentage] of [

@@ -31,7 +31,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   const busy = ['checking', 'opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
   const downloading = state.phase === 'downloading'
   const sending = state.phase === 'sending'
-  const progressing = downloading || sending
+  const progressing = downloading || (sending && state.loaded !== undefined)
   const needsApp = state.needsApp
   const total = state.total ?? (downloading ? packageInfo.sizeBytes : undefined)
   const percent =
@@ -44,16 +44,20 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
     state.phase === 'checking'
       ? 'Checking Open-Science…'
       : state.phase === 'opening'
-        ? 'Opening Open-Science…'
-        : state.phase === 'canceling'
-          ? 'Canceling…'
-          : state.phase === 'received'
-            ? 'Sent to Open-Science'
-            : state.action === 'open'
-              ? 'Open Open-Science'
-              : state.needsApp
-                ? 'Try again'
-                : 'Continue in Open-Science'
+        ? 'Waiting for Open-Science…'
+        : sending
+          ? 'Sending to Open-Science…'
+          : state.phase === 'canceling'
+            ? 'Canceling…'
+            : state.phase === 'received'
+              ? 'Sent to Open-Science'
+              : state.action === 'resume'
+                ? 'I’ve opened Open-Science'
+                : state.action === 'open'
+                  ? 'Open Open-Science'
+                  : state.needsApp
+                    ? 'Try again'
+                    : 'Continue in Open-Science'
 
   return (
     <section
@@ -89,6 +93,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
             disabled={busy || !state.action}
             onClick={() => {
               if (state.action === 'prepare') void session.current?.prepareAndOpen()
+              else if (state.action === 'resume') void session.current?.resume()
               else if (state.action === 'open') void session.current?.open()
             }}
             className="inline-flex min-h-10 w-full items-center justify-center gap-3 rounded-xl bg-[#10110f] px-5 py-1 text-sm font-semibold text-white transition-colors hover:bg-[#34352f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default sm:w-auto sm:min-w-56"
@@ -110,8 +115,9 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         </div>
       </div>
       <p className="mt-1.5 text-xs leading-5 text-[#777872]">
-        You may need to allow your browser to open Open-Science and access your local network. Keep
-        this page open until the file is sent.
+        {state.phase === 'opening' || state.action === 'resume'
+          ? 'If your browser asks to open Open-Science, choose Open. You may also need to allow local network access.'
+          : 'You may need to allow your browser to open Open-Science and access your local network. Keep this page open until the file is sent.'}
       </p>
       <div className="space-y-2 text-[13px] leading-6 text-[#777872]">
         <p
@@ -148,7 +154,16 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
               Cancel
             </button>
           ) : null}
-          {state.phase === 'error' && state.action === 'open' ? (
+          {state.action === 'resume' ? (
+            <button
+              type="button"
+              onClick={() => void session.current?.open()}
+              className="min-h-10 font-medium text-[#10110f] underline underline-offset-4"
+            >
+              Open Open-Science
+            </button>
+          ) : null}
+          {(state.phase === 'error' && state.action === 'open') || state.action === 'resume' ? (
             <button
               type="button"
               onClick={() => session.current?.restart()}

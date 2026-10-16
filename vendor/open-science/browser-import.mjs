@@ -28,6 +28,20 @@ export class BrowserImportError extends Error {
   }
 }
 
+/** Request app launch synchronously from a user click; return does not prove OS delivery. */
+export function launchOpenScience() {
+  if (typeof globalThis.location?.assign !== 'function')
+    throw new BrowserImportError(
+      'unsupported-browser',
+      'This environment cannot open Open-Science.'
+    )
+  try {
+    globalThis.location.assign('open-science://open')
+  } catch {
+    throw new BrowserImportError('launch-failed', 'Could not request opening Open-Science.')
+  }
+}
+
 const supported = () =>
   typeof Blob === 'function' &&
   typeof fetch === 'function' &&
@@ -170,16 +184,22 @@ export function prepareBrowserImport(file, options = {}) {
     async send({
       signal,
       onProgress,
+      onPhase,
+      readinessMode = 'attempts',
       readyTimeoutMs = 120_000,
       readinessAttempts = 5,
       attemptTimeoutMs = 2000
     } = {}) {
+      if (!['attempts', 'wait-for-launch'].includes(readinessMode))
+        throw new Error('Invalid readiness mode.')
+      const waitingForLaunch = readinessMode === 'wait-for-launch'
       if (!Number.isFinite(readyTimeoutMs) || readyTimeoutMs <= 0)
         throw new Error('Invalid receiver timeout.')
       if (
-        !Number.isInteger(readinessAttempts) ||
-        readinessAttempts < 1 ||
-        readinessAttempts > 5 ||
+        (!waitingForLaunch &&
+          (!Number.isInteger(readinessAttempts) ||
+            readinessAttempts < 1 ||
+            readinessAttempts > 5)) ||
         !Number.isFinite(attemptTimeoutMs) ||
         attemptTimeoutMs <= 0 ||
         attemptTimeoutMs > 30_000
@@ -203,66 +223,67 @@ export function prepareBrowserImport(file, options = {}) {
           )
         })
       try {
-        const deadline = Date.now() + Math.min(readyTimeoutMs, 300_000)
-        const ready = await bounded(
-          signal,
-          Math.min(readyTimeoutMs, 300_000),
-          async (readySignal) => {
-            for (let attempt = 0; attempt < readinessAttempts; attempt++) {
-              readySignal.throwIfAborted()
-              try {
-                return await bounded(readySignal, attemptTimeoutMs, async (attemptSignal) => {
-                  const challenge = randomHex()
-                  const response = await request(`/ready?challenge=${challenge}`, {
-                    signal: attemptSignal
-                  })
-                  const value = await response.json()
-                  if (
-                    !value ||
-                    typeof value !== 'object' ||
-                    typeof value.accepted !== 'boolean' ||
-                    !Number.isSafeInteger(value.offset) ||
-                    value.offset < 0 ||
-                    value.offset > file.size ||
-                    value.chunkBytes !== CHUNK_BYTES
-                  )
-                    throw new BrowserImportError(
-                      'incompatible',
-                      'Could not verify the local receiver identity.'
-                    )
-                  const expected = await sign(
-                    `open-science-import-v1:${challenge}:${value.offset}:${value.accepted ? 1 : 0}`
-                  )
-                  attemptSignal.throwIfAborted()
-                  if (Date.now() >= deadline)
-                    throw new BrowserImportError(
-                      'timeout',
-                      'Open-Science did not become ready in time.'
-                    )
-                  if (!response.ok || value.proof !== expected)
-                    throw new BrowserImportError(
-                      'incompatible',
-                      'Could not verify the local receiver identity. Prepare a new transfer and reopen Open-Science.'
-                    )
-                  return value
+        onPhase?.('waiting-for-receiver')
+        // Browser protocol prompts have no observable completion event. Only this secret's proof
+        // ends launch waiting; the bounded deadline covers requests, body reads and retry gaps.
+        const budget = Math.min(readyTimeoutMs, waitingForLaunch ? 120_000 : 300_000)
+        const attemptBudget = waitingForLaunch ? Math.min(attemptTimeoutMs, 2000) : attemptTimeoutMs
+        const deadline = Date.now() + budget
+        const ready = await bounded(signal, budget, async (readySignal) => {
+          for (let attempt = 0; waitingForLaunch || attempt < readinessAttempts; attempt++) {
+            readySignal.throwIfAborted()
+            try {
+              return await bounded(readySignal, attemptBudget, async (attemptSignal) => {
+                const challenge = randomHex()
+                const response = await request(`/ready?challenge=${challenge}`, {
+                  signal: attemptSignal
                 })
-              } catch (error) {
-                readySignal.throwIfAborted()
-                if (error.code === 'incompatible') throw error
-                if (error instanceof SyntaxError)
+                const value = await response.json()
+                if (
+                  !value ||
+                  typeof value !== 'object' ||
+                  typeof value.accepted !== 'boolean' ||
+                  !Number.isSafeInteger(value.offset) ||
+                  value.offset < 0 ||
+                  value.offset > file.size ||
+                  value.chunkBytes !== CHUNK_BYTES
+                )
                   throw new BrowserImportError(
                     'incompatible',
                     'Could not verify the local receiver identity.'
                   )
-                if (attempt + 1 < readinessAttempts) await wait(1000, readySignal)
-              }
+                const expected = await sign(
+                  `open-science-import-v1:${challenge}:${value.offset}:${value.accepted ? 1 : 0}`
+                )
+                attemptSignal.throwIfAborted()
+                if (Date.now() >= deadline)
+                  throw new BrowserImportError(
+                    'timeout',
+                    'Open-Science did not become ready in time.'
+                  )
+                if (!response.ok || value.proof !== expected)
+                  throw new BrowserImportError(
+                    'incompatible',
+                    'Could not verify the local receiver identity. Prepare a new transfer and reopen Open-Science.'
+                  )
+                return value
+              })
+            } catch (error) {
+              readySignal.throwIfAborted()
+              if (error.code === 'incompatible') throw error
+              if (error instanceof SyntaxError)
+                throw new BrowserImportError(
+                  'incompatible',
+                  'Could not verify the local receiver identity.'
+                )
+              if (waitingForLaunch || attempt + 1 < readinessAttempts) await wait(1000, readySignal)
             }
-            throw new BrowserImportError(
-              'readiness-exhausted',
-              'Open-Science did not become ready. Open the app, allow local network access, and retry.'
-            )
           }
-        )
+          throw new BrowserImportError(
+            'readiness-exhausted',
+            'Open-Science did not become ready. Open the app, allow local network access, and retry.'
+          )
+        })
         verified = true
         if (
           !Number.isSafeInteger(ready.offset) ||
@@ -272,6 +293,7 @@ export function prepareBrowserImport(file, options = {}) {
         )
           throw new Error('Invalid local transfer response.')
         if (!ready.accepted) {
+          onPhase?.('transferring')
           for (let offset = ready.offset; offset < file.size;) {
             signal?.throwIfAborted()
             const bytes = await file.slice(offset, offset + CHUNK_BYTES).arrayBuffer()
@@ -330,6 +352,12 @@ export function prepareBrowserImport(file, options = {}) {
             targetAddressSpace: 'loopback'
           }).catch(() => undefined)
         }
+        signal?.throwIfAborted()
+        if (verified)
+          throw new BrowserImportError(
+            'transfer-failed',
+            'The local package transfer failed. Retry while the receiver is available.'
+          )
         throw error
       } finally {
         sending = false

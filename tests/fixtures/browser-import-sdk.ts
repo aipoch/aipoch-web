@@ -1,4 +1,5 @@
 import type {
+  BrowserImportPhase,
   BrowserImportProgress,
   BrowserImportTransfer
 } from '../../vendor/open-science/browser-import'
@@ -13,6 +14,7 @@ const state = {
   blobSize: 0,
   activation: false,
   launchedBeforeSend: false,
+  phase: (_value: BrowserImportPhase) => {},
   progress: (_value: BrowserImportProgress) => {},
   finish: (_received = true) => {},
   fail: (_timeout = false) => {}
@@ -29,17 +31,24 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
   const url = `#test-import-${state.prepares}`
   return {
     url,
-    send({ signal, onProgress } = {}) {
+    send({ signal, onProgress, onPhase, readyTimeoutMs } = {}) {
       state.sends++
+      onPhase?.('waiting-for-receiver')
       state.activation = navigator.userActivation.isActive
       state.launchedBeforeSend = window.location.hash === url
       return new Promise((resolve, reject) => {
         const abort = () => {
+          clearTimeout(deadline)
           state.cancels++
           reject(new DOMException('Canceled', 'AbortError'))
         }
         signal?.addEventListener('abort', abort, { once: true })
-        const cleanup = () => signal?.removeEventListener('abort', abort)
+        const deadline = setTimeout(() => state.fail(true), readyTimeoutMs)
+        const cleanup = () => {
+          clearTimeout(deadline)
+          signal?.removeEventListener('abort', abort)
+        }
+        state.phase = (value) => onPhase?.(value)
         state.progress = (value) => onProgress?.(value)
         state.finish = (received = true) => {
           cleanup()

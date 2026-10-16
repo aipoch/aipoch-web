@@ -160,7 +160,7 @@ loads from `<manifest directory>/<case name>/extracted/`.
 ### Import a replay into Open-Science
 
 The composer below each replay first calls the official
-`checkBrowserImportAvailability` when **Continue in Open-Science** is clicked.
+`checkBrowserImportAvailability({ signal })` on the SDK default discovery port when **Continue in Open-Science** is clicked.
 Discovery checks one local endpoint; it does not launch the app or prove that it is
 installed. Local-network access may trigger a browser permission prompt. On
 `unavailable`, `timeout`, `incompatible` or `unsupported-browser`, the composer
@@ -172,20 +172,32 @@ After discovery succeeds, the website downloads the full `.science` Blob, prepar
 an SDK transfer, sets `window.location.href = transfer.url`, then calls `send()`.
 Automatic launch after an asynchronous download is best effort. A direct-click
 **Open Open-Science** fallback reuses the held Blob, without another download.
-**Checking Open-Science…** and **Opening Open-Science…** are separate states.
-The pinned SDK has no readiness-stage callback; sending percentages start only after its
-first acknowledged-chunk progress callback, never from a timer. Until then the
-button remains in the opening state. Download and sending percentages appear in
-the compact button without progress bars; unknown download totals show **—%**.
-Permission guidance and status remain immediately below the composer. The existing
-42px transcript-to-composer spacing is preserved.
+**Checking Open-Science…** and **Waiting for Open-Science…** are separate states.
+The SDK's `onPhase('transferring')` switches to sending only after this transfer's
+identity handshake succeeds. Until its first acknowledged-byte callback, the
+button says **Sending to Open-Science…** without a percentage. Download/send
+percentages then appear in the compact button, without progress bars; unknown
+download totals show **—%**. The composer keeps its 42px upper spacing.
 
-`send()` explicitly uses five readiness attempts, a 2,000ms per-attempt budget and
-a 15,000ms overall readiness budget. The official SDK waits 1,000ms between failed
-attempts (up to about 14 seconds for five full attempts). The readiness deadline
-ends after the handshake and does not limit the file transfer. Recovery uses
-structured error codes, not English error matching. A failed probe or launch does
-not prove the app is uninstalled.
+`send()` explicitly uses `readinessMode: 'wait-for-launch'`, `readyTimeoutMs: 120000`
+and `attemptTimeoutMs: 2000`. The official SDK waits 1,000ms between failed
+attempts and continues beyond the default five-attempt limit. Its 120-second
+budget covers readiness headers, body and retry gaps, but ends once identity is
+verified and does not limit the subsequent file transfer. There is no website
+retry loop, transfer rotation or repeated protocol navigation while waiting.
+
+The website cannot detect an external-protocol permission prompt or its outcome.
+It does not use focus, blur, visibility or a timer to infer consent. Waiting copy
+below the input reads: **If your browser asks to open Open-Science, choose Open.
+You may also need to allow local network access.** Generic availability never
+substitutes for this transfer's authenticated handshake.
+
+On readiness timeout, keep the Blob and transfer and show **Open-Science has not
+connected yet. Open the app, allow any browser prompts, then continue.**
+**I’ve opened Open-Science** calls `send()` again with a fresh cancellation signal
+on that same transfer, without navigation or download. The separate **Open
+Open-Science** action explicitly requests the protocol launch again. A readiness
+timeout does not establish that the app is absent or the user rejected a prompt.
 
 Receipt means only that the desktop received the file. The pinned desktop source
 automatically receives and validates it before destination selection; the user
@@ -208,27 +220,33 @@ research tools remain disabled; no prompt text is sent.
   in this update. The replay route has no repository-defined CSP. If deployment
   adds CSP, retain other restrictions and allow the download origins and
   `http://127.0.0.1:*` in `connect-src`; this change does not modify deployment policy.
-- Retain the Blob for retry. Transient failures and exhausted readiness attempts
-  reuse a still-live transfer; cancellation, readiness timeout, incompatible
-  receiver or expiry create a new transfer on the next user click. **Start a new
-  transfer** allows explicit recovery. Transfer-creation errors retain bytes and
+- Retain the Blob for retry. Transient failures and readiness timeouts reuse the same
+  transfer. Cancellation and identity mismatch require a new transfer on the next
+  explicit launch. If the receiver actually expired, use **Start a new transfer**;
+  the website does not infer expiry from elapsed time or silently rotate secrets.
+  Transfer-creation errors retain bytes and
   are distinct from download failures. Unmount aborts work and releases references.
   Transfer URLs contain secrets and are never rendered, logged or persisted.
-- The public npm registry returned 404 on 2026-10-15. The official SDK is vendored
-  from commit `49848625912937bb5050d061d71966a42cf4b4e0`; source, types and hashes
+- The public npm registry returned 404 on 2026-10-16. The official SDK is vendored
+  from commit `157a8676ca341612bd1f918a5e3a1f942629e2f4`; source, types and hashes
   are documented in [`vendor/open-science/UPSTREAM.md`](vendor/open-science/UPSTREAM.md).
   The website does not implement or modify its crypto, authentication or transport.
   An installed desktop build supporting discovery and automatic receipt is required.
-  This pin has no independent app-launch export. Users open the app themselves
-  after discovery fails; the website does not synthesize protocol URLs or empty
-  transfers. Only APIs present in the pinned commit are used.
+  The waiting mode is compatible with the existing v1 receiver. This flow uses
+  only the transfer-specific protocol URL; after a failed initial availability
+  check, users can open the app manually and check again. Only committed SDK APIs
+  are used.
 
 Run `bun test --isolate tests/unit/browser-science-import.test.ts
  tests/unit/browser-import-sdk-contract.test.ts tests/unit/browser-import-provenance.test.ts`
 for lifecycle, filename, size, provenance and actual SDK HTTP/timing contract checks.
 The contract tests execute the pinned SDK with deterministic HTTP responses,
-including five real two-second attempts and one-second gaps, overall deadline,
-cancellation, authenticated receipt and transfer continuing beyond readiness time.
+including backward-compatible five-attempt behavior, deadlines, cancellation,
+authenticated receipt and transfer continuing beyond readiness time.
+`bun test tests/integration/browser-import-wait-contract.test.ts` executes the
+actual SDK in Chromium with an accelerated clock and a deterministic HTTP peer.
+It verifies waiting past 15 seconds, the 120-second deadline across headers/body/gaps,
+cancellation and same-transfer reconnection. No real receiver is contacted.
 Run `bun test tests/integration/browser-science-import.test.ts` for the React
 composer in Chromium desktop/mobile with a test-only SDK substitute and harmless
 hash navigation. `bun run test:mock` exercises Next SSR/browser interception,

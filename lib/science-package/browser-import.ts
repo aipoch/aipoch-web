@@ -10,7 +10,6 @@ import {
 } from '@/vendor/open-science/browser-import.mjs'
 
 const MAX_BYTES = 2 * 1024 ** 3
-const RECEIVER_IDLE_MS = 110_000
 type PackageSource = { url: string; filename: string }
 type DownloadProgress = { loaded: number; total?: number }
 export type ImportState = {
@@ -26,7 +25,7 @@ export type ImportState = {
     | 'error'
     | 'unsupported'
   message: string
-  action?: 'prepare' | 'open'
+  action?: 'prepare' | 'open' | 'resume'
   loaded?: number
   total?: number
   needsApp?: boolean
@@ -131,7 +130,6 @@ type Dependencies = {
   download: typeof downloadSciencePackage
   prepare: typeof PrepareBrowserImport
   launch: (url: string) => void
-  now: () => number
   supported: () => boolean
 }
 
@@ -149,7 +147,6 @@ export function createScienceImport(
     launch: (url) => {
       window.location.href = url
     },
-    now: Date.now,
     supported: supportsImport,
     ...dependencies
   }
@@ -160,7 +157,6 @@ export function createScienceImport(
   let busy = false
   let disposed = false
   let received = false
-  let activeAt = 0
   const emit = (state: ImportState) => {
     if (!disposed) update(state)
   }
@@ -171,7 +167,6 @@ export function createScienceImport(
   const freshTransfer = () => {
     if (!blob) throw new Error('No prepared package')
     transfer = deps.prepare(blob, { filename })
-    activeAt = deps.now()
   }
   const session = {
     async prepareAndOpen(): Promise<void> {
@@ -282,27 +277,38 @@ export function createScienceImport(
         controller = undefined
       }
     },
-    async open() {
+    async resume() {
+      // Reconnect the same authenticated transfer without another protocol navigation.
+      if (!transfer) return
+      await session.open(false)
+    },
+    async open(requestLaunch = true) {
       if (busy || disposed || received || !blob) return
       busy = true
       controller = new AbortController()
       const signal = controller.signal
-      let launched = false
-      emit({ phase: 'opening', message: 'Opening Open-Science…' })
+      let launched = !requestLaunch
+      emit({ phase: 'opening', message: 'Waiting for Open-Science…' })
       try {
-        if (!transfer || deps.now() - activeAt >= RECEIVER_IDLE_MS) freshTransfer()
+        if (!transfer) freshTransfer()
         if (!transfer) throw new Error('No transfer')
         // Launch before send; a direct-click retry restores activation if auto-launch was blocked.
-        deps.launch(transfer.url)
+        if (requestLaunch) deps.launch(transfer.url)
         launched = true
-        activeAt = deps.now()
         const receipt = await transfer.send({
           signal,
-          readinessAttempts: 5,
+          readinessMode: 'wait-for-launch',
           attemptTimeoutMs: 2000,
-          readyTimeoutMs: 15000,
+          readyTimeoutMs: 120000,
+          onPhase: (phase) => {
+            if (signal.aborted) return
+            emit(
+              phase === 'transferring'
+                ? { phase: 'sending', message: 'Sending package to Open-Science…' }
+                : { phase: 'opening', message: 'Waiting for Open-Science…' }
+            )
+          },
           onProgress: ({ sentBytes, totalBytes }) => {
-            activeAt = deps.now()
             if (!signal.aborted)
               emit({
                 phase: 'sending',
@@ -322,22 +328,25 @@ export function createScienceImport(
       } catch (error) {
         // Readiness failures are structured; other transport failures remain retryable.
         const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined
-        const readinessFailure = [
-          'timeout',
-          'readiness-exhausted',
-          'incompatible',
-          'unsupported-browser'
-        ].includes(String(code))
-        if (signal.aborted || code === 'timeout' || code === 'incompatible') transfer = undefined
+        const waitingEnded = code === 'timeout' || code === 'readiness-exhausted'
+        // A readiness timeout does not invalidate the secret or prove that the app is absent.
+        // Cancellation and identity mismatch require a fresh transfer on an explicit launch.
+        if (signal.aborted || code === 'incompatible') transfer = undefined
         emit({
-          phase: signal.aborted ? 'ready' : 'error',
-          action: 'open',
+          phase: signal.aborted || waitingEnded ? 'ready' : 'error',
+          action: transfer && launched ? 'resume' : 'open',
           needsApp: !signal.aborted,
           message: signal.aborted
             ? 'Transfer canceled. Open Open-Science again to retry with the prepared package.'
-            : readinessFailure || !launched
-              ? 'Could not open Open-Science. Open the app, allow external apps and local network access, then try again.'
-              : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
+            : waitingEnded
+              ? 'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
+              : code === 'incompatible'
+                ? 'Could not verify Open-Science. Open the app again to start a new transfer.'
+                : code === 'unsupported-browser'
+                  ? 'This browser cannot connect to Open-Science. Use the regular download.'
+                  : !launched
+                    ? 'Could not request opening Open-Science. Allow external apps in your browser, then try again.'
+                    : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
         })
       } finally {
         busy = false

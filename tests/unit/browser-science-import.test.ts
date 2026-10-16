@@ -24,6 +24,7 @@ const setup = () => {
   const send = mock(
     (_options: {
       signal?: AbortSignal
+      onPhase?: (phase: 'waiting-for-receiver' | 'transferring') => void
       onProgress?: (p: { sentBytes: number; totalBytes: number }) => void
     }) => {
       events.push('send')
@@ -46,13 +47,11 @@ const setup = () => {
   const launch = mock(() => {
     events.push('launch')
   })
-  let time = 0
   const session = createScienceImport(info, (state) => states.push(state), {
     availability,
     download,
     prepare,
     launch,
-    now: () => time,
     supported: () => true
   })
   return {
@@ -65,10 +64,7 @@ const setup = () => {
     send,
     prepare,
     download,
-    launch,
-    advance: () => {
-      time += 121_000
-    }
+    launch
   }
 }
 
@@ -160,7 +156,7 @@ test('transient failure keeps the original transfer and Blob for retry', async (
   const sending = s.session.open()
   s.receipt.reject(new TypeError('Failed to fetch'))
   await sending
-  expect(s.states.at(-1)).toMatchObject({ phase: 'error', action: 'open' })
+  expect(s.states.at(-1)).toMatchObject({ phase: 'error', action: 'resume' })
   s.send.mockImplementationOnce(async () => ({ received: true }))
   await s.session.open()
   expect(s.prepare).toHaveBeenCalledTimes(1)
@@ -168,10 +164,10 @@ test('transient failure keeps the original transfer and Blob for retry', async (
   expect(s.states.at(-1)?.phase).toBe('received')
 })
 
-test('expired receiver creates a fresh transfer from the held Blob on the next click', async () => {
+test('explicitly replacing an expired receiver uses the held Blob on the next launch', async () => {
   const s = setup()
   await s.session.prepare()
-  s.advance()
+  s.session.restart()
   const sending = s.session.open()
   expect(s.prepare).toHaveBeenCalledTimes(2)
   expect(s.download).toHaveBeenCalledTimes(1)
@@ -179,17 +175,17 @@ test('expired receiver creates a fresh transfer from the held Blob on the next c
   await sending
 })
 
-test('timeout explains permission and readiness uncertainty and renews the transfer', async () => {
+test('timeout explains uncertainty and retains the transfer', async () => {
   const s = setup()
   await s.session.prepare()
   const sending = s.session.open()
   s.receipt.reject(Object.assign(new Error('Arbitrary localized message'), { code: 'timeout' }))
   await sending
-  expect(s.states.at(-1)?.message).toContain('allow external apps and local network access')
+  expect(s.states.at(-1)?.message).toContain('Open-Science has not connected yet')
   expect(s.states.at(-1)?.message).not.toContain('not installed')
   s.send.mockImplementationOnce(async () => ({ received: true }))
   await s.session.open()
-  expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.prepare).toHaveBeenCalledTimes(1)
 })
 
 test('cancellation blocks overlap until send settles, then retries with a fresh transfer', async () => {
@@ -407,9 +403,9 @@ test('opening waits for actual progress and configures the official readiness bu
   expect(s.states.at(-1)).toMatchObject({ phase: 'opening' })
   expect(s.states.at(-1)?.loaded).toBeUndefined()
   expect(s.send.mock.calls[0][0]).toMatchObject({
-    readinessAttempts: 5,
+    readinessMode: 'wait-for-launch',
     attemptTimeoutMs: 2000,
-    readyTimeoutMs: 15000
+    readyTimeoutMs: 120000
   })
   s.receipt.resolve({ received: true })
   await pending
@@ -448,17 +444,17 @@ test('portable filenames bound UTF-16 and UTF-8 without splitting Unicode', () =
   }
 })
 
-for (const code of ['readiness-exhausted', 'incompatible', 'unsupported-browser'] as const) {
-  test(`structured ${code} provides opening guidance without parsing the message`, async () => {
+for (const [code, message] of [
+  ['readiness-exhausted', 'Open-Science has not connected yet'],
+  ['incompatible', 'Could not verify Open-Science'],
+  ['unsupported-browser', 'This browser cannot connect']
+]) {
+  test(`structured ${code} provides recovery without parsing the message`, async () => {
     const s = setup()
     await s.session.prepare()
-    s.send.mockRejectedValueOnce(
-      Object.assign(new Error('Different language and no keywords'), { code })
-    )
+    s.send.mockRejectedValueOnce(Object.assign(new Error('Different language'), { code }))
     await s.session.open()
-    expect(s.states.at(-1)?.message).toBe(
-      'Could not open Open-Science. Open the app, allow external apps and local network access, then try again.'
-    )
+    expect(s.states.at(-1)?.message).toContain(message)
     s.send.mockImplementationOnce(async () => ({ received: true }))
     await s.session.open()
     expect(s.download).toHaveBeenCalledTimes(1)
@@ -480,4 +476,56 @@ test('filename validation precedes discovery and normalization precedes download
     expect.anything()
   )
   expect(prepare).toHaveBeenCalledWith(expect.any(Blob), { filename: '_CON.science' })
+})
+
+test('readiness timeout retains the original transfer and reconnects without launching again', async () => {
+  const s = setup()
+  await s.session.prepare()
+  s.send.mockRejectedValueOnce(Object.assign(new Error('Timeout'), { code: 'timeout' }))
+  await s.session.open()
+  expect(s.states.at(-1)).toMatchObject({
+    phase: 'ready',
+    action: 'resume',
+    message:
+      'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
+  })
+  s.send.mockImplementationOnce(async () => ({ received: true }))
+  await s.session.resume()
+  expect(s.prepare).toHaveBeenCalledTimes(1)
+  expect(s.launch).toHaveBeenCalledTimes(1)
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.states.at(-1)?.phase).toBe('received')
+})
+
+test('verified phase changes to sending without inventing a percentage', async () => {
+  const s = setup()
+  await s.session.prepare()
+  const pending = s.session.open()
+  const options = s.send.mock.calls[0][0]
+  options.onPhase?.('waiting-for-receiver')
+  expect(s.states.at(-1)).toMatchObject({ phase: 'opening', message: 'Waiting for Open-Science…' })
+  options.onPhase?.('transferring')
+  expect(s.states.at(-1)?.phase).toBe('sending')
+  expect(s.states.at(-1)?.loaded).toBeUndefined()
+  await s.session.resume()
+  await s.session.open()
+  expect(s.send).toHaveBeenCalledTimes(1)
+  expect(s.launch).toHaveBeenCalledTimes(1)
+  s.receipt.resolve({ received: true })
+  await pending
+})
+
+test('cancel invalidates reconnect until an explicit launch creates a new transfer', async () => {
+  const s = setup()
+  await s.session.prepare()
+  const pending = s.session.open()
+  s.session.cancel()
+  s.receipt.reject(new DOMException('Canceled', 'AbortError'))
+  await pending
+  await s.session.resume()
+  expect(s.send).toHaveBeenCalledTimes(1)
+  s.send.mockImplementationOnce(async () => ({ received: true }))
+  await s.session.open()
+  expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.download).toHaveBeenCalledTimes(1)
 })

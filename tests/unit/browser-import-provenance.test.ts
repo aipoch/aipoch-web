@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs'
 
 test('vendored SDK matches the pinned upstream bytes except the documented lint comment', () => {
   const hashes = {
-    'browser-import.mjs': '62dabc102ed38fbd70988abd6f1de08b631f2bcc68e9a57e395b6b4862fe722c',
-    'browser-import.d.ts': '9294310ac24722c0b24a4fb98efed5723c2e51281303dc42f77ab828170f0996',
+    'browser-import.mjs': 'ed92ada586b74c0e4a5e447f7276cfc90139d30d88b8c732a05d2255d0f3e18d',
+    'browser-import.d.ts': 'f41624c56001328d04e348975095dd476f6cfd364552f959a312c726c286d07b',
     LICENSE: 'b038148f912bdd6e61e33e56214d02c4d8a9640f7a637e21dfcf939332816979'
   }
   for (const [name, expected] of Object.entries(hashes)) {

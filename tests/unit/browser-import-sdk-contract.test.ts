@@ -165,10 +165,12 @@ test('official readiness budget ends before transfer; progress and received are 
   const proof = (text: string) =>
     createHmac('sha256', Buffer.from(secret, 'hex')).update(text).digest('hex')
   const progress: object[] = []
+  const phases: string[] = []
   fetchSpy.mockImplementation(async (input) => {
     const url = new URL(String(input))
     if (url.pathname.endsWith('/ready')) {
       expect(progress).toHaveLength(0)
+      expect(phases).toEqual(['waiting-for-receiver'])
       return Response.json({
         offset: 0,
         accepted: false,
@@ -177,6 +179,7 @@ test('official readiness budget ends before transfer; progress and received are 
       })
     }
     if (url.pathname.endsWith('/chunk')) {
+      expect(phases).toEqual(['waiting-for-receiver', 'transferring'])
       // This exceeds readiness's 50ms budget. Its timers must already have been disposed.
       await Bun.sleep(100)
       expect(progress).toHaveLength(0)
@@ -187,6 +190,7 @@ test('official readiness budget ends before transfer; progress and received are 
   })
   const receipt = await transfer.send({
     readyTimeoutMs: 50,
+    onPhase: (phase) => phases.push(phase),
     onProgress: (value: object) => progress.push(value)
   })
   expect(receipt).toEqual({ received: true })
