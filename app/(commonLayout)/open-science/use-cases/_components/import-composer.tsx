@@ -33,6 +33,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   const sending = state.phase === 'sending'
   const progressing = downloading || (sending && state.loaded !== undefined)
   const needsApp = state.needsApp
+  const waitingTimedOut = state.phase === 'ready' && state.action === 'resume'
   const total = state.total ?? (downloading ? packageInfo.sizeBytes : undefined)
   const percent =
     total && total > 0 && state.loaded !== undefined
@@ -133,8 +134,31 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
         >
           {state.message}
         </p>
+        {waitingTimedOut ? (
+          <p aria-live="polite">
+            If Open-Science does not open,{' '}
+            <a
+              href={url}
+              download={filename}
+              className="font-medium text-[#10110f] underline underline-offset-4"
+            >
+              download the .science package
+            </a>{' '}
+            and double-click it to open it with your installed Open-Science app. You can also choose
+            “Open with” and select Open-Science. If you haven’t installed it yet,{' '}
+            <a
+              href="/open-science/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#10110f] underline underline-offset-4"
+            >
+              Download Open-Science
+            </a>{' '}
+            and install it first.
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {needsApp ? (
+          {needsApp && !waitingTimedOut ? (
             <a
               href="/open-science/download"
               target="_blank"

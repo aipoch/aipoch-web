@@ -198,6 +198,9 @@ connected yet. Open the app, allow any browser prompts, then continue.**
 on that same transfer, without navigation or download. The separate **Open
 Open-Science** action explicitly requests the protocol launch again. A readiness
 timeout does not establish that the app is absent or the user rejected a prompt.
+Below the timeout message, a direct package-download link explains how to double-click
+the `.science` file or choose **Open with → Open-Science**. An app-download link
+lets users install Open-Science first if needed.
 
 Receipt means only that the desktop received the file. The pinned desktop source
 automatically receives and validates it before destination selection; the user

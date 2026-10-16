@@ -215,8 +215,22 @@ test('composer automatically launches after download and preserves explicit retr
       await expect(page.getByRole('status')).toHaveText(
         'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
       )
+      const downloadFallback = page.getByText('If Open-Science does not open,', { exact: false })
+      await expect(downloadFallback).toContainText(
+        'and double-click it to open it with your installed Open-Science app.'
+      )
+      await expect(downloadFallback).toContainText('“Open with” and select Open-Science.')
+      const packageLink = downloadFallback.getByRole('link', {
+        name: 'download the .science package'
+      })
+      await expect(packageLink).toHaveAttribute('href', '/package.science')
+      await expect(packageLink).toHaveAttribute('download', 'test.science')
+      await expect(
+        downloadFallback.getByRole('link', { name: 'Download Open-Science' })
+      ).toHaveAttribute('href', '/open-science/download')
       await page.evaluate(() => history.replaceState(null, '', '#manual-reconnect-marker'))
       await page.getByRole('button', { name: 'I’ve opened Open-Science', exact: true }).click()
+      await expect(downloadFallback).toHaveCount(0)
       unitExpect(page.url()).toContain('#manual-reconnect-marker')
       unitExpect((await snapshot()).prepares).toBe(1)
       unitExpect((await snapshot()).sends).toBe(2)
