@@ -63,7 +63,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   return (
     <section
       aria-label="Import to Open-Science"
-      className="mx-auto w-full max-w-4xl px-4 pb-16 pt-[26px] md:px-6 md:pb-24"
+      className="mx-auto w-full max-w-4xl px-4 pb-8 pt-[26px] md:px-6 md:pb-12"
     >
       <div className="rounded-2xl border border-[#d8d9d2] bg-white px-4 py-3 shadow-[0_4px_24px_-12px_rgba(16,17,15,0.16)] sm:px-5">
         <textarea
