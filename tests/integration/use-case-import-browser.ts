@@ -50,7 +50,7 @@ export async function verifyImportPreparation(
       await update({ discoveryMode })
       await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
       await expect(composer.getByRole('alert')).toHaveText(
-        "Could not connect to Open-Science. Open the app and try again. If you haven't installed it, download it first.",
+        "Could not connect to Open-Science. If it's already installed, update to version 1.1.0 or later, then open the app and try again. If you haven't installed it, download it first.",
         { timeout: 8000 }
       )
       const link = composer.getByRole('link', { name: 'Download Open-Science', exact: true })

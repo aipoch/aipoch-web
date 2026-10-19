@@ -173,7 +173,8 @@ installed. Local-network access may trigger a browser permission prompt. On
 `unavailable`, `timeout`, `incompatible` or `unsupported-browser`, the composer
 keeps the original page open, offers **Try again** and a manual **Download
 Open-Science** link, and does not download the package. Cancellation is retryable.
-Users can open the app manually and check again; there is no automatic popup.
+The guidance asks users with an existing installation to update to Open-Science
+1.1.0 or later, then open the app and check again. There is no automatic popup.
 
 After discovery succeeds, the website downloads the full `.science` Blob, prepares
 an SDK transfer, sets `window.location.href = transfer.url`, then calls `send()`.
