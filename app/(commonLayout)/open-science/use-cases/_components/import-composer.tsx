@@ -19,15 +19,16 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   const [state, setState] = useState<ImportState>(INITIAL_IMPORT_STATE)
   const session = useRef<ReturnType<typeof createScienceImport> | null>(null)
   const { url, filename } = packageInfo
+  const importUrl = packageInfo.importUrl ?? url
   useEffect(() => {
     setState(INITIAL_IMPORT_STATE)
-    const current = createScienceImport({ url, filename }, setState)
+    const current = createScienceImport({ url: importUrl, filename }, setState)
     session.current = current
     return () => {
       current.dispose()
       session.current = null
     }
-  }, [url, filename])
+  }, [importUrl, filename])
   const busy = ['checking', 'opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
   const downloading = state.phase === 'downloading'
   const sending = state.phase === 'sending'

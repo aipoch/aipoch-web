@@ -283,7 +283,7 @@ test('composer automatically launches after download and preserves explicit retr
       const packageLink = downloadFallback.getByRole('link', {
         name: 'download the .science package'
       })
-      await expect(packageLink).toHaveAttribute('href', '/package.science')
+      await expect(packageLink).toHaveAttribute('href', '/download.science')
       await expect(packageLink).toHaveAttribute('download', 'test.science')
       await expect(
         downloadFallback.getByRole('link', { name: 'Download Open-Science' })

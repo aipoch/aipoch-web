@@ -94,7 +94,7 @@ describe('mock development end to end', () => {
         try {
           await verifyImportPreparation(
             page,
-            `${web}/open-science/use-cases/${manifestSample[0].name}/replay`,
+            `${web}/open-science/use-cases/${device === 'desktop' ? 'first-flight-vs-evening-flight-which-is-more-reliable' : manifestSample[0].name}/replay`,
             api,
             join(importArtifacts, `science-import-${device}.png`),
             device === 'mobile'

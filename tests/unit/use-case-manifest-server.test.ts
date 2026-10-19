@@ -81,6 +81,7 @@ test('maps manifest details without inventing dates or reports', async () => {
       extractedBaseUrl:
         'http://127.0.0.1:3203/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/extracted/',
       url: 'http://127.0.0.1:3203/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.science',
+      importUrl: 'http://127.0.0.1:3203/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple%20Algorithm%20Beat%20AI%20at%20Wordle.science',
       filename: manifest[0].case.file_name,
       sizeBytes: manifest[0].case.bytes,
       sha256: manifest[0].case.sha256

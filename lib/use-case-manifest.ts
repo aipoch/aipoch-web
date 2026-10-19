@@ -124,6 +124,7 @@ export const parseUseCaseManifest = (
         url: releaseUrl
           ? httpUrl(releaseUrl, `${path}.case.release_url`).href
           : resourceUrl(archive),
+        importUrl: resourceUrl(archive),
         filename: archive.file_name,
         sizeBytes: archive.bytes,
         sha256: archive.sha256

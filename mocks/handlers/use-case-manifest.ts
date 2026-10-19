@@ -43,7 +43,9 @@ export const useCaseManifestHandlers = (origin: string) => {
               title: `${item.title}${responseSuffix}`,
               case: {
                 ...item.case,
-                release_url: '',
+                release_url: item.case.release_url
+                  ? `${origin}/use-case-manifest/releases/${item.name}.science`
+                  : '',
                 bytes: packages.get(item.name)?.sizeBytes,
                 sha256: packages.get(item.name)?.sha256
               }
@@ -127,7 +129,10 @@ export const useCaseManifestHandlers = (origin: string) => {
           return HttpResponse.text(`# ${item.title}\n\nLocal sample introduction.`, {
             headers: { 'Content-Type': 'text/markdown' }
           })
-        if (path === `${item.name}/${item.case.file_name}`) {
+        if (
+          path === `${item.name}/${item.case.file_name}` ||
+          (item.case.release_url && path === `releases/${item.name}.science`)
+        ) {
           packageRequests += 1
           const responseMode = packageMode
           if (packageDelayMs) await new Promise((resolve) => setTimeout(resolve, packageDelayMs))

@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 
-/** Real Next/MSW download path. Never clicks a custom protocol or contacts a desktop receiver. */
+/** Real Next/MSW download and launch boundary. No desktop receiver is used. */
 export async function verifyImportPreparation(
   page: Page,
   url: string,
@@ -8,6 +8,13 @@ export async function verifyImportPreparation(
   screenshot: string,
   mobile = false
 ) {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Page.enable')
+  let protocolRequests = 0
+  cdp.on('Page.frameRequestedNavigation', ({ url }) => {
+    // Count only; protocol URLs contain secrets and must never be retained or logged.
+    if (url.startsWith('open-science:')) protocolRequests++
+  })
   const controls = `${api}/__mock/use-case-manifest`
   const update = (body: object) => fetch(controls, { method: 'PUT', body: JSON.stringify(body) })
   try {
@@ -106,14 +113,31 @@ export async function verifyImportPreparation(
     await expect
       .poll(async () => (await (await fetch(controls)).json()).packageRequests)
       .toBe(before + 1)
-    // Stop before completion: the SDK-substitute browser suite covers automatic launch.
+    // Complete the real download, then exercise the no-op mock launch with the official SDK.
+    await update({})
+    const downloadRequest = page.waitForRequest((request) => request.url().endsWith('.science'))
     await composer.getByRole('button', { name: /^(Continue in Open-Science|Try again)$/ }).click()
-    await expect(busyButton).toBeDisabled()
+    expect((await downloadRequest).url()).toBe(
+      `${api}/use-case-manifest/first-flight-vs-evening-flight-which-is-more-reliable/First%20Flight%20vs.%20Evening%20Flight%20-%20Which%20Is%20More%20Reliable.science`
+    )
+    await expect(composer.getByRole('status')).toHaveText('Waiting for Open-Science…')
+    await expect(composer.getByRole('button', { name: 'Waiting for Open-Science…' })).toBeDisabled()
+    expect(protocolRequests).toBe(0)
+    expect(page.url()).toBe(url)
+    const completedDownloads = (await (await fetch(controls)).json()).packageRequests
     await composer.getByRole('button', { name: 'Cancel', exact: true }).click()
-    await expect(composer.getByRole('status')).toContainText('Download canceled')
+    const openButton = composer.getByRole('button', { name: 'Open Open-Science', exact: true })
+    await expect(openButton).toBeEnabled()
+    await openButton.click()
+    await expect(composer.getByRole('status')).toHaveText('Waiting for Open-Science…')
+    expect((await (await fetch(controls)).json()).packageRequests).toBe(completedDownloads)
+    expect(protocolRequests).toBe(0)
+    expect(page.url()).toBe(url)
+    await composer.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(openButton).toBeEnabled()
     await expect(page.getByRole('link', { name: 'Download research package' })).toHaveAttribute(
       'href',
-      /\.science$/
+      `${api}/use-case-manifest/releases/first-flight-vs-evening-flight-which-is-more-reliable.science`
     )
     expect(await composer.innerHTML()).not.toContain('open-science://')
     expect(await composer.innerText()).not.toContain('Import successful')
@@ -121,6 +145,7 @@ export async function verifyImportPreparation(
     const box = await composer.boundingBox()
     expect(box && viewport && box.x + box.width <= viewport.width).toBe(true)
   } finally {
+    await cdp.detach()
     await update({})
   }
 }

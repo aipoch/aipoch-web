@@ -176,6 +176,10 @@ link to the site’s download page, and does not download the package. Cancellat
 The guidance asks users with an existing installation to update to Open-Science
 1.1.0 or later, then open the app and check again. There is no automatic popup.
 
+Ordinary downloads retain the manifest `release_url` when provided. Browser import
+uses a separate `importUrl` under `<manifest directory>/<case name>/<encoded file name>`
+so it does not fetch GitHub release redirects. The static host must allow browser CORS.
+
 After discovery succeeds, the website downloads the full `.science` Blob, prepares
 an SDK transfer, sets `window.location.href = transfer.url`, then calls `send()`.
 Automatic launch after an asynchronous download is best effort. A direct-click
@@ -236,9 +240,14 @@ research tools remain disabled; no prompt text is sent.
   discovery request is intercepted; adapter-owned `discoveryMode` selects
   `available`, `unavailable`, `incompatible` or `timeout`. Package scenarios cover
   HTTP 503, empty, oversized and delayed responses. Transport HTTP calls are
-  rejected in mock development so they cannot reach a real receiver.
-- Package hosts must permit cross-origin fetches. Production CORS was not verified
-  in this update. The replay route has no repository-defined CSP. If deployment
+  rejected in mock development so they cannot reach a real receiver. Both transfer
+  launch and standalone app launch are no-ops at the website call boundary when
+  the existing development mock switch is enabled; MSW cannot block OS protocol
+  navigation. Production ignores that switch.
+- Package hosts must permit cross-origin fetches. On 2026-10-19 a HEAD request to
+  the First Flight static archive with `Origin: https://aipoch.com` returned 200
+  and `Access-Control-Allow-Origin: *`. A complete production browser download
+  was not exercised. The replay route has no repository-defined CSP. If deployment
   adds CSP, retain other restrictions and allow the download origins and
   `http://127.0.0.1:*` in `connect-src`; this change does not modify deployment policy.
 - Retain the Blob for retry. Transient failures and readiness timeouts reuse the same
@@ -271,10 +280,12 @@ cancellation and same-transfer reconnection. No real receiver is contacted.
 Run `bun test tests/integration/browser-science-import.test.ts` for the React
 composer in Chromium desktop/mobile with a test-only SDK substitute and harmless
 hash navigation. `bun run test:mock` exercises Next SSR/browser interception,
-probe failures/recovery, package downloads, cancellation and sitemap output.
+probe failures/recovery, completed downloads from static URLs distinct from regular
+release downloads, suppressed protocol navigation, cancellation/retry and sitemap output.
+`tests/unit/browser-import-launch.test.ts` covers both launch boundaries and the production guard.
 These checks do **not** constitute desktop integration: installed OS protocol
-registration, native permissions, real desktop import and production CORS are
-not verified. No desktop instance or shared Open-Science data is used.
+registration, native permissions, real desktop import and complete production
+browser downloads are not verified. No desktop instance or shared Open-Science data is used.
 
 ## Docker Compose
 

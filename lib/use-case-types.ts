@@ -253,6 +253,8 @@ export interface UseCaseDetail {
 export interface UseCasePackage {
   /** Published metadata and content-addressed objects used for browser replay. */
   extractedBaseUrl?: string
+  /** Static archive URL for browser fetches; ordinary downloads may use a release URL. */
+  importUrl?: string
   url: string
   filename: string
   sizeBytes: number

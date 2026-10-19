@@ -120,3 +120,28 @@ test('discovery scenarios are adapter-owned and validate control input', async (
   )
   expect(invalid?.status).toBe(400)
 })
+
+test('mock release downloads and static import URLs both serve the same archive', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const manifest = await (
+    await getResponse(handlers, new Request(`${origin}/use-case-manifest/manifest.json`))
+  )?.json()
+  const entry = manifest.find(
+    (item: { name: string }) =>
+      item.name === 'first-flight-vs-evening-flight-which-is-more-reliable'
+  )
+  expect(entry.case.release_url).toBe(
+    `${origin}/use-case-manifest/releases/first-flight-vs-evening-flight-which-is-more-reliable.science`
+  )
+  const release = await getResponse(handlers, new Request(entry.case.release_url))
+  const asset = await getResponse(
+    handlers,
+    new Request(
+      `${origin}/use-case-manifest/first-flight-vs-evening-flight-which-is-more-reliable/First%20Flight%20vs.%20Evening%20Flight%20-%20Which%20Is%20More%20Reliable.science`
+    )
+  )
+  expect(release?.status).toBe(200)
+  expect(asset?.status).toBe(200)
+  expect(await release?.arrayBuffer()).toEqual(await asset?.arrayBuffer())
+})

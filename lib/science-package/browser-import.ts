@@ -149,15 +149,20 @@ export function createScienceImport(
   update: (state: ImportState) => void,
   dependencies: Partial<Dependencies> = {}
 ) {
+  // MSW intercepts HTTP only; mock development must never request an OS protocol launch.
+  const mockLaunch =
+    process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_API_MOCKING === 'enabled'
   const deps: Dependencies = {
     availability: checkBrowserImportAvailability as typeof CheckBrowserImportAvailability,
     download: downloadSciencePackage,
     // The upstream package normally pairs these through its exports.types entry.
     prepare: prepareBrowserImport as typeof PrepareBrowserImport,
     launch: (url) => {
-      window.location.href = url
+      if (!mockLaunch) window.location.href = url
     },
-    launchApp: launchOpenScience,
+    launchApp: () => {
+      if (!mockLaunch) launchOpenScience()
+    },
     supported: supportsImport,
     mobile: () =>
       typeof navigator !== 'undefined' &&
