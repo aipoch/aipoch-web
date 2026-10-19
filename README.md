@@ -171,8 +171,8 @@ discovery port with a five-second probe budget when **Continue in Open-Science**
 Discovery checks one local endpoint; it does not launch the app or prove that it is
 installed. Local-network access may trigger a browser permission prompt. On
 `unavailable`, `timeout`, `incompatible` or `unsupported-browser`, the composer
-keeps the original page open, offers **Try again** and a manual **Download
-Open-Science** link, and does not download the package. Cancellation is retryable.
+keeps the original page open, offers **Try again** and an inline **download it first**
+link to the site’s download page, and does not download the package. Cancellation is retryable.
 The guidance asks users with an existing installation to update to Open-Science
 1.1.0 or later, then open the app and check again. There is no automatic popup.
 

@@ -53,9 +53,12 @@ export async function verifyImportPreparation(
         "Could not connect to Open-Science. If it's already installed, update to version 1.1.0 or later, then open the app and try again. If you haven't installed it, download it first.",
         { timeout: 8000 }
       )
-      const link = composer.getByRole('link', { name: 'Download Open-Science', exact: true })
+      const link = composer.getByRole('alert').getByRole('link', { name: 'download it first' })
       await expect(link).toHaveAttribute('href', '/open-science/download')
       await expect(link).toHaveAttribute('target', '_blank')
+      await expect(
+        composer.getByRole('link', { name: 'Download Open-Science', exact: true })
+      ).toHaveCount(0)
       expect((await (await fetch(controls)).json()).packageRequests).toBe(initialPackages)
       expect(page.url()).toBe(url)
     }

@@ -33,6 +33,8 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
   const sending = state.phase === 'sending'
   const progressing = downloading || (sending && state.loaded !== undefined)
   const needsApp = state.needsApp
+  const downloadPrompt = 'download it first'
+  const inlineDownload = needsApp && state.message?.endsWith(`${downloadPrompt}.`)
   const waitingTimedOut = state.phase === 'ready' && state.action === 'resume'
   const total = state.total ?? (downloading ? packageInfo.sizeBytes : undefined)
   const percent =
@@ -138,7 +140,22 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
                     : undefined
             }
           >
-            {state.message}{' '}
+            {inlineDownload ? (
+              <>
+                {state.message?.slice(0, -`${downloadPrompt}.`.length)}
+                <a
+                  href="/open-science/download"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-4"
+                >
+                  {downloadPrompt}
+                </a>
+                .
+              </>
+            ) : (
+              state.message
+            )}{' '}
             {state.phase === 'received' ? (
               <span>
                 Clicked Cancel by mistake?{' '}
@@ -192,7 +209,7 @@ export function ImportComposer({ packageInfo }: { packageInfo: UseCasePackage })
           </p>
         ) : null}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {needsApp && !waitingTimedOut ? (
+          {needsApp && !waitingTimedOut && !inlineDownload ? (
             <a
               href="/open-science/download"
               target="_blank"
