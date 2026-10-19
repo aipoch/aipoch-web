@@ -184,12 +184,11 @@ export function createScienceImport(
   }
   const session = {
     async retryImport() {
-      // Only an explicit retry after receipt starts another complete import attempt.
-      if (!received || busy || disposed) return
+      // Reuse page-held bytes, but never reuse a transfer that already received them.
+      if (!received || busy || disposed || !blob) return
       received = false
-      clear()
-      emit(INITIAL_IMPORT_STATE)
-      await session.prepareAndOpen()
+      transfer = undefined
+      await session.open()
     },
     openApp() {
       // Receipt is final for this file; a later click only requests the standalone app launch.
@@ -364,7 +363,7 @@ export function createScienceImport(
         })
         if (receipt.received !== true) throw new Error('Missing receipt')
         received = true
-        clear()
+        transfer = undefined
         emit(RECEIVED_IMPORT_STATE)
       } catch (error) {
         // Readiness failures are structured; other transport failures remain retryable.

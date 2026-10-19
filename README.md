@@ -214,8 +214,10 @@ The received-state **Open Open-Science** button remains clickable and synchronou
 calls the official `launchOpenScience()` entry point. It does not download,
 prepare a transfer or send the file again; the receipt confirmation remains visible.
 Only after receipt, **Clicked Cancel by mistake? Retry the import.** follows the
-receipt confirmation beneath the composer. Its underlined retry button explicitly starts the same complete flow
-as **Continue in Open-Science**: check availability, download, prepare, launch and send.
+receipt confirmation beneath the composer. Its underlined retry button reuses the
+downloaded Blob to prepare a fresh transfer, launch and send without another
+download. The Blob stays in page memory after receipt and is released when the
+page refreshes or the composer unmounts.
 The retry hint is hidden while the new attempt runs; the main app-launch button
 continues to open the app without resending.
 The pinned desktop source automatically receives and validates it before destination selection; the user

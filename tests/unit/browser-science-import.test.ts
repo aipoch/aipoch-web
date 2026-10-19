@@ -98,7 +98,7 @@ test('mobile detection covers phones and desktop-mode iPads without rejecting de
   expect(isMobileDevice('X11; Linux x86_64', 0)).toBe(false)
 })
 
-test('explicit retry after receipt repeats the complete import flow once and guards disposal', async () => {
+test('explicit retry after receipt reuses the Blob with a fresh transfer and guards disposal', async () => {
   const s = setup()
   await s.session.retryImport()
   expect(s.download).not.toHaveBeenCalled()
@@ -106,16 +106,20 @@ test('explicit retry after receipt repeats the complete import flow once and gua
   s.receipt.resolve({ received: true })
   await pending
   await Promise.all([s.session.retryImport(), s.session.retryImport()])
-  expect(s.availability).toHaveBeenCalledTimes(2)
-  expect(s.download).toHaveBeenCalledTimes(2)
+  expect(s.availability).toHaveBeenCalledTimes(1)
+  expect(s.download).toHaveBeenCalledTimes(1)
   expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.prepare.mock.calls[0][0]).toBe(s.blob)
+  expect(s.prepare.mock.calls[1][0]).toBe(s.blob)
   expect(s.launch).toHaveBeenCalledTimes(2)
   expect(s.send).toHaveBeenCalledTimes(2)
   expect(s.launchApp).not.toHaveBeenCalled()
   expect(s.states.at(-1)?.phase).toBe('received')
   s.session.dispose()
   await s.session.retryImport()
-  expect(s.download).toHaveBeenCalledTimes(2)
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.send).toHaveBeenCalledTimes(2)
 })
 
 test('received files offer standalone launch without another download or transfer', async () => {

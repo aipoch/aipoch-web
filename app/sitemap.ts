@@ -20,8 +20,8 @@ const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
 const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-13'
 // Track overview and replay template changes separately from the gallery.
 const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-13'
-// Replay import waiting and connection recovery were updated on October 16.
-const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-16'
+// Replay import retries retain downloaded packages as of October 19.
+const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-10-19'
 const AGENT_SKILLS_LIST_LAST_MODIFIED = '2026-09-23'
 
 // Disable cache, regenerate on every request
