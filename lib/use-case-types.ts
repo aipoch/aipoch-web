@@ -139,11 +139,22 @@ export type MessageAnnotation =
       url?: string
     }>
 
+/** Application-generated correction prompts retain a user transport role in exported history. */
+export interface ReviewerCorrectionAttribution {
+  kind: 'application'
+  feature: 'reviewer'
+  purpose: 'correction'
+  causeReviewId: string
+  continuation?: { round: number; maxRounds: number; findingIds: string[] }
+}
+
 export type TranscriptItem =
   | {
       type: 'message'
       id: string
       role: 'user' | 'assistant'
+      attribution?: ReviewerCorrectionAttribution
+      responseToMessageId?: string
       content: string
       status: string
       createdAt: number
@@ -177,6 +188,30 @@ export type TranscriptItem =
       activity: NormalizedActivity
     }
 
+export interface ReplayReviewCheck {
+  id: string
+  kind: 'new' | 'tracked'
+  status: 'pass' | 'warn' | 'fail'
+  claim: string
+  evidence: string
+  sortIndex: number | null
+  disposition?: string
+  legacyAssessment?: boolean
+}
+
+export interface ReplayReview {
+  id: string
+  anchorMessageId: string
+  lifecycle: 'running' | 'complete' | 'error'
+  outcome?: 'pass' | 'flagged'
+  model: string
+  errorMessage?: string
+  createdAt: number
+  stale: boolean
+  verificationUnavailable: boolean
+  checks: ReplayReviewCheck[]
+}
+
 export interface UseCaseSession {
   schemaVersion: 1
   slug: string
@@ -186,6 +221,7 @@ export interface UseCaseSession {
   exportedAt: number
   sessionCreatedAt: number
   items: TranscriptItem[]
+  reviews?: ReplayReview[]
   assets: Record<string, UseCaseAsset>
   omissions: string[]
   excludedFiles: { storageKey: string; filename: string; sizeBytes: number }[]

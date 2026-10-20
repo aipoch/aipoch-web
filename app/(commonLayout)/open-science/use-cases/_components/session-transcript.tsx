@@ -1,3 +1,4 @@
+import { reviewerResponseStates } from '@/lib/science-package/reviewer'
 import type { NormalizedActivity, UseCaseSession } from '@/lib/use-case-types'
 import { SessionActivityGroup } from './activity-group'
 import { SessionElicitationCard } from './elicitation-card'
@@ -5,6 +6,7 @@ import { FilePreviewProvider } from './file-preview'
 import { SessionMessageItem } from './message-item'
 import { PlanCard } from './plan-card'
 import { projectGeneratePlanActivity } from './plan-projection'
+import { ReviewerCard } from './reviewer-card'
 
 // The "Completed" footer is a turn-level marker in the app: it appears once at
 // the end of each turn (the last assistant message before the next user
@@ -47,6 +49,7 @@ const SessionPlanItem = ({ activity }: { activity: NormalizedActivity }) => {
 // transcript width (max-w-4xl = 56rem); each row carries the app's own horizontal padding.
 export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
   const turnFinal = turnFinalMessageIds(session.items)
+  const correctionStates = reviewerResponseStates(session.items)
   return (
     <div className="osp-session text-text-000">
       <FilePreviewProvider>
@@ -58,7 +61,16 @@ export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
             if (item.type === 'message') {
               return (
                 <div key={item.id} className={rowClassName}>
-                  <SessionMessageItem message={item} showTurnCompletion={turnFinal.has(item.id)} />
+                  <SessionMessageItem
+                    message={item}
+                    showTurnCompletion={turnFinal.has(item.id)}
+                    reviewerCorrectionState={correctionStates.get(item.id)}
+                  />
+                  {session.reviews
+                    ?.filter((review) => review.anchorMessageId === item.id)
+                    .map((review) => (
+                      <ReviewerCard key={review.id} review={review} />
+                    ))}
                 </div>
               )
             }

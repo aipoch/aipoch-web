@@ -1,14 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
 import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 
 import { USE_CASE_BATCH_SIZE } from './use-case-gallery-data'
 
 type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview'>
+type ImageSize = { width: number; height: number }
+type GalleryView = { count: number; images: Record<string, ImageSize> }
 
-const GalleryCard = ({ useCase }: { useCase: GalleryEntry }) => (
+const GalleryCard = ({
+  useCase,
+  imageSize,
+  onImageLoad
+}: {
+  useCase: GalleryEntry
+  imageSize?: ImageSize
+  onImageLoad: (image: HTMLImageElement) => void
+}) => (
   <Link
     href={`/open-science/use-cases/${useCase.slug}`}
     className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
@@ -23,6 +34,9 @@ const GalleryCard = ({ useCase }: { useCase: GalleryEntry }) => (
           className="block h-auto w-full"
           loading="lazy"
           decoding="async"
+          width={imageSize?.width}
+          height={imageSize?.height}
+          onLoad={(event) => onImageLoad(event.currentTarget)}
         />
       ) : null}
     </div>
@@ -47,36 +61,77 @@ export function UseCaseGallery({
   category?: string
   initialCount?: number
 }) {
-  const [visibleCount, setVisibleCount] = useState(initialCount)
+  const [view, setView, viewReady] = useNavigationViewState<GalleryView>(
+    `use-case-gallery:${category ?? 'all'}`,
+    { count: initialCount, images: {} }
+  )
+  const visibleCount = Math.max(initialCount, view.count)
   const sentinel = useRef<HTMLDivElement>(null)
   const hasMore = visibleCount < items.length
 
+  // Save presentation state per history entry; fresh server data remains authoritative.
+  const expand = useCallback(() => {
+    setView((current) => ({
+      ...current,
+      count: Math.min(Math.max(initialCount, current.count) + USE_CASE_BATCH_SIZE, items.length)
+    }))
+  }, [initialCount, items.length, setView])
+
+  // Reuse measured natural dimensions on return without cropping covers or caching content.
+  const rememberImageSize = useCallback(
+    (image: HTMLImageElement) => {
+      const { naturalWidth: width, naturalHeight: height } = image
+      if (!width || !height) return
+      const src = image.getAttribute('src')
+      if (!src) return
+      setView((current) =>
+        current.images[src]?.width === width && current.images[src]?.height === height
+          ? current
+          : { ...current, images: { ...current.images, [src]: { width, height } } }
+      )
+    },
+    [setView]
+  )
+
   useEffect(() => {
     const target = sentinel.current
-    if (!hasMore || !target || typeof IntersectionObserver === 'undefined') return
+    if (
+      !viewReady ||
+      visibleCount >= items.length ||
+      !target ||
+      typeof IntersectionObserver === 'undefined'
+    )
+      return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return
         // One batch per observation; reconnect after the new cards move the sentinel.
         observer.disconnect()
-        setVisibleCount(Math.min(visibleCount + USE_CASE_BATCH_SIZE, items.length))
+        expand()
       },
       { rootMargin: '0px 0px 160px 0px' }
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [hasMore, items.length, visibleCount])
+    // Reconnect when another batch moves the sentinel, even if more cards remain.
+  }, [viewReady, items.length, visibleCount, expand])
 
   return (
     <>
       <div
         id="use-case-grid"
         data-testid="use-case-grid"
+        data-scroll-restoration-pending={!viewReady}
         className="grid grid-cols-1 gap-x-7 gap-y-8 sm:grid-cols-2 lg:grid-cols-3"
       >
         {items.slice(0, visibleCount).map((useCase) => (
-          <GalleryCard key={useCase.slug} useCase={useCase} />
+          <GalleryCard
+            key={useCase.slug}
+            useCase={useCase}
+            imageSize={view.images[useCase.preview?.image ?? '']}
+            onImageLoad={rememberImageSize}
+          />
         ))}
       </div>
       <div ref={sentinel} className="mt-10 flex min-h-11 items-center justify-center">
@@ -88,7 +143,7 @@ export function UseCaseGallery({
             onClick={(event) => {
               if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
               event.preventDefault()
-              setVisibleCount((count) => Math.min(count + USE_CASE_BATCH_SIZE, items.length))
+              expand()
             }}
             className="min-h-11 border border-[#e7e5de] px-5 py-2.5 text-sm text-[#171717] transition-colors hover:border-[#171717] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
           >

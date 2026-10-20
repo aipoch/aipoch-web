@@ -216,5 +216,119 @@
     },
     "catalog": "Health & Climate",
     "catalog_name": "health-climate"
+  },
+  {
+    "title": "Extended Gallery Case 1",
+    "name": "extended-gallery-case-1",
+    "cover": {
+      "file_name": "Extended Gallery Case 1.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 1/Extended Gallery Case 1.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 1.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 1/Extended Gallery Case 1.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
+  },
+  {
+    "title": "Extended Gallery Case 2",
+    "name": "extended-gallery-case-2",
+    "cover": {
+      "file_name": "Extended Gallery Case 2.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 2/Extended Gallery Case 2.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 2.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 2/Extended Gallery Case 2.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
+  },
+  {
+    "title": "Extended Gallery Case 3",
+    "name": "extended-gallery-case-3",
+    "cover": {
+      "file_name": "Extended Gallery Case 3.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 3/Extended Gallery Case 3.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 3.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 3/Extended Gallery Case 3.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
+  },
+  {
+    "title": "Extended Gallery Case 4",
+    "name": "extended-gallery-case-4",
+    "cover": {
+      "file_name": "Extended Gallery Case 4.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 4/Extended Gallery Case 4.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 4.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 4/Extended Gallery Case 4.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
+  },
+  {
+    "title": "Extended Gallery Case 5",
+    "name": "extended-gallery-case-5",
+    "cover": {
+      "file_name": "Extended Gallery Case 5.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 5/Extended Gallery Case 5.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 5.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 5/Extended Gallery Case 5.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
+  },
+  {
+    "title": "Extended Gallery Case 6",
+    "name": "extended-gallery-case-6",
+    "cover": {
+      "file_name": "Extended Gallery Case 6.png",
+      "bytes": 2366230,
+      "sha256": "cf90cb228dcc7c623c507f471820e14104a8abe85751f80a60a326c9d444d24e",
+      "path": "Extended Gallery Case 6/Extended Gallery Case 6.png"
+    },
+    "case": {
+      "file_name": "Extended Gallery Case 6.science",
+      "bytes": 671109,
+      "sha256": "6e816f1f92cbe4feeed9e3217c6f1bd0d9c046fd4ba653017b9812391f421610",
+      "release_url": "",
+      "path": "Extended Gallery Case 6/Extended Gallery Case 6.science"
+    },
+    "catalog": "Science",
+    "catalog_name": "science"
   }
 ]

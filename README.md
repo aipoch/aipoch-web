@@ -147,14 +147,22 @@ loads from `<manifest directory>/<case name>/extracted/`.
 - **Publish:** Preserve `session.json` and restore archive objects to their inventory
   `storageKey` paths. Enable CORS for JSON and assets.
 - **Load:** Fetch `session.json` and optional `notebooks/<projectId>/<sessionId>/run.json`.
-  Extracted `manifest.json` and `records.json` are not required.
+  Also read optional `records.json` for Reviewer cards, findings, and tracked reassessments.
+  Extracted `manifest.json` is not required. If `records.json` is absent (403/404) and
+  the session contains reviewer corrections or has automatic review enabled, replay
+  reads the size- and SHA-256-verified archive for matching review records. Other
+  records errors remain retryable. Sessions without review evidence can omit records.
+  Completed replay verdicts use the desktop's warning icon and `(outdated)` label as
+  historical assessments. This presentation does not change stored outcomes; the
+  content-change notice appears only when exported evidence actually differs.
 - **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
   Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
   original filenames. SVG remains image-only.
 - **Fallback:** An initial session 403/404 loads the size- and SHA-256-verified
   `.science` archive. Other errors remain retryable. Extracted metadata has size
   limits and schema checks; asset integrity relies on the CDN.
-- **Verify:** `bun run test:mock` covers restored directories, previews, downloads,
+- **Verify:** `bun run test:mock` covers reviewer correction rows and expandable review cards,
+  restored directories, previews, downloads,
   retries and archive fallback on desktop and mobile.
 
 ### Import a replay into Open-Science

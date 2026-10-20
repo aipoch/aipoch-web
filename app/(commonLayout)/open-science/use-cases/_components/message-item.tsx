@@ -1,7 +1,16 @@
 'use client'
 
-import { Download, Eye, FileImage, FileSpreadsheet, FileText } from 'lucide-react'
+import {
+  Check,
+  CircleAlert,
+  Download,
+  Eye,
+  FileImage,
+  FileSpreadsheet,
+  FileText
+} from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
+import { isReviewerCorrectionAttribution } from '@/lib/science-package/reviewer'
 import type { MessageArtifact, MessageUpload, TranscriptItem } from '@/lib/use-case-types'
 import { cn } from '@/lib/utils'
 import {
@@ -392,11 +401,36 @@ const CollapsibleUserMessage = ({ message }: { message: TranscriptMessage }) => 
 
 export const SessionMessageItem = ({
   message,
-  showTurnCompletion = false
+  showTurnCompletion = false,
+  reviewerCorrectionState = 'failed'
 }: {
   message: TranscriptMessage
   showTurnCompletion?: boolean
+  reviewerCorrectionState?: 'completed' | 'failed'
 }) => {
+  // Reviewer prompts are application events, not user-authored bubbles or copyable instructions.
+  if (isReviewerCorrectionAttribution(message.attribution)) {
+    const completed = reviewerCorrectionState === 'completed'
+    const Icon = completed ? Check : CircleAlert
+    return (
+      <div className="px-4 pb-1 pt-5 md:px-6">
+        <div
+          data-testid="reviewer-correction-message"
+          className="flex max-w-[56rem] items-start gap-2 rounded-lg bg-bg-200 px-3 py-2 text-xs text-text-300"
+          role="status"
+        >
+          <Icon
+            className={cn('mt-0.5 size-3.5 shrink-0', !completed && 'text-amber-600')}
+            aria-hidden="true"
+          />
+          <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+            <span className="font-medium text-text-200">Corrections requested</span>
+            <span>{completed ? 'Response completed.' : 'Response failed.'}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (message.role === 'user') {
     // Mentioned files render inline in the text; only plain uploads get chips.
     const chipUploads = message.uploads?.filter((upload) => !upload.mention)

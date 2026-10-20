@@ -1,4 +1,5 @@
 import { afterEach, expect, mock, spyOn, test } from 'bun:test'
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import { renderToReadableStream } from 'react-dom/server'
 
 const detail = {
@@ -29,7 +30,23 @@ const renderIntroduction = async () => {
     '../../app/(commonLayout)/open-science/use-cases/[id]/page'
   )
   const tree = await Page({ params: Promise.resolve({ id: 'sample-case' }) })
-  return new Response(await renderToReadableStream(tree)).text()
+  // Supply the layout's router context while retaining the real return-link component.
+  const unexpectedNavigation = () => {
+    throw new Error('Rendering the introduction must not trigger navigation')
+  }
+  const router = {
+    back: unexpectedNavigation,
+    forward: unexpectedNavigation,
+    refresh: unexpectedNavigation,
+    push: unexpectedNavigation,
+    replace: unexpectedNavigation,
+    prefetch: unexpectedNavigation
+  }
+  return new Response(
+    await renderToReadableStream(
+      <AppRouterContext.Provider value={router}>{tree}</AppRouterContext.Provider>
+    )
+  ).text()
 }
 
 test('renders introductions through the shared Markdown typography and GFM renderer', async () => {
@@ -40,6 +57,7 @@ test('renders introductions through the shared Markdown typography and GFM rende
       )
   ) as unknown as typeof fetch
   const html = await renderIntroduction()
+  expect(html).toContain('href="/open-science/use-cases"')
   expect(html).toContain('class="markdown-body"')
   expect(html).toContain('<h1 id="heading-findings">Findings</h1>')
   expect(html).toContain('<li>First result</li>')

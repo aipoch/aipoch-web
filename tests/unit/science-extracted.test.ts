@@ -22,7 +22,12 @@ const setup = async (override?: (path: string, blob: Blob | undefined) => Respon
   const manifest = await readJson<Manifest>(files.get('manifest.json'), 'manifest.json')
   const sessionFile = files.get('session.json')
   if (!sessionFile) throw new Error('Missing fixture session')
-  const extracted = new Map([['session.json', sessionFile]])
+  const recordsFile = files.get('records.json')
+  if (!recordsFile) throw new Error('Missing fixture review records')
+  const extracted = new Map([
+    ['session.json', sessionFile],
+    ['records.json', recordsFile]
+  ])
   for (const entry of manifest.inventory) {
     const file = files.get(entry.path)
     if (entry.storageKey && file) extracted.set(entry.storageKey, file)
@@ -39,7 +44,7 @@ const setup = async (override?: (path: string, blob: Blob | undefined) => Respon
   return { files, requests }
 }
 
-test('renders without an extracted manifest or records and leaves artifact bytes on the CDN', async () => {
+test('loads review records without a manifest and leaves artifact bytes on the CDN', async () => {
   const { requests } = await setup()
   const result = await loadReplayPackage(info, 'sample', () => {})
   expect(requests[0]).toBe(`${base}session.json`)
@@ -48,8 +53,9 @@ test('renders without an extracted manifest or records and leaves artifact bytes
   const report = result.session.assets['files/coverage_report.md']
   expect(report.url).toBe(`${base}files/coverage_report.md#coverage_report.md`)
   expect(requests).not.toContain(report.url.split('#')[0])
-  expect(requests).toHaveLength(2) // Session and optional notebook run only.
-  expect(requests.some((url) => /\/(manifest|records)\.json$/.test(url))).toBe(false)
+  expect(requests).toHaveLength(3) // Session, optional notebook run, and review records.
+  expect(result.session.reviews).toHaveLength(2)
+  expect(requests.some((url) => /\/manifest\.json$/.test(url))).toBe(false)
   const message = result.session.items.find(
     (item) => item.type === 'message' && item.artifacts?.length
   )
@@ -153,7 +159,7 @@ test('maps an unchanged session storage key directly to the restored directory',
   expect(message.type === 'message' && message.artifacts?.[0].url).toBe(
     `${base}artifacts/cmuchpzre0000rxicgzmt5my5/01a0c89a-3411-7040-a549-6f01a2551e02/.provenance/20f824df-908d-46f0-a1b7-07e4258037e5/versions/bbe7d541-de9f-4b70-a1d6-966911fe045b/content#wordle-results.csv`
   )
-  expect(requests).toEqual([`${base}session.json`])
+  expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
 })
 
 for (const status of [403, 404]) {
@@ -226,11 +232,32 @@ test('loads full notebook outputs from the restored notebook directory', async (
   const { session } = await loadReplayPackage(info, 'sample', () => {})
   expect(requests).toEqual([
     `${base}session.json`,
-    `${base}notebooks/mock-project/mock-session/run.json`
+    `${base}notebooks/mock-project/mock-session/run.json`,
+    `${base}records.json`
   ])
   expect(
     session.items.some(
       (item) => item.type === 'activity-group' && item.activities.some((a) => a.run?.outputs.length)
     )
   ).toBe(true)
+})
+
+for (const status of [403, 404]) {
+  test(`uses the verified archive for missing reviewer records (${status})`, async () => {
+    const { requests } = await setup((path) =>
+      path === 'records.json' ? new Response(null, { status }) : undefined
+    )
+    const result = await loadReplayPackage(info, 'sample', () => {})
+    expect(result.session.reviews).toHaveLength(2)
+    expect(requests.filter((url) => url === info.url)).toHaveLength(1)
+    expect(result.session.assets['files/coverage_report.md'].url).toStartWith(base)
+  })
+}
+
+test('does not replace corrupt or unavailable review records with a silent archive download', async () => {
+  for (const response of [Response.json({ tables: null }), new Response(null, { status: 503 })]) {
+    const { requests } = await setup((path) => (path === 'records.json' ? response : undefined))
+    await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow()
+    expect(requests).not.toContain(info.url)
+  }
 })

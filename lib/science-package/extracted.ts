@@ -1,6 +1,15 @@
 import type { UseCasePackage } from '../use-case-types'
 import { downloadPackage, type PackageProgress } from './archive'
-import { parseExtractedSession, parsePackage, sessionRecordFrom, storagePathFor } from './parse'
+import {
+  parseExtractedSession,
+  parsePackage,
+  readVerifiedPackage,
+  sessionRecordFrom,
+  storagePathFor
+} from './parse'
+
+import { reviewRecordsFrom } from './review-records'
+import { isReviewerCorrectionAttribution } from './reviewer'
 
 const MAX_METADATA_BYTES = 128 * 1024 ** 2
 
@@ -68,8 +77,32 @@ export const loadReplayPackage = async (
           runDocument = run as Record<string, unknown>
         }
       }
+      // Review tables are optional for old publications. Only sessions known to have reviews
+      // need an archive fallback; unreviewed sessions keep the lightweight metadata path.
+      let records = session.messages.length
+        ? await fetchMetadata(base.href, 'records.json', true)
+        : undefined
+      const hasReviews =
+        session.autoReviewEnabled === true ||
+        session.messages.some((message) => isReviewerCorrectionAttribution(message.attribution))
+      if (records === undefined && hasReviews) {
+        const archive = await readVerifiedPackage(await downloadPackage(info, progress))
+        if (
+          archive.session.id !== session.id ||
+          archive.session.revision !== session.revision ||
+          JSON.stringify(archive.session.messages) !== JSON.stringify(session.messages)
+        )
+          throw new Error('Review history does not match the published session.')
+        records = archive.records
+      }
       progress({ stage: 'parsing' })
-      return parseExtractedSession(session, slug, base.href, runDocument)
+      return parseExtractedSession(
+        session,
+        slug,
+        base.href,
+        runDocument,
+        records === undefined ? undefined : reviewRecordsFrom(records)
+      )
     }
   }
 

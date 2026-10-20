@@ -38,7 +38,7 @@ test('mock object storage supports conditional GET, updates, empty data and fail
   expect(first.status).toBe(200)
   const etag = first.headers.get('etag') as string
   const data = await first.json()
-  expect(data).toHaveLength(9)
+  expect(data).toHaveLength(15)
   const unchanged = await request('/use-case-manifest/manifest.json', {
     headers: { 'If-None-Match': etag }
   })
@@ -89,9 +89,14 @@ test('serves extracted metadata and referenced objects from the same package', a
   expect(session?.status).toBe(200)
   if (!session) throw new Error('Missing session handler')
   expect((await session.json()).version).toBe(2)
-  for (const missing of ['manifest.json', 'records.json']) {
-    expect((await getResponse(handlers, new Request(`${base}${missing}`)))?.status).toBe(404)
-  }
+  expect((await getResponse(handlers, new Request(`${base}manifest.json`)))?.status).toBe(404)
+  const records = await getResponse(handlers, new Request(`${base}records.json`))
+  expect(records?.status).toBe(200)
+  if (!records) throw new Error('Missing review records handler')
+  const tables = (await records.json()).tables
+  expect(tables.Review).toHaveLength(2)
+  expect(tables.Finding).toHaveLength(3)
+  expect(tables.ReviewFindingDisposition).toHaveLength(1)
   // Extracted files preserve storage keys while the archive keeps its inventory.
   const reportPath = 'files/coverage_report.md'
   const asset = await getResponse(handlers, new Request(`${base}${reportPath}`))

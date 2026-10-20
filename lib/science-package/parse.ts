@@ -11,6 +11,8 @@ import type {
   UseCaseSession
 } from '../use-case-types'
 import { type ArchiveEntry, readArchive, readJson } from './archive'
+import { normalizeReviews, type ReviewRecords, reviewRecordsFrom } from './review-records'
+import { isReviewerCorrectionAttribution } from './reviewer'
 
 interface ManifestInventoryEntry {
   path: string
@@ -40,10 +42,6 @@ interface SessionRecord extends JsonObject {
   messages: JsonObject[]
   conversationGraph?: { activities?: JsonObject[] }
   artifacts?: JsonObject[]
-}
-
-interface RecordsFile extends JsonObject {
-  tables: Record<string, JsonObject[]>
 }
 
 const buildSanitizer = (session: SessionRecord, runDocument: JsonObject | undefined) => {
@@ -137,10 +135,11 @@ const validateManifest = (manifest: Manifest) => {
   )
     throw new Error('Invalid package manifest.')
   for (const feature of manifest.requiredFeatures ?? []) {
-    if (!['literature', 'ro-crate'].includes(feature))
+    if (!['literature', 'ro-crate', 'content-dedupe'].includes(feature))
       throw new Error(`Unsupported required feature: ${feature}`)
   }
-  const paths = new Set<string>()
+  const paths = new Map<string, ManifestInventoryEntry>()
+  const storageKeys = new Set<string>()
   for (const entry of manifest.inventory) {
     if (
       !entry ||
@@ -148,7 +147,6 @@ const validateManifest = (manifest: Manifest) => {
       !/^(session\.json|records\.json|ro-crate-metadata\.json|README\.md|objects\/[a-f0-9]{64})$/.test(
         entry.path
       ) ||
-      paths.has(entry.path) ||
       !Number.isSafeInteger(entry.sizeBytes) ||
       entry.sizeBytes < 0 ||
       typeof entry.checksum !== 'string' ||
@@ -156,7 +154,21 @@ const validateManifest = (manifest: Manifest) => {
       (entry.storageKey !== undefined && typeof entry.storageKey !== 'string')
     )
       throw new Error('Invalid package inventory entry.')
-    paths.add(entry.path)
+    const existing = paths.get(entry.path)
+    // Current exports store shared object bytes once, with one inventory alias per storage key.
+    if (
+      (entry.storageKey && storageKeys.has(entry.storageKey)) ||
+      (existing &&
+        (!manifest.requiredFeatures?.includes('content-dedupe') ||
+          !entry.path.startsWith('objects/') ||
+          !entry.storageKey ||
+          !existing.storageKey ||
+          existing.sizeBytes !== entry.sizeBytes ||
+          existing.checksum !== entry.checksum))
+    )
+      throw new Error('Invalid package inventory alias.')
+    paths.set(entry.path, entry)
+    if (entry.storageKey) storageKeys.add(entry.storageKey)
   }
   if (!paths.has('session.json')) throw new Error('Package inventory is missing session.json.')
 }
@@ -187,7 +199,7 @@ export const sessionRecordFrom = (value: unknown): SessionRecord => {
   return file.session
 }
 
-export async function parsePackage(archive: Blob, slug: string) {
+export const readVerifiedPackage = async (archive: Blob) => {
   const objects = await readArchive(archive)
   const manifest = await readJson<Manifest>(objects.get('manifest.json'), 'manifest.json')
   validateManifest(manifest)
@@ -206,8 +218,13 @@ export async function parsePackage(archive: Blob, slug: string) {
     await readJson<unknown>(objects.get('session.json'), 'session.json')
   )
   const records = objects.has('records.json')
-    ? await readJson<RecordsFile>(objects.get('records.json'), 'records.json')
+    ? reviewRecordsFrom(await readJson<unknown>(objects.get('records.json'), 'records.json'))
     : undefined
+  return { objects, manifest, session, records }
+}
+
+export async function parsePackage(archive: Blob, slug: string) {
+  const { objects, manifest, session, records } = await readVerifiedPackage(archive)
   const runEntry = manifest.inventory.find((entry) => entry.storageKey?.endsWith('/run.json'))
   const runDocument = runEntry
     ? await readJson<JsonObject>(objects.get(runEntry.path), runEntry.path)
@@ -220,8 +237,9 @@ export const parseExtractedSession = (
   session: SessionRecord,
   slug: string,
   assetBaseUrl: string,
-  runDocument?: JsonObject
-) => normalizeSession(session, slug, { assetBaseUrl, runDocument })
+  runDocument?: JsonObject,
+  records?: ReviewRecords
+) => normalizeSession(session, slug, { assetBaseUrl, runDocument, records })
 
 function normalizeSession(
   session: SessionRecord,
@@ -229,11 +247,13 @@ function normalizeSession(
   {
     archive,
     assetBaseUrl,
-    runDocument
+    runDocument,
+    records
   }: {
-    archive?: { manifest: Manifest; objects: Map<string, ArchiveEntry>; records?: RecordsFile }
+    archive?: { manifest: Manifest; objects: Map<string, ArchiveEntry>; records?: ReviewRecords }
     assetBaseUrl?: string
     runDocument?: JsonObject
+    records?: ReviewRecords
   }
 ) {
   const resources: { id: string; blob: Blob }[] = []
@@ -722,6 +742,12 @@ function normalizeSession(
         type: 'message',
         id: String(message.id),
         role: message.role === 'user' ? 'user' : 'assistant',
+        // Preserve application identity independently of the model's user/assistant transport role.
+        attribution: isReviewerCorrectionAttribution(message.attribution)
+          ? message.attribution
+          : undefined,
+        responseToMessageId:
+          typeof message.responseToMessageId === 'string' ? message.responseToMessageId : undefined,
         content: resolveMessageLinks(sanitize(String(message.content ?? ''))),
         status: String(message.status ?? 'complete'),
         createdAt: Number(message.createdAt),
@@ -759,6 +785,7 @@ function normalizeSession(
     exportedAt: archive?.manifest.createdAt ?? Number(session.updatedAt ?? session.createdAt ?? 0),
     sessionCreatedAt: Number(session.createdAt),
     items,
+    reviews: normalizeReviews(session, records ?? archive?.records, sanitize),
     assets,
     omissions: (archive?.manifest.omissions ?? []).map((o) => sanitize(o.description)),
     excludedFiles: archive?.manifest.excludedFiles ?? []

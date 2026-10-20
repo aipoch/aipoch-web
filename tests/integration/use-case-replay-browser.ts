@@ -95,6 +95,44 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   // -- user bubble -------------------------------------------------------------
   await expect(page.getByText('Run the renderer coverage scenario.')).toBeVisible()
 
+  // Reviewer events use persisted attribution; quoted text remains in a user bubble.
+  const corrections = page.getByTestId('reviewer-correction-message')
+  await expect(corrections).toHaveCount(2)
+  await corrections.first().scrollIntoViewIfNeeded()
+  await expect(corrections.first()).toContainText('Corrections requested')
+  await expect(corrections.first()).toContainText('Response completed.')
+  await expect(corrections.last()).toContainText('Response failed.')
+  await expect(corrections.locator('button')).toHaveCount(0)
+  await expect(
+    page.getByText('[Auditor] Coverage reviewer correction instructions.', { exact: true })
+  ).toHaveCount(0)
+  await expect(
+    page.getByText('[Auditor] Coverage unanswered reviewer instructions.', { exact: true })
+  ).toHaveCount(0)
+  await expect(page.getByText('[Auditor] This is a user quotation.', { exact: true })).toBeVisible()
+
+  // Reviewer cards remain at their audited messages, including the correction-turn reassessment.
+  const reviews = page.getByTestId('reviewer-card')
+  await expect(reviews).toHaveCount(2)
+  await expect(reviews.first()).toContainText('1 finding (outdated)')
+  await expect(reviews.last()).toContainText('No issues found (outdated)')
+  for (const card of await reviews.all()) {
+    await expect(card).toContainText('2 checks')
+    const toggle = card.getByRole('button').first()
+    await toggle.scrollIntoViewIfNeeded()
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(card.getByTestId('reviewer-check')).toHaveCount(2)
+  }
+  await expect(
+    reviews.last().getByText('Coverage missing calculations have been provided.', { exact: true })
+  ).toBeVisible()
+  await expect(
+    reviews.last().getByText('Coverage calculations were missing.', { exact: true })
+  ).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Re-run review' })).toHaveCount(0)
+  for (const card of await reviews.all()) await card.getByRole('button').first().click()
+
   // -- markdown surface ---------------------------------------------------------
   await expect(page.getByRole('heading', { name: 'Coverage Markdown Heading' })).toBeVisible()
   await expect(page.getByText('bold coverage')).toBeVisible()

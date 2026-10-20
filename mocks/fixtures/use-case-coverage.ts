@@ -530,6 +530,53 @@ export const coverageFixtureSession: UseCaseSession = {
       ]
     },
 
+    // Application-owned prompts must not appear as human-authored bubbles.
+    {
+      type: 'message',
+      id: 'cov-reviewer-correction',
+      role: 'user',
+      content: '[Auditor] Coverage reviewer correction instructions.',
+      attribution: {
+        kind: 'application',
+        feature: 'reviewer',
+        purpose: 'correction',
+        causeReviewId: 'cov-review-1'
+      },
+      status: 'complete',
+      createdAt: 1790133083100
+    },
+    {
+      type: 'message',
+      id: 'cov-reviewer-response',
+      role: 'assistant',
+      content: 'Coverage reviewer feedback has been addressed.',
+      responseToMessageId: 'cov-reviewer-correction',
+      status: 'complete',
+      createdAt: 1790133083200
+    },
+    {
+      type: 'message',
+      id: 'cov-reviewer-failed',
+      role: 'user',
+      content: '[Auditor] Coverage unanswered reviewer instructions.',
+      attribution: {
+        kind: 'application',
+        feature: 'reviewer',
+        purpose: 'correction',
+        causeReviewId: 'cov-review-2'
+      },
+      status: 'complete',
+      createdAt: 1790133083300
+    },
+    {
+      type: 'message',
+      id: 'cov-reviewer-quote',
+      role: 'user',
+      content: '[Auditor] This is a user quotation.',
+      status: 'complete',
+      createdAt: 1790133083400
+    },
+
     // -- assistant message: artifact gallery (including a PDF) ---------------------------
     {
       type: 'message',

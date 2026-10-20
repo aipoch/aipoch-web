@@ -1,3 +1,4 @@
+import { reviewerRecords } from './reviewer-records'
 import { buildSciencePackage, digest } from './science-package'
 import { coverageFixtureSession } from './use-case-coverage'
 
@@ -91,6 +92,6 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
     title,
     { messages, artifacts, conversationGraph: { activities } },
     objects,
-    { tables: { ArtifactVersion: records } }
+    { tables: { ...reviewerRecords().tables, ArtifactVersion: records } }
   )
 }

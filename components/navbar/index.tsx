@@ -3,9 +3,10 @@
 import { ChevronDown, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { type ComponentProps, useEffect, useMemo, useRef, useState } from 'react'
 import { LogoIcon } from '@/components/svg-icons'
 import { usesContentPageDesign } from '@/lib/content-page-design'
+import { NAVIGATION_ENTRY_KEY } from '@/lib/navigation-entry'
 import { cn } from '@/lib/utils'
 import type { NavChild } from './navbar-data'
 import {
@@ -19,8 +20,39 @@ import {
 } from './navbar-data'
 import { alignNavbarPanels, useAdaptiveNavbar } from './use-adaptive-navbar'
 
+// Browsers can reuse the current entry for an identical-URL document navigation.
+// Give explicit gallery reloads a fresh view identity without clearing other history entries.
+const FreshGalleryLink = ({ onClick, href, ...props }: ComponentProps<'a'> & { href: string }) => (
+  <a
+    {...props}
+    href={href}
+    onClick={(event) => {
+      onClick?.(event)
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return
+      if (event.currentTarget.href !== window.location.href) return
+      window.history.replaceState(
+        {
+          ...window.history.state,
+          [NAVIGATION_ENTRY_KEY]: { id: crypto.randomUUID(), views: {} }
+        },
+        ''
+      )
+    }}
+  />
+)
+
 export function Navbar() {
   const pathname = usePathname()
+  const isUseCasePage =
+    pathname === '/open-science/use-cases' || pathname.startsWith('/open-science/use-cases/')
   const isContentPage = usesContentPageDesign(pathname)
   const activeGroupIds = useMemo(() => getActiveGroupIds(pathname), [pathname])
   const activeLinkHref = getActiveLinkHref(pathname)
@@ -147,9 +179,12 @@ export function Navbar() {
           {navItems.map((item) => {
             if (item.type === 'link') {
               const isActive = activeLinkHref === item.href
+              // Within case pages, the navbar starts a fresh gallery visit; Back preserves history.
+              const ItemLink =
+                isUseCasePage && item.href === '/open-science/use-cases' ? FreshGalleryLink : Link
 
               return (
-                <Link
+                <ItemLink
                   key={item.label}
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
@@ -161,7 +196,7 @@ export function Navbar() {
                   )}
                 >
                   {item.label}
-                </Link>
+                </ItemLink>
               )
             }
 
@@ -294,6 +329,9 @@ export function Navbar() {
           {navItems.map((item) => {
             if (item.type === 'link') {
               const isActive = activeLinkHref === item.href
+              // Match desktop's fresh gallery entry while preserving modified/new-tab clicks.
+              const ItemLink =
+                isUseCasePage && item.href === '/open-science/use-cases' ? FreshGalleryLink : Link
 
               return (
                 <div
@@ -303,7 +341,7 @@ export function Navbar() {
                     isDark ? 'border-white/10' : 'border-black/[0.08]'
                   )}
                 >
-                  <Link
+                  <ItemLink
                     href={item.href}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={closeMobileMenu}
@@ -313,7 +351,7 @@ export function Navbar() {
                     )}
                   >
                     {item.label}
-                  </Link>
+                  </ItemLink>
                 </div>
               )
             }

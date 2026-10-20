@@ -83,6 +83,7 @@ export function buildSciencePackage(
   // Publishing restores storage keys without rewriting the exported session bytes.
   const extractedFiles: Record<string, Uint8Array> = {
     'session.json': files['session.json'],
+    'records.json': files['records.json'],
     ...Object.fromEntries(
       Object.values(objects).map(({ storageKey, bytes }) => [storageKey, bytes])
     )
