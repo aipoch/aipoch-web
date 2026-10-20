@@ -167,7 +167,7 @@ loads from `<manifest directory>/<case name>/extracted/`.
 
 ### Import a replay into Open-Science
 
-On a desktop computer, open Open-Science 1.1.0 or later, then click **Continue in
+On a desktop computer, open Open-Science 1.0.1 or later, then click **Continue in
 Open-Science** below a replay. Allow the browser to open the app and access the
 local network if prompted. After the file is sent, confirm the import in the app.
 

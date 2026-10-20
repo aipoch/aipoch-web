@@ -453,7 +453,7 @@ for (const status of [
     expect(s.states.at(-1)?.action).toBe('prepare')
     if (status !== 'aborted')
       expect(s.states.at(-1)?.message).toBe(
-        "Could not connect to Open-Science. If it's already installed, update to version 1.1.0 or later, then open the app and try again. If you haven't installed it, download it first."
+        "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
       )
     await s.session.prepare()
     expect(s.availability).toHaveBeenCalledTimes(2)

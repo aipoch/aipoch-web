@@ -259,7 +259,7 @@ export function createScienceImport(
                   action: 'prepare',
                   needsApp: true,
                   message:
-                    "Could not connect to Open-Science. If it's already installed, update to version 1.1.0 or later, then open the app and try again. If you haven't installed it, download it first."
+                    "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
                 }
           )
           return false
@@ -307,7 +307,7 @@ export function createScienceImport(
             : stage === 'preparing'
               ? 'Could not prepare the transfer. Try opening Open-Science again, or use the regular download.'
               : stage === 'checking'
-                ? "Could not connect to Open-Science. If it's already installed, update to version 1.1.0 or later, then open the app and try again. If you haven't installed it, download it first."
+                ? "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
                 : error instanceof DownloadError
                   ? error.message
                   : signal.aborted
