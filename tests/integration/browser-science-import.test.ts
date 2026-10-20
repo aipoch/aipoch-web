@@ -15,10 +15,9 @@ test('composer automatically launches after download and preserves explicit retr
       {
         name: 'test-only-sdk',
         setup(builder) {
-          builder.onResolve(
-            { filter: /(?:vendor\/open-science\/browser-import\.mjs|mocks\/ready)$/ },
-            () => ({ path: resolve('tests/fixtures/browser-import-sdk.ts') })
-          )
+          builder.onResolve({ filter: /(?:lib\/science-package\/sdk|mocks\/ready)$/ }, () => ({
+            path: resolve('tests/fixtures/browser-import-sdk.ts')
+          }))
         }
       }
     ]
@@ -238,6 +237,23 @@ test('composer automatically launches after download and preserves explicit retr
       unitExpect((await snapshot()).prepares).toBe(beforeRetry.prepares + 1)
       unitExpect((await snapshot()).sends).toBe(beforeRetry.sends + 1)
       unitExpect((await snapshot()).appLaunches).toBe(beforeRetry.appLaunches)
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
+      await expect(retryImport).toBeVisible()
+      // Desktop cancellation is terminal: wait for a click and reuse the held bytes.
+      await retryImport.click()
+      const beforeDesktopCancel = await snapshot()
+      await page.evaluate(() => (window as unknown as TestWindow).importTest.desktopCancel())
+      await expect(page.getByRole('status')).toHaveText(
+        'Transfer canceled in Open-Science. Open Open-Science again to retry with the prepared package.'
+      )
+      await expect(openButton).toBeEnabled()
+      await expect(page.getByRole('button', { name: 'I’ve opened Open-Science' })).toHaveCount(0)
+      unitExpect(await snapshot()).toEqual(beforeDesktopCancel)
+      await openButton.click()
+      unitExpect((await snapshot()).prepares).toBe(beforeDesktopCancel.prepares + 1)
+      unitExpect((await snapshot()).sends).toBe(beforeDesktopCancel.sends + 1)
+      unitExpect((await snapshot()).blobSize).toBe(beforeDesktopCancel.blobSize)
+      unitExpect(downloads).toBe(count + 1)
       await page.evaluate(() => (window as unknown as TestWindow).importTest.finish())
       await expect(retryImport).toBeVisible()
       // Unmount during a new send must abort it without late React updates.

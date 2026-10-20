@@ -252,26 +252,39 @@ research tools remain disabled; no prompt text is sent.
   `http://127.0.0.1:*` in `connect-src`; this change does not modify deployment policy.
 - Retain the Blob for retry. Transient failures and readiness timeouts reuse the same
   transfer. Cancellation and identity mismatch require a new transfer on the next
-  explicit launch. If the receiver actually expired, use **Start a new transfer**;
+  explicit launch. An authenticated desktop `cancelled` error also discards the
+  transfer while retaining the Blob; the website never automatically retries it.
+  If the receiver actually expired, use **Start a new transfer**;
   the website does not infer expiry from elapsed time or silently rotate secrets.
   Transfer-creation errors retain bytes and
   are distinct from download failures. Unmount aborts work and releases references.
   Transfer URLs contain secrets and are never rendered, logged or persisted.
-- The public npm registry returned 404 on 2026-10-16. The official SDK is vendored
-  from commit `157a8676ca341612bd1f918a5e3a1f942629e2f4`; source, types and hashes
+- The public npm registry returned 404 on 2026-10-20. The official SDK is vendored
+  from commit `121f459f5a85b04156b40c235dbfefba25a126bc`; source, types and hashes
   are documented in [`vendor/open-science/UPSTREAM.md`](vendor/open-science/UPSTREAM.md).
+  All SDK interfaces and types enter through `lib/science-package/sdk.ts`.
   The website does not implement or modify its crypto, authentication or transport.
   An installed desktop build supporting discovery and automatic receipt is required.
-  The waiting mode is compatible with the existing v1 receiver. This flow uses
-  only the transfer-specific protocol URL; after a failed initial availability
-  check, users can open the app manually and check again. Only committed SDK APIs
-  are used.
+  The waiting mode is compatible with the existing v1 receiver. Transfers use
+  their own protocol URL; the received-state button uses the official standalone
+  launch API. After a failed availability check, users can open the app manually
+  and check again. Only committed SDK APIs are used.
+
+TODO(open-science-sdk): When a published `@aipoch/open-science` version is verified
+for discovery, standalone launch, wait-for-launch readiness, phase notifications
+and authenticated cancellation, pin that exact version and switch the single
+`sdk.ts` entry to `@aipoch/open-science/browser-import`. Remove `vendor/open-science`
+and the provenance test, retaining contract, website and mock/browser tests.
+Downloading, filename validation, UI state and mock launch guards remain website
+responsibilities. Obtain authorization for the dependency configuration changes;
+no install-time patch or dynamic fallback is needed.
 
 Run `bun test --isolate tests/unit/browser-science-import.test.ts
  tests/unit/browser-import-sdk-contract.test.ts tests/unit/browser-import-provenance.test.ts`
 for lifecycle, filename, size, provenance and actual SDK HTTP/timing contract checks.
 The contract tests execute the pinned SDK with deterministic HTTP responses,
-including backward-compatible five-attempt behavior, deadlines, cancellation,
+including backward-compatible five-attempt behavior, deadlines, authenticated
+desktop cancellation during readiness/chunks/completion, forged cancellation rejection,
 authenticated receipt and transfer continuing beyond readiness time.
 `bun test tests/integration/browser-import-wait-contract.test.ts` executes the
 actual SDK in Chromium with an accelerated clock and a deterministic HTTP peer.

@@ -1,15 +1,11 @@
 import { isMobileDevice } from '@/lib/browser-device'
 import { waitForBrowserMock } from '@/mocks/ready'
-import type {
-  BrowserImportTransfer,
-  checkBrowserImportAvailability as CheckBrowserImportAvailability,
-  prepareBrowserImport as PrepareBrowserImport
-} from '@/vendor/open-science/browser-import'
 import {
+  type BrowserImportTransfer,
   checkBrowserImportAvailability,
   launchOpenScience,
   prepareBrowserImport
-} from '@/vendor/open-science/browser-import.mjs'
+} from '@/lib/science-package/sdk'
 
 const MAX_BYTES = 2 * 1024 ** 3
 type PackageSource = { url: string; filename: string }
@@ -134,9 +130,9 @@ const supportsImport = () =>
   typeof globalThis.AbortSignal?.timeout === 'function'
 
 type Dependencies = {
-  availability: typeof CheckBrowserImportAvailability
+  availability: typeof checkBrowserImportAvailability
   download: typeof downloadSciencePackage
-  prepare: typeof PrepareBrowserImport
+  prepare: typeof prepareBrowserImport
   launch: (url: string) => void
   launchApp: () => void
   supported: () => boolean
@@ -153,10 +149,9 @@ export function createScienceImport(
   const mockLaunch =
     process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_API_MOCKING === 'enabled'
   const deps: Dependencies = {
-    availability: checkBrowserImportAvailability as typeof CheckBrowserImportAvailability,
+    availability: checkBrowserImportAvailability,
     download: downloadSciencePackage,
-    // The upstream package normally pairs these through its exports.types entry.
-    prepare: prepareBrowserImport as typeof PrepareBrowserImport,
+    prepare: prepareBrowserImport,
     launch: (url) => {
       if (!mockLaunch) window.location.href = url
     },
@@ -376,22 +371,25 @@ export function createScienceImport(
         const waitingEnded = code === 'timeout' || code === 'readiness-exhausted'
         // A readiness timeout does not invalidate the secret or prove that the app is absent.
         // Cancellation and identity mismatch require a fresh transfer on an explicit launch.
-        if (signal.aborted || code === 'incompatible') transfer = undefined
+        const canceled = signal.aborted || code === 'cancelled'
+        if (canceled || code === 'incompatible') transfer = undefined
         emit({
-          phase: signal.aborted || waitingEnded ? 'ready' : 'error',
+          phase: canceled || waitingEnded ? 'ready' : 'error',
           action: transfer && launched ? 'resume' : 'open',
-          needsApp: !signal.aborted,
+          needsApp: !canceled,
           message: signal.aborted
             ? 'Transfer canceled. Open Open-Science again to retry with the prepared package.'
-            : waitingEnded
-              ? 'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
-              : code === 'incompatible'
-                ? 'Could not verify Open-Science. Open the app again to start a new transfer.'
-                : code === 'unsupported-browser'
-                  ? 'This browser cannot connect to Open-Science. Use the regular download.'
-                  : !launched
-                    ? 'Could not request opening Open-Science. Allow external apps in your browser, then try again.'
-                    : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
+            : code === 'cancelled'
+              ? 'Transfer canceled in Open-Science. Open Open-Science again to retry with the prepared package.'
+              : waitingEnded
+                ? 'Open-Science has not connected yet. Open the app, allow any browser prompts, then continue.'
+                : code === 'incompatible'
+                  ? 'Could not verify Open-Science. Open the app again to start a new transfer.'
+                  : code === 'unsupported-browser'
+                    ? 'This browser cannot connect to Open-Science. Use the regular download.'
+                    : !launched
+                      ? 'Could not request opening Open-Science. Allow external apps in your browser, then try again.'
+                      : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
         })
       } finally {
         busy = false

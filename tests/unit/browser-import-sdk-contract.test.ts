@@ -1,19 +1,13 @@
 import { afterAll, afterEach, expect, spyOn, test } from 'bun:test'
 import { createHmac } from 'node:crypto'
 import { scienceImportFilename } from '../../lib/science-package/browser-import'
-import type {
-  checkBrowserImportAvailability as Check,
-  prepareBrowserImport as Prepare
-} from '../../vendor/open-science/browser-import'
 import {
-  checkBrowserImportAvailability as checkImplementation,
+  checkBrowserImportAvailability,
   launchOpenScience,
-  prepareBrowserImport as prepareImplementation
-} from '../../vendor/open-science/browser-import.mjs'
+  prepareBrowserImport
+} from '../../lib/science-package/sdk'
 
-// Exercise the actual pinned SDK with deterministic HTTP responses, never a desktop process.
-const checkBrowserImportAvailability = checkImplementation as typeof Check
-const prepareBrowserImport = prepareImplementation as typeof Prepare
+// Exercise the actual pinned SDK through the website entry point with deterministic HTTP.
 const fetchSpy = spyOn(
   globalThis as { fetch: (url: RequestInfo | URL, init?: RequestInit) => Promise<Response> },
   'fetch'
@@ -226,5 +220,48 @@ for (const input of [
     const filename = scienceImportFilename(input)
     const transfer = prepareBrowserImport(new Blob(['hello']), { filename, origin })
     expect(new URL(transfer.url).searchParams.get('name')).toBe(filename)
+  })
+}
+
+for (const stage of ['ready', 'chunk', 'complete']) {
+  test(`authenticated desktop cancellation at ${stage} is terminal for the SDK transfer`, async () => {
+    const transfer = prepare()
+    const secret = new URL(transfer.url).searchParams.get('secret') ?? ''
+    const proof = (text: string) =>
+      createHmac('sha256', Buffer.from(secret, 'hex')).update(text).digest('hex')
+    fetchSpy.mockImplementation(async (input, init) => {
+      if (init?.method === 'DELETE') return new Response(null, { status: 204 })
+      const url = new URL(String(input))
+      if (url.pathname.endsWith(`/${stage}`))
+        return Response.json({ code: 'cancelled', proof: proof('cancelled') }, { status: 410 })
+      if (url.pathname.endsWith('/ready'))
+        return Response.json({
+          offset: 0,
+          accepted: false,
+          chunkBytes: 4194304,
+          proof: proof(`open-science-import-v1:${url.searchParams.get('challenge')}:0:0`)
+        })
+      return Response.json({ offset: 5, proof: proof('offset:5') })
+    })
+    await expect(transfer.send({ readinessAttempts: 1 })).rejects.toMatchObject({
+      code: 'cancelled'
+    })
+    const calls = fetchSpy.mock.calls.length
+    await expect(transfer.send()).rejects.toMatchObject({ code: 'cancelled' })
+    expect(fetchSpy).toHaveBeenCalledTimes(calls)
+  })
+}
+
+for (const body of [
+  JSON.stringify({ code: 'cancelled', proof: 'forged' }),
+  JSON.stringify({ code: 'other', proof: 'forged' }),
+  'invalid json'
+]) {
+  test(`unverified HTTP 410 is an identity error: ${body}`, async () => {
+    fetchSpy.mockImplementation(async () => new Response(body, { status: 410 }))
+    await expect(prepare().send({ readinessAttempts: 1 })).rejects.toMatchObject({
+      code: 'incompatible'
+    })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 }

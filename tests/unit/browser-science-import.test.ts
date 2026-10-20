@@ -619,3 +619,28 @@ test('cancel invalidates reconnect until an explicit launch creates a new transf
   expect(s.prepare).toHaveBeenCalledTimes(2)
   expect(s.download).toHaveBeenCalledTimes(1)
 })
+
+test('desktop cancellation discards the transfer and waits for explicit retry with the same Blob', async () => {
+  const s = setup()
+  await s.session.prepare()
+  s.send.mockRejectedValueOnce(Object.assign(new Error('Receiver stopped'), { code: 'cancelled' }))
+  await s.session.open()
+  expect(s.states.at(-1)).toMatchObject({
+    phase: 'ready',
+    action: 'open',
+    needsApp: false,
+    message:
+      'Transfer canceled in Open-Science. Open Open-Science again to retry with the prepared package.'
+  })
+  await s.session.resume()
+  expect(s.send).toHaveBeenCalledTimes(1)
+  expect(s.prepare).toHaveBeenCalledTimes(1)
+  expect(s.launch).toHaveBeenCalledTimes(1)
+  s.send.mockImplementationOnce(async () => ({ received: true }))
+  await Promise.all([s.session.open(), s.session.open()])
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.prepare).toHaveBeenCalledTimes(2)
+  expect(s.prepare.mock.calls[1][0]).toBe(s.blob)
+  expect(s.send).toHaveBeenCalledTimes(2)
+  expect(s.states.at(-1)?.phase).toBe('received')
+})

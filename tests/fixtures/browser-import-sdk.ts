@@ -2,7 +2,7 @@ import type {
   BrowserImportPhase,
   BrowserImportProgress,
   BrowserImportTransfer
-} from '../../vendor/open-science/browser-import'
+} from '../../lib/science-package/sdk'
 
 // Browser component tests only: no custom protocol, crypto, receiver or desktop process.
 const state = {
@@ -18,7 +18,8 @@ const state = {
   phase: (_value: BrowserImportPhase) => {},
   progress: (_value: BrowserImportProgress) => {},
   finish: (_received = true) => {},
-  fail: (_timeout = false) => {}
+  fail: (_timeout = false) => {},
+  desktopCancel: () => {}
 }
 Object.assign(window, { importTest: state })
 export const waitForBrowserMock = async () => {}
@@ -33,9 +34,12 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
   state.prepares++
   state.blobSize = blob.size
   const url = `#test-import-${state.prepares}`
+  let cancelled = false
   return {
     url,
     send({ signal, onProgress, onPhase, readyTimeoutMs } = {}) {
+      if (cancelled)
+        return Promise.reject(Object.assign(new Error('Desktop canceled'), { code: 'cancelled' }))
       state.sends++
       onPhase?.('waiting-for-receiver')
       state.activation = navigator.userActivation.isActive
@@ -51,6 +55,11 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
         const cleanup = () => {
           clearTimeout(deadline)
           signal?.removeEventListener('abort', abort)
+        }
+        state.desktopCancel = () => {
+          cleanup()
+          cancelled = true
+          reject(Object.assign(new Error('Desktop canceled'), { code: 'cancelled' }))
         }
         state.phase = (value) => onPhase?.(value)
         state.progress = (value) => onProgress?.(value)

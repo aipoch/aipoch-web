@@ -1,11 +1,9 @@
-import type {
-  BrowserImportTransfer,
-  prepareBrowserImport as Prepare
-} from '../../vendor/open-science/browser-import'
-import { prepareBrowserImport as implementation } from '../../vendor/open-science/browser-import.mjs'
+import {
+  type BrowserImportTransfer,
+  prepareBrowserImport as prepare
+} from '../../lib/science-package/sdk'
 
 // Test-only HTTP peer. The actual SDK still verifies proofs and encrypts its chunks.
-const prepare = implementation as typeof Prepare
 let transfer: BrowserImportTransfer
 let controller: AbortController
 let options: Parameters<BrowserImportTransfer['send']>[0]
