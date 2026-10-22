@@ -2,7 +2,6 @@ import { isMobileDevice } from '@/lib/browser-device'
 import { waitForBrowserMock } from '@/mocks/ready'
 import {
   type BrowserImportTransfer,
-  checkBrowserImportAvailability,
   launchOpenScience,
   prepareBrowserImport
 } from '@/lib/science-package/sdk'
@@ -13,7 +12,6 @@ type DownloadProgress = { loaded: number; total?: number }
 export type ImportState = {
   phase:
     | 'idle'
-    | 'checking'
     | 'opening'
     | 'downloading'
     | 'ready'
@@ -130,11 +128,11 @@ const supportsImport = () =>
   typeof globalThis.AbortSignal?.timeout === 'function'
 
 type Dependencies = {
-  availability: typeof checkBrowserImportAvailability
   download: typeof downloadSciencePackage
   prepare: typeof prepareBrowserImport
   launch: (url: string) => void
   launchApp: () => void
+  listenForBlur: (callback: () => void) => () => void
   supported: () => boolean
   mobile: () => boolean
 }
@@ -149,7 +147,6 @@ export function createScienceImport(
   const mockLaunch =
     process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_API_MOCKING === 'enabled'
   const deps: Dependencies = {
-    availability: checkBrowserImportAvailability,
     download: downloadSciencePackage,
     prepare: prepareBrowserImport,
     launch: (url) => {
@@ -157,6 +154,11 @@ export function createScienceImport(
     },
     launchApp: () => {
       if (!mockLaunch) launchOpenScience()
+    },
+    listenForBlur: (callback) => {
+      if (typeof window === 'undefined') return () => {}
+      window.addEventListener('blur', callback, { once: true })
+      return () => window.removeEventListener('blur', callback)
     },
     supported: supportsImport,
     mobile: () =>
@@ -171,6 +173,40 @@ export function createScienceImport(
   let busy = false
   let disposed = false
   let received = false
+  let launchTimer: ReturnType<typeof setTimeout> | undefined
+  let stopListeningForBlur: (() => void) | undefined
+  let showInstallHint = false
+  let handshakeVerified = false
+  const clearLaunchWatch = () => {
+    clearTimeout(launchTimer)
+    launchTimer = undefined
+    stopListeningForBlur?.()
+    stopListeningForBlur = undefined
+  }
+  const waiting = () =>
+    emit({
+      phase: 'opening',
+      message: 'Waiting for Open-Science…',
+      needsApp: showInstallHint
+    })
+  const launchTransfer = () => {
+    if (!transfer) return
+    clearLaunchWatch()
+    showInstallHint = false
+    let blurred = false
+    // Blur is only a heuristic; only the SDK handshake can authorize sending bytes.
+    stopListeningForBlur = deps.listenForBlur(() => {
+      blurred = true
+    })
+    launchTimer = setTimeout(() => {
+      clearLaunchWatch()
+      if (!blurred && !handshakeVerified && !controller?.signal.aborted) {
+        showInstallHint = true
+        waiting()
+      }
+    }, 3000)
+    deps.launch(transfer.url)
+  }
   const emit = (state: ImportState) => {
     if (!disposed) update(state)
   }
@@ -238,35 +274,15 @@ export function createScienceImport(
       busy = true
       controller = new AbortController()
       const operation = controller
-      let stage: 'checking' | 'downloading' | 'preparing' = 'checking'
-      let signal = operation.signal
-      emit({ phase: 'checking', message: 'Checking Open-Science…' })
+      let stage: 'downloading' | 'preparing' = 'downloading'
+      const timeout = setTimeout(
+        () => operation.abort(new DOMException('Download timed out', 'TimeoutError')),
+        120_000
+      )
+      const signal = operation.signal
       try {
         await waitForBrowserMock()
         signal.throwIfAborted()
-        const availability = await deps.availability({ signal, timeoutMs: 5000 })
-        signal.throwIfAborted()
-        if (availability.status !== 'available') {
-          emit(
-            availability.status === 'aborted'
-              ? {
-                  phase: 'idle',
-                  action: 'prepare',
-                  message: 'Check canceled. Try again when you are ready.'
-                }
-              : {
-                  phase: availability.status === 'unsupported-browser' ? 'unsupported' : 'error',
-                  action: 'prepare',
-                  needsApp: true,
-                  message:
-                    "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
-                }
-          )
-          return false
-        }
-        stage = 'downloading'
-        // The download budget is independent of discovery and receiver readiness.
-        signal = AbortSignal.any([operation.signal, AbortSignal.timeout(120_000)])
         emit({ phase: 'downloading', message: 'Downloading .science package…', loaded: 0 })
         const downloaded = await deps.download(
           { ...source, filename },
@@ -295,27 +311,24 @@ export function createScienceImport(
         })
         return true
       } catch (error) {
-        const canceled = operation.signal.aborted
+        const canceled =
+          operation.signal.aborted && operation.signal.reason?.name !== 'TimeoutError'
         emit({
           phase: canceled ? 'idle' : 'error',
           action: blob ? 'open' : 'prepare',
-          needsApp: stage === 'checking' && !canceled,
           message: canceled
-            ? stage === 'checking'
-              ? 'Check canceled. Try again when you are ready.'
-              : 'Download canceled. Prepare the package to try again.'
+            ? 'Download canceled. Prepare the package to try again.'
             : stage === 'preparing'
               ? 'Could not prepare the transfer. Try opening Open-Science again, or use the regular download.'
-              : stage === 'checking'
-                ? "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
-                : error instanceof DownloadError
-                  ? error.message
-                  : signal.aborted
-                    ? 'The download timed out. Try again or use the regular download.'
-                    : 'Could not download the package. Check your connection and try again, or use the regular download.'
+              : error instanceof DownloadError
+                ? error.message
+                : signal.aborted
+                  ? 'The download timed out. Try again or use the regular download.'
+                  : 'Could not download the package. Check your connection and try again, or use the regular download.'
         })
         return false
       } finally {
+        clearTimeout(timeout)
         busy = false
         controller = undefined
       }
@@ -331,25 +344,31 @@ export function createScienceImport(
       controller = new AbortController()
       const signal = controller.signal
       let launched = !requestLaunch
-      emit({ phase: 'opening', message: 'Waiting for Open-Science…' })
+      showInstallHint = false
+      handshakeVerified = false
+      waiting()
       try {
         if (!transfer) freshTransfer()
         if (!transfer) throw new Error('No transfer')
         // Launch before send; a direct-click retry restores activation if auto-launch was blocked.
-        if (requestLaunch) deps.launch(transfer.url)
+        if (requestLaunch) launchTransfer()
         launched = true
         const receipt = await transfer.send({
           signal,
-          readinessMode: 'wait-for-launch',
-          attemptTimeoutMs: 2000,
-          readyTimeoutMs: 120000,
+          readinessMode: 'attempts',
+          readinessAttempts: 30,
+          readinessIntervalMs: 3000,
+          attemptTimeoutMs: 3000,
+          // The attempt count ends polling; this safety deadline cannot truncate 30 attempts.
+          readyTimeoutMs: 300000,
           onPhase: (phase) => {
             if (signal.aborted) return
-            emit(
-              phase === 'transferring'
-                ? { phase: 'sending', message: 'Sending package to Open-Science…' }
-                : { phase: 'opening', message: 'Waiting for Open-Science…' }
-            )
+            if (phase === 'transferring') {
+              handshakeVerified = true
+              clearLaunchWatch()
+              showInstallHint = false
+              emit({ phase: 'sending', message: 'Sending package to Open-Science…' })
+            } else waiting()
           },
           onProgress: ({ sentBytes, totalBytes }) => {
             if (!signal.aborted)
@@ -392,8 +411,20 @@ export function createScienceImport(
                       : 'The file was not acknowledged by Open-Science. Check the app and browser permissions, then retry. If needed, start a new transfer or use the regular download.'
         })
       } finally {
+        clearLaunchWatch()
         busy = false
         controller = undefined
+      }
+    },
+    reopen() {
+      // Called synchronously by a click; reuse the active poller and transfer.
+      if (!busy || disposed || !transfer || handshakeVerified || controller?.signal.aborted) return
+      try {
+        launchTransfer()
+        waiting()
+      } catch {
+        showInstallHint = true
+        waiting()
       }
     },
     restart() {
@@ -407,12 +438,16 @@ export function createScienceImport(
     },
     cancel() {
       if (!busy || !controller || controller.signal.aborted) return
+      clearLaunchWatch()
       controller.abort()
+      void transfer?.cancel()
       emit({ phase: 'canceling', message: 'Canceling…' })
     },
     dispose() {
       disposed = true
+      clearLaunchWatch()
       controller?.abort()
+      void transfer?.cancel()
       clear()
     }
   }

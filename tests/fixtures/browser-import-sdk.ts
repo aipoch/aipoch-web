@@ -37,6 +37,9 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
   let cancelled = false
   return {
     url,
+    cancel: async () => {
+      cancelled = true
+    },
     send({ signal, onProgress, onPhase, readyTimeoutMs } = {}) {
       if (cancelled)
         return Promise.reject(Object.assign(new Error('Desktop canceled'), { code: 'cancelled' }))

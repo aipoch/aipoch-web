@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 
-test('vendored SDK matches the pinned upstream bytes except the documented lint comment', () => {
+test('vendored SDK matches the documented local revision and unchanged upstream license', () => {
   const hashes = {
-    'browser-import.mjs': '21d513281aff4bc30366c8e749b4ac3613ce5c761685269a13e5221450fa07eb',
-    'browser-import.d.ts': '84b70c2b26f8792d141184065b6ae4ded8b2a97ed2903be5be230e20f64e794d',
+    'browser-import.mjs': 'ca4531994955a55e31ecd47e25a6b41746763b81b0d8febd1becb7c73f59ac4c',
+    'browser-import.d.ts': '8d09f8e2f653c504b79318c1d42e83e7949a5be64e12fe1e75d6b24ff9dcfce6',
     LICENSE: 'b038148f912bdd6e61e33e56214d02c4d8a9640f7a637e21dfcf939332816979'
   }
   for (const [name, expected] of Object.entries(hashes)) {

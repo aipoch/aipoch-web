@@ -148,28 +148,8 @@ for (const surface of ['composer', 'detail']) {
           await page.close()
           continue
         }
-        await page.evaluate(() => {
-          ;(window as unknown as TestWindow).importTest.availability = 'unavailable'
-        })
-        await otherControls.getByRole('button', { name: defaultLabel, exact: true }).click()
-        await expect(controls.getByRole('alert')).toHaveText(
-          "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
-        )
-        await expect(announcements).toHaveCount(1)
-        await expect(announcements).toContainText('Could not connect to Open-Science.')
-        const installLink = controls
-          .getByRole('alert')
-          .getByRole('link', { name: 'download it first' })
-        await expect(installLink).toBeVisible()
-        await expect(installLink).toHaveAttribute('href', '/open-science/download')
-        await expect(
-          controls.getByRole('link', { name: 'Download Open-Science', exact: true })
-        ).toHaveCount(0)
-        await page.evaluate(() => {
-          ;(window as unknown as TestWindow).importTest.availability = 'available'
-        })
         const count = downloads
-        await controls.getByRole('button', { name: 'Try again', exact: true }).click()
+        await otherControls.getByRole('button', { name: defaultLabel, exact: true }).click()
         const downloading = controls.getByRole('button', {
           name: /^Downloading \.science package:/
         })
@@ -259,7 +239,7 @@ for (const surface of ['composer', 'detail']) {
           await expect(controls.getByRole('textbox')).toHaveCount(0)
         }
         await expect(
-          controls.getByRole('link', { name: 'Download Open-Science', exact: true })
+          controls.getByRole('link', { name: 'Install or update Open-Science', exact: true })
         ).toHaveAttribute('href', '/open-science/download')
         await controls
           .getByRole('button', { name: 'I’ve opened Open-Science', exact: true })
@@ -357,7 +337,21 @@ for (const surface of ['composer', 'detail']) {
         await expect(downloading).toContainText('50%')
         finishDownload()
         await expect(controls.getByRole('status')).toContainText('Waiting for Open-Science')
-        await page.clock.runFor(16000)
+        await page.clock.runFor(2999)
+        const reopen = controls.getByRole('button', { name: 'Open again', exact: true })
+        await expect(reopen).toHaveCount(0)
+        await page.clock.runFor(1)
+        await expect(reopen).toBeVisible()
+        await expect(controls.getByText(/This check is an estimate/)).toBeVisible()
+        await expect(
+          controls.getByRole('link', { name: 'Install or update Open-Science' })
+        ).toBeVisible()
+        unitExpect((await snapshot()).sends).toBe(1)
+        await reopen.click()
+        await expect(reopen).toHaveCount(0)
+        unitExpect((await snapshot()).sends).toBe(1)
+        unitExpect((await snapshot()).checks).toBe(0)
+        await page.clock.runFor(13000)
         await expect(
           controls.getByRole('button', { name: 'Waiting for Open-Science…', exact: true })
         ).toBeDisabled()
@@ -369,7 +363,7 @@ for (const surface of ['composer', 'detail']) {
         ).toBeVisible()
         unitExpect((await snapshot()).prepares).toBe(1)
         unitExpect((await snapshot()).sends).toBe(1)
-        await page.clock.runFor(104000)
+        await page.clock.runFor(284000)
         await expect(announcements).toHaveCount(1)
         await expect(announcements).toContainText('Open-Science has not connected yet')
         if (surface === 'composer') {
@@ -422,6 +416,35 @@ for (const surface of ['composer', 'detail']) {
         await expect(controls.getByRole('status')).toContainText(
           'File sent to Open-Science. Please confirm the import in the app.'
         )
+        for (const scenario of ['blur', 'handshake', 'late-handshake']) {
+          await page.goto(origin)
+          await continueButton.click()
+          await expect(downloading).toContainText('50%')
+          finishDownload()
+          await expect(controls.getByRole('status')).toContainText('Waiting for Open-Science')
+          if (scenario === 'blur')
+            await page.evaluate(() => window.dispatchEvent(new Event('blur')))
+          if (scenario === 'handshake')
+            await page.evaluate(() =>
+              (window as unknown as TestWindow).importTest.phase('transferring')
+            )
+          await page.clock.runFor(3000)
+          await expect(
+            controls.getByRole('button', { name: 'Open again', exact: true })
+          ).toHaveCount(scenario === 'late-handshake' ? 1 : 0)
+          if (scenario === 'late-handshake') {
+            await page.evaluate(() =>
+              (window as unknown as TestWindow).importTest.phase('transferring')
+            )
+            await expect(controls.getByText(/This check is an estimate/)).toHaveCount(0)
+          }
+          await otherControls.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await expect(controls.getByRole('status')).toContainText('Transfer canceled')
+          const sends = (await snapshot()).sends
+          await page.clock.runFor(300000)
+          unitExpect((await snapshot()).sends).toBe(sends)
+          await expect(controls.getByText(/This check is an estimate/)).toHaveCount(0)
+        }
         // No Content-Length: use manifest size when known, otherwise do not invent a percentage.
         includeContentLength = false
         for (const [suffix, percentage] of [

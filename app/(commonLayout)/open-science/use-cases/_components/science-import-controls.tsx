@@ -19,6 +19,9 @@ import {
 import type { UseCasePackage } from '@/lib/use-case-types'
 
 type ImportSession = ReturnType<typeof createScienceImport>
+const INSTALL_HINT =
+  'Open-Science may not be installed or may need an update. Install Open-Science 1.0.1 or later. This check is an estimate; we are still waiting for a connection.'
+
 const ImportContext = createContext<{
   state: ImportState
   session: RefObject<ImportSession | null>
@@ -68,7 +71,13 @@ export const ScienceImportProvider = ({
       {/* Announce the shared transfer once; each visible feedback area stays readable. */}
       {packageInfo ? (
         <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-          {[state.message, state.launchError].filter(Boolean).join(' ')}
+          {[
+            state.message,
+            state.phase === 'opening' && state.needsApp ? INSTALL_HINT : '',
+            state.launchError
+          ]
+            .filter(Boolean)
+            .join(' ')}
         </p>
       ) : null}
       {children}
@@ -89,7 +98,7 @@ export const ScienceImportButton = ({
   variant?: 'composer' | 'detail' | 'toolbar'
 }) => {
   const { state, session, packageInfo, revealFeedback } = useScienceImport()
-  const busy = ['checking', 'opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
+  const busy = ['opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
   const downloading = state.phase === 'downloading'
   const sending = state.phase === 'sending'
   const progressing = downloading || (sending && state.loaded !== undefined)
@@ -103,23 +112,21 @@ export const ScienceImportButton = ({
   // Keep each entry point's default wording when cancellation or failure allows a fresh start.
   const defaultLabel = variant === 'detail' ? 'Open in Open-Science' : 'Continue in Open-Science'
   const label =
-    state.phase === 'checking'
-      ? 'Checking Open-Science…'
-      : state.phase === 'opening'
-        ? 'Waiting for Open-Science…'
-        : sending
-          ? 'Sending to Open-Science…'
-          : state.phase === 'canceling'
-            ? 'Canceling…'
-            : state.phase === 'received'
-              ? 'Open Open-Science'
-              : state.action === 'resume'
-                ? 'I’ve opened Open-Science'
-                : state.action === 'open'
-                  ? 'Open Open-Science'
-                  : state.needsApp
-                    ? 'Try again'
-                    : defaultLabel
+    state.phase === 'opening'
+      ? 'Waiting for Open-Science…'
+      : sending
+        ? 'Sending to Open-Science…'
+        : state.phase === 'canceling'
+          ? 'Canceling…'
+          : state.phase === 'received'
+            ? 'Open Open-Science'
+            : state.action === 'resume'
+              ? 'I’ve opened Open-Science'
+              : state.action === 'open'
+                ? 'Open Open-Science'
+                : state.needsApp
+                  ? 'Try again'
+                  : defaultLabel
 
   return (
     <button
@@ -229,7 +236,7 @@ export const ScienceImportFeedback = ({ compact = false }: { compact?: boolean }
   } = useScienceImport()
   // A click on either entry point reveals guidance for the shared page session, including retries.
   if (!hasInteracted) return null
-  const busy = ['checking', 'opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
+  const busy = ['opening', 'downloading', 'sending', 'canceling'].includes(state.phase)
   const needsApp = state.needsApp
   const downloadPrompt = 'download it first'
   const inlineDownload = needsApp && state.message?.endsWith(`${downloadPrompt}.`)
@@ -246,7 +253,7 @@ export const ScienceImportFeedback = ({ compact = false }: { compact?: boolean }
           ? 'Not connected. Open the app, allow browser prompts, then continue.'
           : state.message
   const hasRecoveryActions =
-    (needsApp && !waitingTimedOut && !inlineDownload) ||
+    (needsApp && !inlineDownload) ||
     state.action === 'resume' ||
     (state.phase === 'error' && state.action === 'open')
   return (
@@ -319,6 +326,7 @@ export const ScienceImportFeedback = ({ compact = false }: { compact?: boolean }
             </button>
           ) : null}
         </div>
+        {state.phase === 'opening' && needsApp ? <p>{INSTALL_HINT}</p> : null}
         {state.launchError ? (
           <p role="alert" aria-live="off" className="text-status-failure-foreground">
             {state.launchError}
@@ -351,15 +359,24 @@ export const ScienceImportFeedback = ({ compact = false }: { compact?: boolean }
           <div
             className={`flex flex-wrap items-center gap-x-5 gap-y-1 ${compact ? 'justify-end' : ''}`}
           >
-            {needsApp && !waitingTimedOut && !inlineDownload ? (
+            {needsApp && !inlineDownload ? (
               <a
                 href="/open-science/download"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-8 items-center font-medium text-[#10110f] underline underline-offset-4"
               >
-                Download Open-Science
+                Install or update Open-Science
               </a>
+            ) : null}
+            {state.phase === 'opening' && needsApp ? (
+              <button
+                type="button"
+                onClick={() => session.current?.reopen()}
+                className="min-h-8 font-medium text-[#10110f] underline underline-offset-4"
+              >
+                Open again
+              </button>
             ) : null}
             {state.action === 'resume' ? (
               <button

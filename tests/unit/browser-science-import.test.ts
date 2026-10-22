@@ -32,26 +32,15 @@ const setup = () => {
       return receipt.promise
     }
   )
-  const prepare = mock((_blob: Blob) => ({ url: 'open-science://test-secret', send }))
+  const cancel = mock(async () => {})
+  const prepare = mock((_blob: Blob) => ({ url: 'open-science://test-secret', send, cancel }))
   const download = mock(async () => blob)
-  const availability = mock(
-    async (): Promise<{
-      status:
-        | 'available'
-        | 'unavailable'
-        | 'timeout'
-        | 'incompatible'
-        | 'unsupported-browser'
-        | 'aborted'
-    }> => ({ status: 'available' })
-  )
   const launch = mock(() => {
     events.push('launch')
   })
   const launchApp = mock(() => {})
   const mobile = mock(() => false)
   const session = createScienceImport(info, (state) => states.push(state), {
-    availability,
     download,
     prepare,
     launch,
@@ -61,7 +50,7 @@ const setup = () => {
   })
   return {
     session,
-    availability,
+    cancel,
     states,
     receipt,
     blob,
@@ -85,7 +74,7 @@ test('mobile clicks show desktop guidance before any discovery, download or laun
     action: 'prepare',
     message: 'Please continue on a desktop computer.'
   })
-  for (const operation of [s.availability, s.download, s.prepare, s.send, s.launch, s.launchApp])
+  for (const operation of [s.download, s.prepare, s.send, s.launch, s.launchApp])
     expect(operation).not.toHaveBeenCalled()
 })
 
@@ -106,7 +95,6 @@ test('explicit retry after receipt reuses the Blob with a fresh transfer and gua
   s.receipt.resolve({ received: true })
   await pending
   await Promise.all([s.session.retryImport(), s.session.retryImport()])
-  expect(s.availability).toHaveBeenCalledTimes(1)
   expect(s.download).toHaveBeenCalledTimes(1)
   expect(s.prepare).toHaveBeenCalledTimes(2)
   expect(s.prepare.mock.calls[0][0]).toBe(s.blob)
@@ -281,6 +269,7 @@ test('cancellation blocks overlap until send settles, then retries with a fresh 
   const signal = s.send.mock.calls[0][0].signal
   s.session.cancel()
   expect(signal?.aborted).toBe(true)
+  expect(s.cancel).toHaveBeenCalledTimes(1)
   expect(s.states.at(-1)?.phase).toBe('canceling')
   await s.session.open()
   expect(s.send).toHaveBeenCalledTimes(1)
@@ -436,54 +425,12 @@ test('dispose during a download ignores the late Blob and all later progress', a
   expect(s.prepare).not.toHaveBeenCalled()
 })
 
-for (const status of [
-  'unavailable',
-  'timeout',
-  'incompatible',
-  'unsupported-browser',
-  'aborted'
-] as const) {
-  test(`discovery ${status} never downloads and can be checked again`, async () => {
-    const s = setup()
-    s.availability.mockResolvedValueOnce({ status })
-    await s.session.prepareAndOpen()
-    expect(s.states[0].phase).toBe('checking')
-    expect(s.download).not.toHaveBeenCalled()
-    expect(s.launch).not.toHaveBeenCalled()
-    expect(s.states.at(-1)?.action).toBe('prepare')
-    if (status !== 'aborted')
-      expect(s.states.at(-1)?.message).toBe(
-        "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first."
-      )
-    await s.session.prepare()
-    expect(s.availability).toHaveBeenCalledTimes(2)
-    expect(s.states.at(-1)?.phase).toBe('ready')
-  })
-}
-
-test('checking blocks duplicates, cancellation and unmount abort discovery', async () => {
-  for (const dispose of [false, true]) {
-    const s = setup()
-    const pending = deferred<{ status: 'available' }>()
-    s.availability.mockImplementationOnce(() => pending.promise)
-    const preparing = s.session.prepareAndOpen()
-    await Promise.resolve()
-    await Promise.resolve()
-    await s.session.prepareAndOpen()
-    expect(s.availability).toHaveBeenCalledTimes(1)
-    expect(s.availability).toHaveBeenCalledWith({
-      signal: expect.any(AbortSignal),
-      timeoutMs: 5000
-    })
-    if (dispose) s.session.dispose()
-    else s.session.cancel()
-    const count = s.states.length
-    pending.resolve({ status: 'available' })
-    await preparing
-    expect(s.download).not.toHaveBeenCalled()
-    expect(s.launch).not.toHaveBeenCalled()
-    if (dispose) expect(s.states).toHaveLength(count)
-  }
+test('download preparation does not depend on app discovery', async () => {
+  const s = setup()
+  await s.session.prepare()
+  expect(s.states[0]?.phase).toBe('downloading')
+  expect(s.states.at(-1)?.phase).toBe('ready')
+  expect(s.download).toHaveBeenCalledTimes(1)
 })
 
 test('opening waits for actual progress and configures the official readiness budgets', async () => {
@@ -493,9 +440,11 @@ test('opening waits for actual progress and configures the official readiness bu
   expect(s.states.at(-1)).toMatchObject({ phase: 'opening' })
   expect(s.states.at(-1)?.loaded).toBeUndefined()
   expect(s.send.mock.calls[0][0]).toMatchObject({
-    readinessMode: 'wait-for-launch',
-    attemptTimeoutMs: 2000,
-    readyTimeoutMs: 120000
+    readinessMode: 'attempts',
+    readinessAttempts: 30,
+    readinessIntervalMs: 3000,
+    attemptTimeoutMs: 3000,
+    readyTimeoutMs: 300000
   })
   s.receipt.resolve({ received: true })
   await pending
@@ -552,13 +501,15 @@ for (const [code, message] of [
   })
 }
 
-test('filename validation precedes discovery and normalization precedes download', async () => {
-  const availability = mock(async () => ({ status: 'available' as const }))
+test('filename validation and normalization precede download', async () => {
   const download = mock(async () => new Blob(['x']))
-  const prepare = mock(() => ({ url: '#safe', send: async () => ({ received: true as const }) }))
-  const dependencies = { availability, download, prepare, supported: () => true }
+  const prepare = mock(() => ({
+    url: '#safe',
+    cancel: async () => {},
+    send: async () => ({ received: true as const })
+  }))
+  const dependencies = { download, prepare, supported: () => true }
   await createScienceImport({ ...info, filename: 'report.pdf' }, () => {}, dependencies).prepare()
-  expect(availability).not.toHaveBeenCalled()
   expect(download).not.toHaveBeenCalled()
   await createScienceImport({ ...info, filename: 'CON.science' }, () => {}, dependencies).prepare()
   expect(download).toHaveBeenCalledWith(

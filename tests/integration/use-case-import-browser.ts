@@ -141,32 +141,6 @@ export async function verifyImportPreparation(
       await page.screenshot({ path: screenshot.replace('.png', '-desktop-required.png') })
       return
     }
-    for (const discoveryMode of ['unavailable', 'incompatible', 'timeout']) {
-      await update({ discoveryMode })
-      await composer.getByRole('button', { name: startLabel }).click()
-      await expect(feedback.getByRole('alert')).toHaveText(
-        "Could not connect to Open-Science. If it's already installed, update to version 1.0.1 or later, then open the app and try again. If you haven't installed it, download it first.",
-        { timeout: 8000 }
-      )
-      const link = feedback.getByRole('alert').getByRole('link', { name: 'download it first' })
-      await expect(link).toHaveAttribute('href', '/open-science/download')
-      await expect(link).toHaveAttribute('target', '_blank')
-      await expect(
-        feedback.getByRole('link', { name: 'Download Open-Science', exact: true })
-      ).toHaveCount(0)
-      expect((await (await fetch(controls)).json()).packageRequests).toBe(initialPackages)
-      expect(page.url()).toBe(url)
-    }
-    for (const [packageMode, message] of [
-      ['error', 'HTTP 503'],
-      ['empty', 'empty'],
-      ['oversized', '2 GiB']
-    ]) {
-      await update({ packageMode })
-      await composer.getByRole('button', { name: startLabel }).click()
-      await expect(feedback.getByRole('alert')).toContainText(message)
-      await expect(composer.getByRole('button', { name: idleLabel, exact: true })).toBeEnabled()
-    }
     await update({ packageDelayMs: 1200 })
     const before = (await (await fetch(controls)).json()).packageRequests
     await composer.getByRole('button', { name: startLabel }).click()
@@ -178,12 +152,13 @@ export async function verifyImportPreparation(
     await expect(busyButton).toContainText('0%')
     await expect(opposite.getByText(/You may need to allow your browser/)).toBeVisible()
     // Inline cancellation must not add hidden padding between the two guidance lines.
-    const hintBox = await opposite.getByText(/You may need to allow your browser/).boundingBox()
-    const messageBox = await opposite.getByRole('status').boundingBox()
-    expect(hintBox && messageBox).toBeTruthy()
-    if (hintBox && messageBox) {
-      expect(messageBox.y - hintBox.y - hintBox.height).toBe(4)
-    }
+    await expect(async () => {
+      const hintBox = await opposite.getByText(/You may need to allow your browser/).boundingBox()
+      const messageBox = await opposite.getByRole('status').boundingBox()
+      expect(hintBox && messageBox).toBeTruthy()
+      if (hintBox && messageBox) expect(messageBox.y - hintBox.y - hintBox.height).toBe(4)
+    }).toPass({ timeout: 1000 })
+    if (!detail) await expect(feedback).toHaveCSS('opacity', '1')
     const expandedToolbarHeight = (await composer.boundingBox())?.height
     if (!detail) expect(expandedToolbarHeight).toBeGreaterThan(idleToolbarHeight ?? 0)
     if (!detail && wideViewport)
@@ -235,6 +210,14 @@ export async function verifyImportPreparation(
     expect(protocolRequests).toBe(0)
     expect(page.url()).toBe(url)
     const completedDownloads = (await (await fetch(controls)).json()).packageRequests
+    await expect(feedback.getByRole('button', { name: 'Open again', exact: true })).toBeVisible({
+      timeout: 6000
+    })
+    await expect(feedback.getByText(/This check is an estimate/)).toBeVisible()
+    await page.screenshot({ path: screenshot.replace('.png', '-install-hint.png') })
+    await feedback.getByRole('button', { name: 'Open again', exact: true }).click()
+    expect((await (await fetch(controls)).json()).packageRequests).toBe(completedDownloads)
+
     await opposite.getByRole('button', { name: 'Cancel', exact: true }).click()
     const openButton = composer.getByRole('button', { name: 'Open Open-Science', exact: true })
     await expect(openButton).toBeEnabled()

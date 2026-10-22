@@ -31,9 +31,9 @@ for (const [environment, mocking, shouldLaunch] of [
       {
         supported: () => true,
         mobile: () => false,
-        availability: async () => ({ status: 'available' }),
+        listenForBlur: () => () => {},
         download,
-        prepare: () => ({ url: 'open-science://test-only', send })
+        prepare: () => ({ url: 'open-science://test-only', send, cancel: async () => {} })
       }
     )
     try {

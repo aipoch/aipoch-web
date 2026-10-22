@@ -123,3 +123,61 @@ test('actual SDK waits past 15 seconds, bounds 120 seconds and reconnects the sa
     server.stop(true)
   }
 }, 60000)
+
+for (const stall of ['none', 'headers', 'body'] as const) {
+  test(`actual SDK executes all 30 attempts with three-second timeout and gaps: ${stall}`, async () => {
+    const build = await Bun.build({
+      entrypoints: [resolve('tests/fixtures/browser-import-wait-contract.ts')],
+      target: 'browser'
+    })
+    unitExpect(build.success).toBe(true)
+    const script = await build.outputs[0].text()
+    const server = Bun.serve({
+      port: 0,
+      hostname: '127.0.0.1',
+      fetch: () =>
+        new Response(`<!doctype html><script type="module">${script}</script>`, {
+          headers: { 'Content-Type': 'text/html' }
+        })
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.clock.install({ time: new Date('2026-10-21T00:00:00Z') })
+      await page.clock.pauseAt(new Date('2026-10-21T00:00:01Z'))
+      await page.goto(server.url.toString())
+      await page.evaluate((stall) => {
+        const s = (window as unknown as ContractWindow).waitContract
+        s.stall = stall
+        s.begin({
+          readinessMode: 'attempts',
+          readinessAttempts: 30,
+          attemptTimeoutMs: 3000,
+          readinessIntervalMs: 3000,
+          readyTimeoutMs: 300000
+        })
+      }, stall)
+      const snapshot = () =>
+        page.evaluate(() => {
+          const s = (window as unknown as ContractWindow).waitContract
+          return { result: s.result, requests: s.requests, phases: s.phases }
+        })
+      const duration = stall === 'none' ? 87000 : 177000
+      await page.clock.runFor(duration - 1)
+      unitExpect((await snapshot()).result).toBe('pending')
+      await page.clock.runFor(1)
+      await expect.poll(async () => (await snapshot()).result).toBe('readiness-exhausted')
+      const done = await snapshot()
+      unitExpect(done.requests).toHaveLength(30)
+      unitExpect(done.phases).toEqual(['waiting-for-receiver'])
+      unitExpect(done.requests.slice(1).map((value, i) => value - done.requests[i])).toEqual(
+        Array(29).fill(stall === 'none' ? 3000 : 6000)
+      )
+      await page.clock.runFor(300000)
+      unitExpect((await snapshot()).requests).toHaveLength(30)
+    } finally {
+      await browser.close()
+      server.stop(true)
+    }
+  }, 30000)
+}

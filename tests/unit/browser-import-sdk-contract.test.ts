@@ -157,7 +157,8 @@ test('official cancellation interrupts the retry gap with no subsequent attempts
   } finally {
     clearTimeout(timer)
   }
-  expect(fetchSpy).toHaveBeenCalledTimes(1)
+  expect(fetchSpy.mock.calls.filter(([, init]) => init?.method !== 'DELETE')).toHaveLength(1)
+  expect(fetchSpy.mock.calls.filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1)
 })
 
 test('official identity errors stop immediately without sending any bytes', async () => {
@@ -263,5 +264,51 @@ for (const body of [
       code: 'incompatible'
     })
     expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+}
+
+for (const stage of ['ready', 'chunk', 'complete']) {
+  test(`SDK cancel aborts ${stage}, cancels the authenticated receiver once and prevents reuse`, async () => {
+    const transfer = prepare()
+    const secret = new URL(transfer.url).searchParams.get('secret') ?? ''
+    const proof = (text: string) =>
+      createHmac('sha256', Buffer.from(secret, 'hex')).update(text).digest('hex')
+    let reached!: () => void
+    const atStage = new Promise<void>((resolve) => {
+      reached = resolve
+    })
+    let requestSignal: AbortSignal | null | undefined
+    fetchSpy.mockImplementation(async (input, init) => {
+      if (init?.method === 'DELETE') {
+        expect(new Headers(init.headers).get('Authorization')).toBe(
+          `HMAC ${proof('DELETE\n/v1/import\n')}`
+        )
+        return new Response(null, { status: 204 })
+      }
+      const url = new URL(String(input))
+      if (url.pathname.endsWith(`/${stage}`)) {
+        requestSignal = init?.signal
+        reached()
+        return stall(init?.signal)
+      }
+      if (url.pathname.endsWith('/ready'))
+        return Response.json({
+          offset: 0,
+          accepted: false,
+          chunkBytes: 4194304,
+          proof: proof(`open-science-import-v1:${url.searchParams.get('challenge')}:0:0`)
+        })
+      return Response.json({ offset: 5, proof: proof('offset:5') })
+    })
+    const sending = transfer.send()
+    const rejected = sending.catch((error: unknown) => error)
+    await atStage
+    await Promise.all([transfer.cancel(), transfer.cancel()])
+    expect(await rejected).toMatchObject({ code: 'cancelled' })
+    expect(requestSignal?.aborted).toBe(true)
+    expect(fetchSpy.mock.calls.filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1)
+    const count = fetchSpy.mock.calls.length
+    await expect(transfer.send()).rejects.toMatchObject({ code: 'cancelled' })
+    expect(fetchSpy).toHaveBeenCalledTimes(count)
   })
 }

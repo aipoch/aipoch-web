@@ -167,13 +167,18 @@ loads from `<manifest directory>/<case name>/extracted/`.
 
 ### Import a replay into Open-Science
 
-On a desktop computer, open Open-Science 1.0.1 or later, then click **Continue in
-Open-Science** below a replay. Allow the browser to open the app and access the
-local network if prompted. After the file is sent, confirm the import in the app.
+On a desktop computer, click **Continue in Open-Science** below a replay. The browser
+first downloads the complete package, then opens Open-Science. Allow app and local
+network access if prompted. After the file is received, confirm the import in the app.
 
-If the connection times out, open the app and click **I’ve opened Open-Science**
-to retry. You can also download the `.science` package and open it with Open-Science.
-Install the app from the [download page](https://aipoch.com/open-science/download).
+If the page stays focused and no connection is verified after three seconds, it
+shows an installation/update hint. This is an estimate, and connection attempts
+continue. Install Open-Science 1.0.1 or later from the
+[download page](https://aipoch.com/open-science/download), then click **Open again**.
+
+Connection attempts stop after 30 tries (three seconds per request, with three-second
+gaps). Retry using the downloaded package, or download the `.science` file and open
+it manually. Cancel stops the current transfer. Keep the page open to retain the file.
 
 Browser import supports packages up to 2 GiB and is unavailable on phones and tablets.
 

@@ -3,9 +3,8 @@
 The public npm registry returned HTTP 404 for `@aipoch/open-science` on 2026-10-20.
 PR [aipoch/open-science#3493](https://github.com/aipoch/open-science/pull/3493)
 was merged on 2026-10-19 and provides the source entry point. This directory contains
-the original browser entry point, public types and Apache-2.0 license from its pinned source commit. The only local
-addition is one Biome suppression comment for the intentional control-character
-rejection regex. Executable source, types and license are otherwise unchanged:
+the browser entry point, public types and Apache-2.0 license from its pinned source commit,
+with the reviewed local changes below. The original hashes remain recorded for upstream comparison.
 
 - Repository: https://github.com/aipoch/open-science
 - Commit: `121f459f5a85b04156b40c235dbfefba25a126bc`
@@ -21,20 +20,42 @@ rejection regex. Executable source, types and license are otherwise unchanged:
 
 Website code imports official interfaces and types only through
 `@/lib/science-package/sdk`. That module forwards the vendored implementation
-and pairs it with the original declaration types; it adds no protocol behavior.
+and pairs it with the matching declaration types; it adds no protocol behavior.
 The SDK is bundled as a source dependency; no protocol code is reimplemented.
 This also keeps the existing Docker dependency-install layer usable without
 introducing a local `file:` package that the layer cannot access.
 
-Do not format or edit the upstream implementation. The provenance unit test
-removes exactly the documented lint comment before checking the source hash.
-For an upgrade, verify the official
-published export or pin a new reviewed source commit, refresh all originals and
-their hashes, and run the browser import tests.
+## Local changes (2026-10-21)
+
+The browser flow requires 30 attempts with three-second request deadlines and gaps.
+The pinned SDK only allowed five count-based attempts and clamped launch waiting to
+120 seconds, two-second requests and one-second gaps. The local SDK now:
+
+- Accepts up to 30 count-based attempts and `readinessIntervalMs` (0–30,000 ms).
+  Existing defaults and legacy `wait-for-launch` behavior remain compatible.
+- Exposes idempotent `cancel()` to abort the transfer lifetime and best-effort send
+  the secret-authenticated DELETE, including during readiness. A canceled transfer
+  cannot be reused. The cancellation request has its own two-second cleanup budget.
+- Clears per-request timers after response bodies finish, including on cancellation.
+- Retains the existing HMAC identity and receipt verification, AES-GCM encryption,
+  filename validation, and receipt-only completion semantics.
+
+The website selects 30 attempts, 3,000 ms per request, 3,000 ms gaps, and a 300,000 ms
+safety deadline. Thirty fully timed-out attempts take 177 seconds, below that deadline.
+The existing Biome control-character regex comment is also retained.
+
+| Local file (excluding the lint comment) | SHA-256 |
+| --- | --- |
+| browser-import.mjs | ca4531994955a55e31ecd47e25a6b41746763b81b0d8febd1becb7c73f59ac4c |
+| browser-import.d.ts | 8d09f8e2f653c504b79318c1d42e83e7949a5be64e12fe1e75d6b24ff9dcfce6 |
+
+The provenance test pins these reviewed local bytes and the unchanged license.
+When upgrading, reconcile these local changes with the upstream source and run the
+SDK contract, browser lifecycle, and mock integration tests.
 
 TODO(open-science-sdk): After npm publishes a version verified to include discovery,
 standalone launch, wait-for-launch readiness, phase notifications and authenticated
-`cancelled` semantics, pin that exact version. Switch only `lib/science-package/sdk.ts`
+`cancelled` semantics plus the local retry and cancellation API, pin that exact version. Switch only `lib/science-package/sdk.ts`
 to `@aipoch/open-science/browser-import`, then remove this directory and its provenance
 test. Retain the SDK contract, website lifecycle, mock launch and browser flow tests.
 Dependency/configuration changes require their own authorization under AGENTS.md.
