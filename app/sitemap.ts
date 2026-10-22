@@ -17,8 +17,8 @@ import { fetchUseCaseSitemapEntries } from '@/service/open-science-use-cases.ser
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
-const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-09-30'
-const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-15'
+const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-10-21'
+const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-21'
 // Track overview and replay template changes separately from the gallery.
 const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-22'
 // Replay toolbar and composer share the complete import workflow.

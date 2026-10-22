@@ -35,14 +35,28 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             data-open-science-reveal="0.06"
             className="font-[Georgia,serif] text-[44px] font-normal leading-[1.02] tracking-normal sm:text-[60px] lg:text-[78px]"
           >
-            Open-Science <br />
+            AIPOCH Open-Science <br />
             AI Research Workbench
           </h1>
           <p data-open-science-reveal="0.12" className="text-base leading-[26px] text-[#6b6b66]">
-            Open-Science is an open-source, local-first, model-agnostic AI research workbench for
-            scientific discovery. It brings coordinator and specialist agents, Python and R
-            execution, scientific Connectors, Reviewer checks, and traceable research artifacts into
-            one desktop workspace for macOS, Windows, and Linux.
+            AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS,
+            Windows, and Linux. It brings scientific agents, Python and R execution, scientific
+            Connectors, and traceable artifacts into one workspace. A{' '}
+            <a
+              href="https://aipoch.com/blog/aipoch-open-science-research-packages"
+              className="underline underline-offset-4 transition-colors hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              .science package
+            </a>{' '}
+            can carry selected conversation branches, file versions, Notebook records, and
+            verification evidence for review, handoff, and archiving. Explore{' '}
+            <a
+              href="https://aipoch.com/open-science/use-cases"
+              className="underline underline-offset-4 transition-colors hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              .science use cases
+            </a>{' '}
+            to see these workflows in practice.
           </p>
           <div data-open-science-reveal="0.18" className="flex flex-wrap items-center gap-3">
             <a
