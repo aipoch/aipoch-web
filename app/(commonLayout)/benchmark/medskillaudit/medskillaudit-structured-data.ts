@@ -5,7 +5,7 @@ import { createPageMetadata } from '@/lib/page-metadata'
 import { staticImage } from '@/lib/staticAsset'
 import { validationStudy } from './benchmark-data'
 
-export const MEDSKILLAUDIT_PAGE_LAST_MODIFIED = '2026-10-20'
+export const MEDSKILLAUDIT_PAGE_LAST_MODIFIED = '2026-10-21'
 
 export const medSkillAuditSeo = {
   title: 'MedSkillAudit - Audit Framework for Medical Research Agent Skills · AIPOCH',

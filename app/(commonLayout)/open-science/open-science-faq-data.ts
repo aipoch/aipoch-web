@@ -28,5 +28,29 @@ export const openScienceFaqItems = [
       'Visit the official Open-Science download page for current installers, compatibility information, release notes and known limitations.',
     answerLinkLabel: 'official Open-Science download page',
     answerHref: OPEN_SCIENCE_DOWNLOAD_PAGE_URL
+  },
+  {
+    question: 'What does a .science package contain in AIPOCH Open-Science?',
+    answer:
+      'A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving. Included files depend on your export selection. Side Chat conversations, private reading bookmarks, and their notes are excluded. Review the export preview before sharing. See the .science package guide for content options and export steps.',
+    answerLinks: [
+      {
+        label: '.science package guide',
+        href: 'https://aipoch.com/docs/guides/research-packages/'
+      }
+    ]
+  },
+  {
+    question:
+      'Where can I learn about the design and use of .science packages in AIPOCH Open-Science?',
+    answer:
+      'The AIPOCH Open-Science preprint describes the .science package design, controlled tests, and limitations. For a practical overview of what packages contain and how they support research review, handoff, and continued work, read our guide to .science packages.',
+    answerLinks: [
+      { label: 'AIPOCH Open-Science preprint', href: 'https://arxiv.org/abs/2610.17110' },
+      {
+        label: 'guide to .science packages',
+        href: 'https://aipoch.com/blog/aipoch-open-science-research-packages'
+      }
+    ]
   }
 ] as const

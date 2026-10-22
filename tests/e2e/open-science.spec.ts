@@ -142,7 +142,7 @@ test('renders every design section, retains shared navigation and loads all mark
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/open-science')
-  await expect(page.locator('h1')).toHaveText('Open-Science AI Research Workbench')
+  await expect(page.locator('h1')).toHaveText('AIPOCH Open-Science AI Research Workbench')
   await expect(page.locator('header')).toBeVisible()
   await expect(
     page.getByRole('heading', {

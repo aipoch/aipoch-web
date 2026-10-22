@@ -93,9 +93,9 @@ describe('sitemap', () => {
     const { default: sitemap } = await import('../../app/sitemap')
     const routes = await sitemap()
     expect(routes.some((route) => route.url.includes('/replay/dot-science'))).toBe(false)
-    // Overview import actions change detail pages; the gallery keeps its navigation date.
+    // Keep the gallery metadata date and the newer overview import workflow date.
     for (const [path, date] of [
-      ['/open-science/use-cases', '2026-10-20'],
+      ['/open-science/use-cases', '2026-10-21'],
       ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-22'],
       ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-22'],
       ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-22']
@@ -153,20 +153,20 @@ describe('sitemap', () => {
       (route) => route.url === `${siteDomain}/guides/what-is-a-skill`
     )
 
-    expect((homepageRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
+    expect((homepageRoute?.lastModified as Date).toISOString()).toBe('2026-10-21T00:00:00.000Z')
 
     expect(openScienceRoute).toMatchObject({
       changeFrequency: 'weekly',
       priority: 0.8
     })
-    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
+    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-10-21T00:00:00.000Z')
 
     expect(openScienceDownloadRoute).toMatchObject({
       changeFrequency: 'weekly',
       priority: 0.8
     })
     expect((openScienceDownloadRoute?.lastModified as Date).toISOString()).toBe(
-      '2026-10-20T00:00:00.000Z'
+      '2026-10-21T00:00:00.000Z'
     )
 
     expect(medFlowRoute).toMatchObject({
@@ -186,7 +186,7 @@ describe('sitemap', () => {
       priority: 0.8
     })
     expect((medSkillAuditRoute?.lastModified as Date).toISOString()).toBe(
-      '2026-10-20T00:00:00.000Z'
+      '2026-10-21T00:00:00.000Z'
     )
     expect((skillsListRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
     expect((skillDetailRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
@@ -234,7 +234,7 @@ describe('sitemap', () => {
       )
     }
     expect(routeDate(`${siteDomain}/benchmark/open-science`)).toBe('2026-10-21T00:00:00.000Z')
-    expect(routeDate(`${siteDomain}/benchmark/medskillaudit`)).toBe('2026-10-20T00:00:00.000Z')
+    expect(routeDate(`${siteDomain}/benchmark/medskillaudit`)).toBe('2026-10-21T00:00:00.000Z')
     for (const excluded of [
       '/medskillaudit',
       '/benchmark',

@@ -115,7 +115,7 @@ describe('homepage GEO contracts', () => {
       dateTime: 'Aug 4, 2026',
       label: 'Aug 4, 2026'
     })
-    expect(webpage?.dateModified).toBe('2026-10-20')
+    expect(webpage?.dateModified).toBe('2026-10-21T00:00:00.000Z')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v0.20.4',
       dateModified: '2026-08-04',
@@ -178,12 +178,19 @@ console.log(renderToStaticMarkup(await Home()))`
     })
   })
 
-  test('keeps the crawler summary aligned with the current public release and skill count', async () => {
+  test('keeps the crawler summary aligned with research package resources and boundaries', async () => {
     const llms = await Bun.file(resolve(import.meta.dir, '../../public/llms.txt')).text()
 
-    expect(llms).toContain('550+ reusable medical research skills')
-    expect(llms).toContain("Open-Science is AIPOCH's primary open-source AI research workbench")
+    expect(llms).toContain("AIPOCH Open-Science is AIPOCH's open-source AI research workbench")
     expect(llms).toContain('https://github.com/aipoch/open-science/releases/latest')
+    expect(llms).toContain('https://aipoch.com/docs/guides/research-packages/')
+    expect(llms).toContain('https://aipoch.com/open-science/use-cases')
+    expect(llms).toContain('https://aipoch.com/blog/aipoch-open-science-research-packages')
+    expect(llms).toContain('https://arxiv.org/abs/2610.17110')
+    expect(llms).toContain('https://huggingface.co/AIPOCH-AI')
+    expect(llms).toContain('Importing or browsing it does not execute code, restore credentials')
+    expect(llms).toContain("Received verification records describe the sender's checks")
+    expect(llms).not.toContain('550+ reusable medical research skills')
     expect(llms).not.toContain('597+')
     expect(llms).not.toContain('v0.14.1')
   })
@@ -228,7 +235,8 @@ console.log(renderToStaticMarkup(await Home()))`
         'https://github.com/aipoch',
         'https://www.linkedin.com/company/pochai/',
         'https://www.youtube.com/@AIPOCH_AI',
-        'https://x.com/aipoch_ai'
+        'https://x.com/aipoch_ai',
+        'https://huggingface.co/AIPOCH-AI'
       ]
     })
     expect(schemas.find((schema) => schema['@type'] === 'WebSite')).toMatchObject({
@@ -238,7 +246,7 @@ console.log(renderToStaticMarkup(await Home()))`
     expect(schemas.find((schema) => schema['@type'] === 'WebPage')).toMatchObject({
       '@id': 'https://aipoch.com/#webpage',
       url: 'https://aipoch.com',
-      dateModified: '2026-10-20',
+      dateModified: '2026-10-21T00:00:00.000Z',
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']

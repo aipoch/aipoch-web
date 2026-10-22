@@ -5,13 +5,13 @@ import { staticImage } from '@/lib/staticAsset'
 
 // Keep the requested page SEO copy aligned across metadata and visible heading surfaces.
 export const openScienceSeo = {
-  title: 'AIPOCH Open-Science | Open-Source AI Research Workbench',
+  title: 'AIPOCH Open-Science AI Research Workbench',
   description:
-    'AIPOCH Open-Science is an open-source, local-first AI research workbench with model choice, code execution, reviewer checks, and traceable artifacts.'
+    'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux, with scientific agents, code execution, and .science packages.'
 } as const
 
 const openSciencePageUrl = `${SITE_DOMAIN}/open-science`
-export const OPEN_SCIENCE_PAGE_LAST_MODIFIED = '2026-10-10'
+export const OPEN_SCIENCE_PAGE_LAST_MODIFIED = '2026-10-21'
 const openScienceSocialAsset = staticImage('og-science-open-to-all-ab128c94.png')
 export const openScienceSocialImage = {
   url: openScienceSocialAsset.src,

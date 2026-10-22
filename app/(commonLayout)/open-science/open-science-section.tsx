@@ -9,11 +9,13 @@ export const openScienceAction =
 export function OpenScienceSectionHeading({
   eyebrow,
   title,
-  children
+  children,
+  supportingContent
 }: {
   eyebrow: string
   title: ReactNode
   children: ReactNode
+  supportingContent?: ReactNode
 }) {
   return (
     <div data-open-science-reveal="" className="mx-auto mb-12 max-w-[950px] text-center lg:mb-16">
@@ -24,6 +26,11 @@ export function OpenScienceSectionHeading({
       <p className="mx-auto mt-6 max-w-[800px] text-base leading-[26px] text-[#6b6b66]">
         {children}
       </p>
+      {supportingContent ? (
+        <p className="mx-auto mt-4 max-w-[800px] text-sm leading-6 text-[#6b6b66]">
+          {supportingContent}
+        </p>
+      ) : null}
     </div>
   )
 }

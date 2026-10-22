@@ -23,6 +23,25 @@ export const OPEN_SCIENCE_WEBPAGE_ID = `${SITE_DOMAIN}/open-science#webpage`
 export const OPEN_SCIENCE_PRODUCT_ID = `${SITE_DOMAIN}/#open-science`
 export const OPEN_SCIENCE_BREADCRUMB_ID = `${SITE_DOMAIN}/open-science#breadcrumb`
 export const OPEN_SCIENCE_FAQ_ID = `${SITE_DOMAIN}/open-science#faq`
+export const OPEN_SCIENCE_PREPRINT_URL = 'https://arxiv.org/abs/2610.17110'
+export const OPEN_SCIENCE_PREPRINT_ID = `${OPEN_SCIENCE_PREPRINT_URL}#article`
+
+/** Product-page descriptions reflect the selected-record boundary stated in the visible copy. */
+const OPEN_SCIENCE_PRODUCT_DESCRIPTION =
+  'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux. It brings scientific agents, Python and R execution, scientific Connectors, and traceable artifacts into one workspace. A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving.'
+
+/** Bibliographic facts verified against the official arXiv abstract record on 2026-10-21. */
+const buildOpenSciencePreprintSchema = (): Record<string, unknown> => ({
+  '@type': 'ScholarlyArticle',
+  '@id': OPEN_SCIENCE_PREPRINT_ID,
+  name: 'AIPOCH Open-Science: An Open-Source AI Research Workbench with Reproducible .science Packages',
+  url: OPEN_SCIENCE_PREPRINT_URL,
+  identifier: { '@type': 'PropertyValue', propertyID: 'arXiv', value: '2610.17110' },
+  datePublished: '2026-10-12',
+  creativeWorkStatus: 'Preprint',
+  inLanguage: 'en',
+  about: { '@id': OPEN_SCIENCE_PRODUCT_ID }
+})
 
 const MONTH_TO_NUMBER: Record<string, string> = {
   Jan: '01',
@@ -97,6 +116,8 @@ export const buildOpenScienceSoftwareApplicationSchema = ({
 export const buildOpenScienceFaqPageSchema = (): Record<string, unknown> => ({
   '@type': 'FAQPage',
   '@id': OPEN_SCIENCE_FAQ_ID,
+  inLanguage: 'en',
+  isPartOf: { '@id': OPEN_SCIENCE_WEBPAGE_ID },
   mainEntity: openScienceFaqItems.map((item) => ({
     '@type': 'Question',
     name: item.question,
@@ -153,9 +174,17 @@ export const buildOpenSciencePageGraph = ({
         url: `${SITE_DOMAIN}/open-science`,
         name: openScienceSeo.title,
         description: openScienceSeo.description,
+        inLanguage: 'en',
         isPartOf: { '@id': AIPOCH_WEBSITE_ID },
         mainEntity: { '@id': OPEN_SCIENCE_PRODUCT_ID },
         breadcrumb: { '@id': OPEN_SCIENCE_BREADCRUMB_ID },
+        citation: { '@id': OPEN_SCIENCE_PREPRINT_ID },
+        hasPart: { '@id': OPEN_SCIENCE_FAQ_ID },
+        relatedLink: [
+          `${SITE_DOMAIN}/blog/aipoch-open-science-research-packages`,
+          `${SITE_DOMAIN}/open-science/use-cases`,
+          `${SITE_DOMAIN}/docs/guides/research-packages/`
+        ],
         dateModified: toSchemaDate(
           commonLayoutLastModified(
             schemaDate && Date.parse(schemaDate) > Date.parse(OPEN_SCIENCE_PAGE_LAST_MODIFIED)
@@ -164,7 +193,18 @@ export const buildOpenSciencePageGraph = ({
           )
         )
       },
-      softwareApplication,
+      {
+        ...softwareApplication,
+        description: OPEN_SCIENCE_PRODUCT_DESCRIPTION,
+        featureList: [
+          'Scientific agents',
+          'Python and R execution',
+          '36 built-in Scientific Connectors',
+          'Traceable artifacts',
+          'Selected conversation branches, file versions, Notebook records, and verification evidence in .science packages'
+        ],
+        subjectOf: { '@id': OPEN_SCIENCE_PREPRINT_ID }
+      },
       {
         '@type': 'BreadcrumbList',
         '@id': OPEN_SCIENCE_BREADCRUMB_ID,
@@ -183,7 +223,8 @@ export const buildOpenSciencePageGraph = ({
           }
         ]
       },
-      buildOpenScienceFaqPageSchema()
+      buildOpenScienceFaqPageSchema(),
+      buildOpenSciencePreprintSchema()
     ]
   }
 }

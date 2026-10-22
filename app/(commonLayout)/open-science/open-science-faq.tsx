@@ -7,22 +7,33 @@ import { openScienceFaqItems } from './open-science-faq-data'
 import { openScienceContainer, openScienceHeading } from './open-science-section'
 
 const renderFaqAnswer = (item: (typeof openScienceFaqItems)[number]): ReactNode => {
-  if (!('answerHref' in item) || !item.answerHref || !item.answerLinkLabel) {
-    return item.answer
-  }
+  const links =
+    'answerLinks' in item
+      ? item.answerLinks
+      : 'answerHref' in item
+        ? [{ label: item.answerLinkLabel, href: item.answerHref }]
+        : []
+  if (links.length === 0) return item.answer
 
-  const [before, after] = item.answer.split(item.answerLinkLabel)
-  if (before === undefined || after === undefined) return item.answer
-
-  return (
-    <>
-      {before}
-      <a href={item.answerHref} className="underline underline-offset-4 hover:text-[#111]">
-        {item.answerLinkLabel}
+  const parts: ReactNode[] = []
+  let remaining: string = item.answer
+  for (const link of links) {
+    const position = remaining.indexOf(link.label)
+    if (position === -1) continue
+    parts.push(remaining.slice(0, position))
+    parts.push(
+      <a
+        key={link.href}
+        href={link.href}
+        className="underline underline-offset-4 hover:text-[#111]"
+      >
+        {link.label}
       </a>
-      {after}
-    </>
-  )
+    )
+    remaining = remaining.slice(position + link.label.length)
+  }
+  parts.push(remaining)
+  return <>{parts}</>
 }
 
 const FaqItem = ({

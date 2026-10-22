@@ -18,7 +18,13 @@ const pageDescription =
 export const metadata: Metadata = createPageMetadata({
   title: pageTitle,
   description: pageDescription,
-  canonical: `${SITE_DOMAIN}/open-science/use-cases`
+  canonical: `${SITE_DOMAIN}/open-science/use-cases`,
+  image: {
+    url: `${SITE_DOMAIN}/images/open-science/use-case-gallery-social.png`,
+    width: 1280,
+    height: 672,
+    alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
+  }
 })
 
 export const dynamic = 'force-dynamic'

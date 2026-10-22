@@ -70,10 +70,29 @@ export function OpenScienceCapabilities() {
       <OpenScienceSectionHeading
         eyebrow="How it works"
         title="Run, inspect, and share research with .science"
+        supportingContent={
+          <>
+            <a
+              href="https://arxiv.org/abs/2610.17110"
+              className="underline underline-offset-4 hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              Read the preprint
+            </a>{' '}
+            for the design, controlled tests, and limitations, or{' '}
+            <a
+              href="https://aipoch.com/docs/guides/research-packages/"
+              className="underline underline-offset-4 hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"
+            >
+              follow the worked example
+            </a>{' '}
+            to export a session, inspect its read-only import, and create a writable fork.
+          </>
+        }
       >
         AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources,
-        persistent context, and traceable outputs. .science packages make selected research records
-        portable for review, handoff, and continuation.
+        persistent context, and traceable outputs. A .science package can carry selected
+        conversation branches, file versions, Notebook records, and verification evidence for
+        review, handoff, and archiving.
       </OpenScienceSectionHeading>
       <div className="space-y-16 lg:space-y-24">
         <Capability
@@ -121,7 +140,7 @@ export function OpenScienceCapabilities() {
               {
                 title: 'Scientific Connectors',
                 description:
-                  'Open-Science includes 24 built-in Scientific Connectors covering scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Connector and tool access remains governed by workspace permissions, and researchers can add compatible custom connectors.'
+                  'Open-Science includes 36 built-in Scientific Connectors covering scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Connector and tool access remains governed by workspace permissions, and researchers can add compatible custom connectors.'
               },
               {
                 title: 'Specialists',
@@ -137,7 +156,7 @@ export function OpenScienceCapabilities() {
                     and remote compute. Researchers can also use Personal and imported Skills
                     through the Skills system.
                     <a
-                      href="https://aipoch.com/docs/settings/skills"
+                      href="https://aipoch.com/docs/skills/overview/"
                       className="mt-4 block underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                       Manage Skills in Settings →
@@ -198,7 +217,7 @@ export function OpenScienceCapabilities() {
             Permissions &amp; Runtimes before using sensitive or regulated data.
           </p>
           <a
-            href="https://aipoch.com/docs/settings/permissions-runtimes"
+            href="https://aipoch.com/docs/guides/approval-modes/"
             className="mt-4 block text-sm leading-[21px] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             Permissions &amp; runtimes →

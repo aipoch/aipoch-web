@@ -32,9 +32,9 @@ mock.module('../../public/figma/open-science/workflow-share.png', () => ({
   default: { src: '/figma/open-science/workflow-share.png', width: 2223, height: 1162 }
 }))
 
-const expectedSeoTitle = 'AIPOCH Open-Science | Open-Source AI Research Workbench'
+const expectedSeoTitle = 'AIPOCH Open-Science AI Research Workbench'
 const expectedSeoDescription =
-  'AIPOCH Open-Science is an open-source, local-first AI research workbench with model choice, code execution, reviewer checks, and traceable artifacts.'
+  'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux, with scientific agents, code execution, and .science packages.'
 
 const textFromMarkup = (markup: string) =>
   markup
@@ -123,7 +123,7 @@ describe('Open-Science page', () => {
     const html = await renderOpenSciencePage()
     const headings = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)]
     expect(headings).toHaveLength(1)
-    expect(textFromMarkup(headings[0]?.[1] ?? '')).toBe('Open-Science AI Research Workbench')
+    expect(textFromMarkup(headings[0]?.[1] ?? '')).toBe('AIPOCH Open-Science AI Research Workbench')
   })
 
   test('builds canonical Open-Science SoftwareApplication data', () => {
@@ -160,7 +160,7 @@ describe('Open-Science page', () => {
     const webpage = schemas.find((item) => item['@type'] === 'WebPage')
     const softwareApplication = schemas.find((item) => item['@type'] === 'SoftwareApplication')
 
-    expect(webpage?.dateModified).toBe('2026-10-20')
+    expect(webpage?.dateModified).toBe('2026-10-21')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v1.2.3',
       dateModified: '2026-09-07',
@@ -205,7 +205,8 @@ describe('Open-Science page', () => {
       'WebPage',
       'SoftwareApplication',
       'BreadcrumbList',
-      'FAQPage'
+      'FAQPage',
+      'ScholarlyArticle'
     ])
 
     expect(schemas.find((item) => item['@type'] === 'Organization')).toMatchObject({
@@ -214,7 +215,8 @@ describe('Open-Science page', () => {
         'https://github.com/aipoch',
         'https://www.linkedin.com/company/pochai/',
         'https://www.youtube.com/@AIPOCH_AI',
-        'https://x.com/aipoch_ai'
+        'https://x.com/aipoch_ai',
+        'https://huggingface.co/AIPOCH-AI'
       ]
     })
     expect(schemas.find((item) => item['@type'] === 'WebSite')).toMatchObject({
@@ -227,13 +229,35 @@ describe('Open-Science page', () => {
       isPartOf: { '@id': 'https://aipoch.com/#website' },
       breadcrumb: { '@id': 'https://aipoch.com/open-science#breadcrumb' }
     })
+    const webpage = schemas.find((item) => item['@type'] === 'WebPage')
+    expect(webpage).toMatchObject({
+      name: expectedSeoTitle,
+      citation: { '@id': 'https://arxiv.org/abs/2610.17110#article' },
+      hasPart: { '@id': 'https://aipoch.com/open-science#faq' },
+      relatedLink: [
+        'https://aipoch.com/blog/aipoch-open-science-research-packages',
+        'https://aipoch.com/open-science/use-cases',
+        'https://aipoch.com/docs/guides/research-packages/'
+      ]
+    })
     expect(schemas.find((item) => item['@type'] === 'SoftwareApplication')).toMatchObject({
       '@type': 'SoftwareApplication',
       softwareVersion: 'v0.16.0',
       dateModified: '2026-08-16',
       sameAs: ['https://github.com/aipoch/open-science'],
       publisher: { '@id': 'https://aipoch.com/#organization' },
-      mainEntityOfPage: { '@id': 'https://aipoch.com/open-science#webpage' }
+      mainEntityOfPage: { '@id': 'https://aipoch.com/open-science#webpage' },
+      subjectOf: { '@id': 'https://arxiv.org/abs/2610.17110#article' }
+    })
+    expect(schemas.find((item) => item['@type'] === 'SoftwareApplication')?.featureList).toContain(
+      '36 built-in Scientific Connectors'
+    )
+    expect(schemas.find((item) => item['@type'] === 'ScholarlyArticle')).toMatchObject({
+      '@id': 'https://arxiv.org/abs/2610.17110#article',
+      url: 'https://arxiv.org/abs/2610.17110',
+      creativeWorkStatus: 'Preprint',
+      datePublished: '2026-10-12',
+      about: { '@id': 'https://aipoch.com/#open-science' }
     })
     expect(schemas.find((item) => item['@type'] === 'BreadcrumbList')).toMatchObject({
       '@id': 'https://aipoch.com/open-science#breadcrumb',
@@ -282,7 +306,7 @@ describe('Open-Science page', () => {
     ])
       expect(text).toContain(title)
     expect(text).toContain(
-      'AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources, persistent context, and traceable outputs. .science packages make selected research records portable for review, handoff, and continuation.'
+      'AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources, persistent context, and traceable outputs. A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving.'
     )
     expect(text).toContain(
       'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
@@ -497,7 +521,7 @@ describe('Open-Science page', () => {
 
   test('includes all FAQ answers in server HTML with only the first answer expanded', async () => {
     const html = await renderOpenSciencePage()
-    expect(html.match(/<details\b/g)).toHaveLength(5)
+    expect(html.match(/<details\b/g)).toHaveLength(openScienceFaqItems.length)
     expect(html.match(/<details[^>]*\bopen=""/g)).toHaveLength(1)
     expect(html).toContain('Apache License 2.0')
     expect(html).toContain('Researchers remain responsible')
@@ -597,7 +621,7 @@ describe('Open-Science page', () => {
     expect(text).toContain('Codex subscription')
     expect(text).toContain('xAI (Grok) OAuth')
     expect(text).toContain('Apodex')
-    expect(text).toContain('24 built-in Scientific Connectors')
+    expect(text).toContain('36 built-in Scientific Connectors')
     expect(text).toContain(
       'they do not certify scientific correctness or replace expert validation'
     )

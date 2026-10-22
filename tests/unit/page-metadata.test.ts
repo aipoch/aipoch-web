@@ -1,5 +1,10 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, mock, test } from 'bun:test'
 import type { Metadata } from 'next'
+
+// Metadata checks do not need the gallery's server-only manifest reader.
+mock.module('@/service/open-science-use-cases.server', () => ({
+  fetchUseCaseList: async () => []
+}))
 
 const BLOG_TITLE = 'AIPOCH Blog | Open-Science Updates & Research Workflows'
 const BLOG_DESCRIPTION =
@@ -123,6 +128,24 @@ describe('page metadata contracts', () => {
     expect(homepageMetadata.twitter?.images).toEqual([OPEN_SCIENCE_IMAGE])
     expect(openScienceMetadata.openGraph?.images).toEqual(homepageMetadata.openGraph?.images)
     expect(openScienceMetadata.twitter?.images).toEqual([OPEN_SCIENCE_IMAGE])
+  })
+
+  test('uses the supplied gallery image for use-case social cards', async () => {
+    const { metadata } = await import('../../app/(commonLayout)/open-science/use-cases/page')
+    const image = 'https://aipoch.com/images/open-science/use-case-gallery-social.png'
+
+    expect(metadata.twitter).toMatchObject({
+      card: 'summary_large_image',
+      images: [image]
+    })
+    expect(metadata.openGraph?.images).toEqual([
+      {
+        url: image,
+        width: 1280,
+        height: 672,
+        alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
+      }
+    ])
   })
 
   test('keeps Skills List metadata aligned with its new visible description', async () => {

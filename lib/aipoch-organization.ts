@@ -9,7 +9,8 @@ export const AIPOCH_ORGANIZATION_SAME_AS = [
   'https://github.com/aipoch',
   'https://www.linkedin.com/company/pochai/',
   'https://www.youtube.com/@AIPOCH_AI',
-  'https://x.com/aipoch_ai'
+  'https://x.com/aipoch_ai',
+  'https://huggingface.co/AIPOCH-AI'
 ] as const
 
 export const AIPOCH_ORGANIZATION_DESCRIPTION =
