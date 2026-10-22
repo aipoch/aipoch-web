@@ -96,9 +96,9 @@ describe('sitemap', () => {
     // Overview import actions change detail pages; the gallery keeps its navigation date.
     for (const [path, date] of [
       ['/open-science/use-cases', '2026-10-20'],
-      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-21'],
-      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-21'],
-      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-21']
+      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-22'],
+      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-22'],
+      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-22']
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
         new Date(date)
@@ -112,7 +112,7 @@ describe('sitemap', () => {
       '/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle/replay'
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
-        new Date('2026-10-21')
+        new Date('2026-10-22')
       )
     }
   })

@@ -312,3 +312,21 @@ for (const stage of ['ready', 'chunk', 'complete']) {
     expect(fetchSpy).toHaveBeenCalledTimes(count)
   })
 }
+
+test('count-only readiness is opt-in and rejects unbounded wait-for-launch', async () => {
+  await expect(
+    prepare().send({ readinessMode: 'wait-for-launch', readyTimeoutMs: null })
+  ).rejects.toThrow('Invalid receiver timeout.')
+  expect(fetchSpy).not.toHaveBeenCalled()
+  fetchSpy.mockRejectedValue(new TypeError('Unavailable'))
+  await expect(
+    prepare().send({
+      readinessMode: 'attempts',
+      readyTimeoutMs: null,
+      readinessAttempts: 3,
+      readinessIntervalMs: 0,
+      attemptTimeoutMs: 10
+    })
+  ).rejects.toMatchObject({ code: 'readiness-exhausted' })
+  expect(fetchSpy).toHaveBeenCalledTimes(3)
+})

@@ -214,7 +214,8 @@ export function prepareBrowserImport(file, options = {}) {
       if (!['attempts', 'wait-for-launch'].includes(readinessMode))
         throw new Error('Invalid readiness mode.')
       const waitingForLaunch = readinessMode === 'wait-for-launch'
-      if (!Number.isFinite(readyTimeoutMs) || readyTimeoutMs <= 0)
+      const countOnly = !waitingForLaunch && readyTimeoutMs === null
+      if (!countOnly && (!Number.isFinite(readyTimeoutMs) || readyTimeoutMs <= 0))
         throw new Error('Invalid receiver timeout.')
       if (
         (!waitingForLaunch &&
@@ -273,12 +274,12 @@ export function prepareBrowserImport(file, options = {}) {
       })
       try {
         onPhase?.('waiting-for-receiver')
-        // Browser protocol prompts have no observable completion event. Only this secret's proof
-        // ends launch waiting; the bounded deadline covers requests, body reads and retry gaps.
-        const budget = Math.min(readyTimeoutMs, waitingForLaunch ? 120_000 : 300_000)
+        // Count-only polling survives page suspension without consuming an overall deadline.
+        // Numeric/default budgets retain the legacy deadline across requests, bodies and gaps.
+        const budget = countOnly ? null : Math.min(readyTimeoutMs, waitingForLaunch ? 120_000 : 300_000)
         const attemptBudget = waitingForLaunch ? Math.min(attemptTimeoutMs, 2000) : attemptTimeoutMs
-        const deadline = Date.now() + budget
-        const ready = await bounded(signal, budget, async (readySignal) => {
+        const deadline = budget === null ? null : Date.now() + budget
+        const poll = async (readySignal) => {
           for (let attempt = 0; waitingForLaunch || attempt < readinessAttempts; attempt++) {
             readySignal.throwIfAborted()
             try {
@@ -305,7 +306,7 @@ export function prepareBrowserImport(file, options = {}) {
                   `open-science-import-v1:${challenge}:${value.offset}:${value.accepted ? 1 : 0}`
                 )
                 attemptSignal.throwIfAborted()
-                if (Date.now() >= deadline)
+                if (deadline !== null && Date.now() >= deadline)
                   throw new BrowserImportError(
                     'timeout',
                     'Open-Science did not become ready in time.'
@@ -332,7 +333,8 @@ export function prepareBrowserImport(file, options = {}) {
             'readiness-exhausted',
             'Open-Science did not become ready. Open the app, allow local network access, and retry.'
           )
-        })
+        }
+        const ready = budget === null ? await poll(signal) : await bounded(signal, budget, poll)
         verified = true
         if (
           !Number.isSafeInteger(ready.offset) ||

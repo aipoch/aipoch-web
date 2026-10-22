@@ -444,7 +444,7 @@ test('opening waits for actual progress and configures the official readiness bu
     readinessAttempts: 30,
     readinessIntervalMs: 3000,
     attemptTimeoutMs: 3000,
-    readyTimeoutMs: 300000
+    readyTimeoutMs: null
   })
   s.receipt.resolve({ received: true })
   await pending

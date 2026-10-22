@@ -12,6 +12,8 @@ const state = {
   ready: false,
   stall: 'none' as 'none' | 'headers' | 'body',
   chunkDelay: 0,
+  incompatible: 'none' as 'none' | 'identity' | 'protocol',
+  httpRequests: [] as string[],
   requests: [] as number[],
   phases: [] as string[],
   progress: [] as number[],
@@ -71,6 +73,7 @@ const proof = async (text: string) => {
 }
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = new URL(String(input))
+  state.httpRequests.push(`${init?.method ?? 'GET'} ${url.pathname}`)
   if (url.pathname.endsWith('/ready')) {
     state.requests.push(Date.now())
     if (state.stall === 'headers') return stalled(init?.signal)
@@ -80,8 +83,11 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     return Response.json({
       accepted: false,
       offset: 0,
-      chunkBytes: 4194304,
-      proof: await proof(`open-science-import-v1:${url.searchParams.get('challenge')}:0:0`)
+      chunkBytes: state.incompatible === 'protocol' ? 1 : 4194304,
+      proof:
+        state.incompatible === 'identity'
+          ? 'invalid-proof'
+          : await proof(`open-science-import-v1:${url.searchParams.get('challenge')}:0:0`)
     })
   }
   if (url.pathname.endsWith('/chunk')) {

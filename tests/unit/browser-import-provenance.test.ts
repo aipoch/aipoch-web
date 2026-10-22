@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs'
 
 test('vendored SDK matches the documented local revision and unchanged upstream license', () => {
   const hashes = {
-    'browser-import.mjs': 'ca4531994955a55e31ecd47e25a6b41746763b81b0d8febd1becb7c73f59ac4c',
-    'browser-import.d.ts': '8d09f8e2f653c504b79318c1d42e83e7949a5be64e12fe1e75d6b24ff9dcfce6',
+    'browser-import.mjs': '26313c4e91d41323f78543cf2d730e9aa0d89dd75909b36a48e7144cd76db806',
+    'browser-import.d.ts': 'f6892ef966030dd5375b429847db36f9acedefda5ee8da26f84f5ba6402dcb7c',
     LICENSE: 'b038148f912bdd6e61e33e56214d02c4d8a9640f7a637e21dfcf939332816979'
   }
   for (const [name, expected] of Object.entries(hashes)) {

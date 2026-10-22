@@ -25,7 +25,7 @@ The SDK is bundled as a source dependency; no protocol code is reimplemented.
 This also keeps the existing Docker dependency-install layer usable without
 introducing a local `file:` package that the layer cannot access.
 
-## Local changes (2026-10-21)
+## Local changes (2026-10-22)
 
 The browser flow requires 30 attempts with three-second request deadlines and gaps.
 The pinned SDK only allowed five count-based attempts and clamped launch waiting to
@@ -33,6 +33,10 @@ The pinned SDK only allowed five count-based attempts and clamped launch waiting
 
 - Accepts up to 30 count-based attempts and `readinessIntervalMs` (0–30,000 ms).
   Existing defaults and legacy `wait-for-launch` behavior remain compatible.
+- Allows `readyTimeoutMs: null` only in `attempts` mode to disable the overall
+  readiness deadline. Attempt count, per-request timeouts, and cancellation still
+  apply after page suspension. Numeric budgets and defaults retain their existing
+  caps; `wait-for-launch` continues to require a finite positive deadline.
 - Exposes idempotent `cancel()` to abort the transfer lifetime and best-effort send
   the secret-authenticated DELETE, including during readiness. A canceled transfer
   cannot be reused. The cancellation request has its own two-second cleanup budget.
@@ -40,14 +44,16 @@ The pinned SDK only allowed five count-based attempts and clamped launch waiting
 - Retains the existing HMAC identity and receipt verification, AES-GCM encryption,
   filename validation, and receipt-only completion semantics.
 
-The website selects 30 attempts, 3,000 ms per request, 3,000 ms gaps, and a 300,000 ms
-safety deadline. Thirty fully timed-out attempts take 177 seconds, below that deadline.
+The website selects 30 attempts, 3,000 ms per request, 3,000 ms gaps, and
+`readyTimeoutMs: null`. An elapsed wall-clock deadline must not discard remaining
+attempts when the browser pauses the page. Without suspension, thirty fully timed-out
+attempts take 177 seconds; suspension can extend that duration.
 The existing Biome control-character regex comment is also retained.
 
 | Local file (excluding the lint comment) | SHA-256 |
 | --- | --- |
-| browser-import.mjs | ca4531994955a55e31ecd47e25a6b41746763b81b0d8febd1becb7c73f59ac4c |
-| browser-import.d.ts | 8d09f8e2f653c504b79318c1d42e83e7949a5be64e12fe1e75d6b24ff9dcfce6 |
+| browser-import.mjs | 26313c4e91d41323f78543cf2d730e9aa0d89dd75909b36a48e7144cd76db806 |
+| browser-import.d.ts | f6892ef966030dd5375b429847db36f9acedefda5ee8da26f84f5ba6402dcb7c |
 
 The provenance test pins these reviewed local bytes and the unchanged license.
 When upgrading, reconcile these local changes with the upstream source and run the

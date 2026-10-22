@@ -54,7 +54,8 @@ export function prepareBrowserImport(blob: Blob): BrowserImportTransfer {
           reject(new DOMException('Canceled', 'AbortError'))
         }
         signal?.addEventListener('abort', abort, { once: true })
-        const deadline = setTimeout(() => state.fail(true), readyTimeoutMs)
+        const deadline =
+          readyTimeoutMs === null ? undefined : setTimeout(() => state.fail(true), readyTimeoutMs)
         const cleanup = () => {
           clearTimeout(deadline)
           signal?.removeEventListener('abort', abort)

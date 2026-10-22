@@ -359,8 +359,8 @@ export function createScienceImport(
           readinessAttempts: 30,
           readinessIntervalMs: 3000,
           attemptTimeoutMs: 3000,
-          // The attempt count ends polling; this safety deadline cannot truncate 30 attempts.
-          readyTimeoutMs: 300000,
+          // Preserve remaining attempts when the browser suspends this page.
+          readyTimeoutMs: null,
           onPhase: (phase) => {
             if (signal.aborted) return
             if (phase === 'transferring') {

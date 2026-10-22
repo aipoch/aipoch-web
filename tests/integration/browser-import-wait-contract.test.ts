@@ -154,7 +154,7 @@ for (const stall of ['none', 'headers', 'body'] as const) {
           readinessAttempts: 30,
           attemptTimeoutMs: 3000,
           readinessIntervalMs: 3000,
-          readyTimeoutMs: 300000
+          readyTimeoutMs: null
         })
       }, stall)
       const snapshot = () =>
@@ -181,3 +181,118 @@ for (const stall of ['none', 'headers', 'body'] as const) {
     }
   }, 30000)
 }
+
+test('attempt-count polling resumes after suspension and stops at its terminal condition', async () => {
+  const build = await Bun.build({
+    entrypoints: [resolve('tests/fixtures/browser-import-wait-contract.ts')],
+    target: 'browser'
+  })
+  unitExpect(build.success).toBe(true)
+  const script = await build.outputs[0].text()
+  const server = Bun.serve({
+    port: 0,
+    hostname: '127.0.0.1',
+    fetch: () =>
+      new Response(`<!doctype html><script type="module">${script}</script>`, {
+        headers: { 'Content-Type': 'text/html' }
+      })
+  })
+  const browser = await chromium.launch()
+  try {
+    for (const stall of ['none', 'headers', 'body'] as const) {
+      for (const outcome of [
+        'exhausted',
+        'received',
+        'identity',
+        'protocol',
+        'cancelled'
+      ] as const) {
+        const page = await browser.newPage()
+        try {
+          await page.clock.install({ time: new Date('2026-10-22T00:00:00Z') })
+          await page.clock.pauseAt(new Date('2026-10-22T00:00:01Z'))
+          await page.goto(server.url.toString())
+          await page.evaluate((stall) => {
+            const s = (window as unknown as ContractWindow).waitContract
+            s.stall = stall
+            s.begin({
+              readinessMode: 'attempts',
+              readinessAttempts: 30,
+              attemptTimeoutMs: 3000,
+              readinessIntervalMs: 3000,
+              readyTimeoutMs: null
+            })
+          }, stall)
+          const snapshot = () =>
+            page.evaluate(() => {
+              const s = (window as unknown as ContractWindow).waitContract
+              return {
+                result: s.result,
+                requests: s.requests.length,
+                httpRequests: s.httpRequests,
+                prepares: s.prepares,
+                sends: s.sends,
+                phases: s.phases
+              }
+            })
+          await page.clock.runFor(7000)
+          const before = await snapshot()
+          unitExpect(before.result).toBe('pending')
+          unitExpect(before.requests).toBeGreaterThan(1)
+          // Emulate a sleeping/suspended page: overdue timers fire once on resume,
+          // rather than executing ten minutes of requests while the page is paused.
+          await page.clock.fastForward(600000)
+          const resumed = await snapshot()
+          unitExpect(resumed.result).toBe('pending')
+          unitExpect(resumed.requests).toBeGreaterThanOrEqual(before.requests)
+          unitExpect(resumed.requests).toBeLessThan(30)
+          unitExpect(resumed.prepares).toBe(1)
+          unitExpect(resumed.sends).toBe(1)
+          await page.evaluate((outcome) => {
+            const s = (window as unknown as ContractWindow).waitContract
+            if (outcome === 'cancelled') s.cancel()
+            else if (outcome !== 'exhausted') {
+              s.stall = 'none'
+              s.ready = true
+              if (outcome === 'identity' || outcome === 'protocol') s.incompatible = outcome
+            }
+          }, outcome)
+          if (outcome !== 'cancelled')
+            await page.clock.runFor(outcome === 'exhausted' ? 180000 : 3000)
+          await expect
+            .poll(async () => (await snapshot()).result)
+            .toBe(
+              outcome === 'exhausted'
+                ? 'readiness-exhausted'
+                : outcome === 'cancelled'
+                  ? 'aborted'
+                  : outcome === 'received'
+                    ? 'received'
+                    : 'incompatible'
+            )
+          const done = await snapshot()
+          if (outcome === 'exhausted') unitExpect(done.requests).toBe(30)
+          else unitExpect(done.requests).toBeLessThanOrEqual(resumed.requests + 1)
+          unitExpect(done.phases).toEqual(
+            outcome === 'received'
+              ? ['waiting-for-receiver', 'transferring']
+              : ['waiting-for-receiver']
+          )
+          if (outcome === 'cancelled') {
+            unitExpect(
+              done.httpRequests.filter((request) => request.startsWith('DELETE '))
+            ).toHaveLength(1)
+          }
+          await page.clock.fastForward(600000)
+          await page.clock.runFor(180000)
+          unitExpect((await snapshot()).httpRequests).toEqual(done.httpRequests)
+        } finally {
+          await page.close()
+        }
+      }
+    }
+  } finally {
+    await browser.close()
+    server.stop(true)
+  }
+}, 60000)

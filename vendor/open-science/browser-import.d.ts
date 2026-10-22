@@ -52,8 +52,10 @@ export type BrowserImportTransfer = {
      * overall deadline or cancellation; it observes only this transfer's authenticated handshake. */
     readinessMode?: BrowserImportReadinessMode
     /** Readiness only; defaults to 120,000 ms. Capped at 120,000 ms in wait-for-launch,
-     * 300,000 ms in attempts mode. Timeout permits another send() on the same live transfer. */
-    readyTimeoutMs?: number
+     * 300,000 ms in attempts mode. Set null only in attempts mode to stop by attempt count
+     * without an overall deadline (including across page suspension). Per-request timeouts
+     * still apply. Timeout/exhaustion permits another send() on the same live transfer. */
+    readyTimeoutMs?: number | null
     /** 1–30 attempts with 1,000 ms gaps; defaults to 5. Ignored in wait-for-launch mode. */
     readinessAttempts?: number
     /** Delay after each failed attempt; defaults to 1,000 ms. Range: 0–30,000 ms. */

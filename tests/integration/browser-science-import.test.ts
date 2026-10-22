@@ -363,7 +363,12 @@ for (const surface of ['composer', 'detail']) {
         ).toBeVisible()
         unitExpect((await snapshot()).prepares).toBe(1)
         unitExpect((await snapshot()).sends).toBe(1)
-        await page.clock.runFor(284000)
+        await page.clock.fastForward(600000)
+        await expect(controls.getByRole('status')).toContainText('Waiting for Open-Science')
+        unitExpect((await snapshot()).prepares).toBe(1)
+        unitExpect((await snapshot()).sends).toBe(1)
+        // The actual SDK contract tests cover exhaustion of all 30 attempts.
+        await page.evaluate(() => (window as unknown as TestWindow).importTest.fail(true))
         await expect(announcements).toHaveCount(1)
         await expect(announcements).toContainText('Open-Science has not connected yet')
         if (surface === 'composer') {
