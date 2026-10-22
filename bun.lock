@@ -5,6 +5,7 @@
     "": {
       "name": "aipoch-web",
       "dependencies": {
+        "@aipoch/open-science": "1.0.1",
         "@base-ui/react": "^1.3.0",
         "@panzoom/panzoom": "^4.6.2",
         "@streamdown/cjk": "^1.0.3",
@@ -65,7 +66,22 @@
   "trustedDependencies": [
     "sharp",
   ],
+  "patchedDependencies": {
+    "@aipoch/open-science@1.0.1": "patches/@aipoch%2Fopen-science@1.0.1.patch",
+  },
   "packages": {
+    "@aipoch/open-science": ["@aipoch/open-science@1.0.1", "", { "optionalDependencies": { "@aipoch/open-science-darwin-arm64": "1.0.1", "@aipoch/open-science-darwin-x64": "1.0.1", "@aipoch/open-science-linux-arm64-gnu": "1.0.1", "@aipoch/open-science-linux-x64-gnu": "1.0.1", "@aipoch/open-science-win32-x64": "1.0.1" }, "bin": { "open-science": "cli.mjs" } }, "sha512-P49VeGTJwayd1JS6uORDxYE20EPeYXMCXxo1H0yIK6qcHgSXBckJGE4cfuBDiGsMf/rliY113OTDdCdgaEqWuQ=="],
+
+    "@aipoch/open-science-darwin-arm64": ["@aipoch/open-science-darwin-arm64@1.0.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-W7H6mxF8C9tSGTYtTzGpS1RP2lfQF007Ky9L0xjnTVUMROwz9j+uyjMTiQcFhYqQXbmGHgTogawTXe609uZ3dA=="],
+
+    "@aipoch/open-science-darwin-x64": ["@aipoch/open-science-darwin-x64@1.0.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-2NxeH39/Jvgtp09q+bAYEQw1OboiQpXQconp41WJvJekpCxF4UchqNGST+uCQbqKqbK4tlbiU+Np8DpormRkPQ=="],
+
+    "@aipoch/open-science-linux-arm64-gnu": ["@aipoch/open-science-linux-arm64-gnu@1.0.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-zz0Oob8n8pRV9ROW6tLtY6gV5gMpRDWovMhwS7Fh8Xj2sNnBtu/dtOI7zBEBfNwKL8dhLMX1vDVYFjb9grSEow=="],
+
+    "@aipoch/open-science-linux-x64-gnu": ["@aipoch/open-science-linux-x64-gnu@1.0.1", "", { "os": "linux", "cpu": "x64" }, "sha512-BodjkHeRh2oMtY0oxATJbWbFRpeSnemOeFc4+/aygtPtzlQC9vG2YVlQok0o2+pqmzc/3yNpyI8+KLFMA+w6IQ=="],
+
+    "@aipoch/open-science-win32-x64": ["@aipoch/open-science-win32-x64@1.0.1", "", { "os": "win32", "cpu": "x64" }, "sha512-FW0cvqnFDZeiqcJSG9EeuRznivAQiyg4etObDrfW4s4+7zRlZNSSUr/moOu3QXSck6QH6nYeNYPMKrKO+SK2nA=="],
+
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "https://registry.npmmirror.com/@alloc/quick-lru/-/quick-lru-5.2.0.tgz", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
     "@antfu/install-pkg": ["@antfu/install-pkg@2.1.0", "", { "dependencies": { "package-manager-detector": "^1.8.0", "tinyexec": "^1.3.1" } }, "sha512-sdg9NxU3zR4Mnawfbc/x6GB5Wf17WYud5qOuEuxXjaKpYpMkISSJEjItGebXJ2bQ4DIcly4NYH23mtkGJjvKUw=="],

@@ -182,6 +182,8 @@ it manually. Cancel stops the current transfer. Keep the page open to retain the
 
 Browser import supports packages up to 2 GiB and is unavailable on phones and tablets.
 
+The npm SDK uses a temporary [Bun patch](patches/README.md); see that note before upgrading.
+
 ## Docker Compose
 
 ```sh

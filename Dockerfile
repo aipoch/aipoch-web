@@ -3,6 +3,7 @@ ARG BUN_VERSION=1.3.14
 FROM oven/bun:${BUN_VERSION}-alpine AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
+COPY patches ./patches
 RUN bun install --frozen-lockfile
 
 FROM deps AS builder
