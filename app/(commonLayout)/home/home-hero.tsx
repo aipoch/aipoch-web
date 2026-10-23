@@ -1,10 +1,10 @@
-import { DEFAULT_GITHUB_STAR_COUNT, homeHeroStats } from './home-data'
+import { homeHeroStats } from './home-data'
 import { HomeDownload } from './home-download'
 import { HomeGithubLink } from './home-github-link'
 import { HomeModelMarquee } from './home-model-marquee'
 import { HomeReveal, MotionPulseDot } from './home-motion'
 
-export const HomeHero = ({ githubStars = DEFAULT_GITHUB_STAR_COUNT }: { githubStars?: number }) => (
+export const HomeHero = () => (
   <section id="home-hero" className="relative flex flex-col overflow-hidden bg-[#f7f7f5]">
     <div
       aria-hidden
@@ -55,7 +55,7 @@ export const HomeHero = ({ githubStars = DEFAULT_GITHUB_STAR_COUNT }: { githubSt
         </p>
         <HomeDownload />
         <div className="mt-12 flex flex-wrap items-center gap-6">
-          <HomeGithubLink initialStars={githubStars} />
+          <HomeGithubLink />
           <a
             href="https://github.com/aipoch/open-science?tab=Apache-2.0-1-ov-file"
             target="_blank"

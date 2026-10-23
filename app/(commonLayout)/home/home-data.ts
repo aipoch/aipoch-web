@@ -1,10 +1,5 @@
 export const DEFAULT_SKILL_LIBRARY_COUNT = 597
 
-/** Fallback GitHub star count for the homepage when the API request fails. */
-export const DEFAULT_GITHUB_STAR_COUNT = 3500
-// Last verified repository count on October 10, 2026; live data replaces this fallback.
-export const DEFAULT_MEDICAL_RESEARCH_SKILLS_STAR_COUNT = 1937
-
 const compactGithubCountFormatter = new Intl.NumberFormat('en', {
   notation: 'compact',
   maximumFractionDigits: 1

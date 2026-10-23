@@ -213,22 +213,15 @@ describe('Figma homepage with existing live data contracts', () => {
       expect(formatCompactGithubCount(value)).toBe(expected)
   })
 
-  test('server-renders independent GitHub counts for the hero and skills repositories', () => {
-    for (const [githubStars, formatted] of [
-      [0, '0'],
-      [987, '987'],
-      [5500, '5.5K'],
-      [1250000, '1.3M']
-    ] as const) {
-      const html = renderToStaticMarkup(<HomePage githubStars={githubStars} skillsCount={612} />)
-      expect(html.split(`aria-label="Open-Science on GitHub, ${formatted} stars"`)).toHaveLength(2)
-      const ecosystem = html.split('id="ecosystem"')[1]?.split('</section>')[0] ?? ''
-      const skillsCard =
-        ecosystem.split('<article').find((card) => card.includes('href="/agent-skills/list"')) ?? ''
-      expect(skillsCard).toContain('612 skills')
-      expect(skillsCard).toContain('data-testid="ecosystem-github-stars"')
-      expect(skillsCard).toContain('href="https://github.com/aipoch/medical-research-skills"')
-      expect(skillsCard).toContain('aria-label="Medical Research Skills on GitHub, 1.9K stars"')
-    }
+  test('server-renders loading placeholders without unverified GitHub counts', () => {
+    const html = renderToStaticMarkup(<HomePage skillsCount={612} />)
+    expect(html).toContain('aria-label="Open-Science on GitHub, loading stars"')
+    expect(html).toContain('aria-label="Medical Research Skills on GitHub, loading stars"')
+    expect(html.match(/aria-busy="true"/g)).toHaveLength(2)
+    expect(html).not.toContain('3.5K')
+    expect(html).not.toContain('1.9K')
+    const ecosystem = html.split('id="ecosystem"')[1]?.split('</section>')[0] ?? ''
+    expect(ecosystem).toContain('612 skills')
+    expect(ecosystem).toContain('href="https://github.com/aipoch/medical-research-skills"')
   })
 })

@@ -16,22 +16,20 @@ export const HomePage = ({
   readWatch = null,
   spotlightContent,
   lastUpdated = DEFAULT_HOMEPAGE_LAST_UPDATED,
-  skillsCount = DEFAULT_SKILL_LIBRARY_COUNT,
-  githubStars
+  skillsCount = DEFAULT_SKILL_LIBRARY_COUNT
 }: {
   openScienceConfig?: HomepagePublicConfig | null
   readWatch?: HomepageReadWatchResponse | null
   spotlightContent?: HomeSpotlightContent
   lastUpdated?: HomepageLastUpdated
   skillsCount?: number | null
-  githubStars?: number
 }) => {
   const spotlight = spotlightContent ?? resolveHomeSpotlightContent(openScienceConfig, readWatch)
   const currentSkillsCount = resolveSkillLibraryCount(skillsCount)
 
   return (
     <main data-homepage="aipoch-open-science" className={`${homeMainShell} -mt-[var(--nav-h)]`}>
-      <HomeHero githubStars={githubStars} />
+      <HomeHero />
       <HomeTourSection media={spotlight.media} />
       <HomeEcosystemSection skillsCount={currentSkillsCount} />
       <HomeSpotlightSection content={spotlight} lastUpdated={lastUpdated} />

@@ -5,19 +5,11 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { GithubIcon } from '@/components/svg-icons/github-icon'
 import { waitForBrowserMock } from '@/mocks/ready'
-import {
-  DEFAULT_GITHUB_STAR_COUNT,
-  DEFAULT_MEDICAL_RESEARCH_SKILLS_STAR_COUNT,
-  formatCompactGithubCount
-} from './home-data'
+import { formatCompactGithubCount } from './home-data'
 
 const repositories = {
-  hero: { slug: 'open-science', name: 'Open-Science', fallback: DEFAULT_GITHUB_STAR_COUNT },
-  compact: {
-    slug: 'medical-research-skills',
-    name: 'Medical Research Skills',
-    fallback: DEFAULT_MEDICAL_RESEARCH_SKILLS_STAR_COUNT
-  }
+  hero: { slug: 'open-science', name: 'Open-Science' },
+  compact: { slug: 'medical-research-skills', name: 'Medical Research Skills' }
 } as const
 
 // Deduplicate development effect reruns independently for each repository.
@@ -54,22 +46,17 @@ const loadGithubStars = (repository: string) => {
   return request
 }
 
-export const HomeGithubLink = ({
-  variant = 'hero',
-  initialStars
-}: {
-  variant?: 'hero' | 'compact'
-  initialStars?: number
-}) => {
+export const HomeGithubLink = ({ variant = 'hero' }: { variant?: 'hero' | 'compact' }) => {
   const repository = repositories[variant]
-  const [githubStars, setGithubStars] = useState(initialStars ?? repository.fallback)
+  // Undefined means pending; null means unavailable. Never present a fallback as live data.
+  const [githubStars, setGithubStars] = useState<number | null | undefined>(undefined)
 
   useEffect(() => {
     let isActive = true
 
     // Fetch once on page mount without polling; a hard refresh starts a new page lifecycle.
     void loadGithubStars(repository.slug).then((stars) => {
-      if (isActive && stars !== null) setGithubStars(stars)
+      if (isActive) setGithubStars(stars)
     })
 
     return () => {
@@ -77,7 +64,14 @@ export const HomeGithubLink = ({
     }
   }, [repository.slug])
 
-  const formattedGithubStars = formatCompactGithubCount(githubStars)
+  const loading = githubStars === undefined
+  const formattedGithubStars =
+    typeof githubStars === 'number' ? formatCompactGithubCount(githubStars) : null
+  const starsLabel = loading
+    ? 'loading stars'
+    : formattedGithubStars === null
+      ? 'stars unavailable'
+      : `${formattedGithubStars} stars`
   const compact = variant === 'compact'
   const testId = compact ? 'ecosystem-github' : 'home-github'
 
@@ -87,7 +81,7 @@ export const HomeGithubLink = ({
       target="_blank"
       rel="noopener noreferrer"
       data-testid={`${testId}-link`}
-      aria-label={`${repository.name} on GitHub, ${formattedGithubStars} stars`}
+      aria-label={`${repository.name} on GitHub, ${starsLabel}`}
       className={
         compact
           ? 'ml-auto inline-flex shrink-0 items-center gap-1.5 text-[#111] transition-colors hover:text-[#915600]'
@@ -100,6 +94,7 @@ export const HomeGithubLink = ({
       />
       <span
         data-testid={`${testId}-stars`}
+        aria-busy={loading}
         className={
           compact
             ? 'flex items-center gap-1 whitespace-nowrap'
@@ -107,7 +102,18 @@ export const HomeGithubLink = ({
         }
       >
         <Star className="size-3.5" aria-hidden="true" />
-        {formattedGithubStars}
+        {loading ? (
+          <span className="inline-flex min-w-[4.5ch] items-center">
+            {/* Reserve the count width and respect reduced-motion preferences while loading. */}
+            <span
+              aria-hidden="true"
+              className="h-3 w-[4.5ch] rounded-none bg-[#c4c4bf] motion-safe:animate-pulse"
+            />
+            <span className="sr-only">Loading stars</span>
+          </span>
+        ) : (
+          <span className="min-w-[4.5ch]">{formattedGithubStars ?? 'Unavailable'}</span>
+        )}
       </span>
       {compact ? null : (
         <>

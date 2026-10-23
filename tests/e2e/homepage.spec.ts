@@ -92,6 +92,49 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
 })
 
+test('keeps both GitHub counts loading until their own response arrives', async ({
+  page
+}, testInfo) => {
+  const releases: Array<() => void> = []
+  for (const [index, glob] of [GITHUB_REPOSITORY_API_GLOB, SKILLS_GITHUB_API_GLOB].entries()) {
+    const ready = new Promise<void>((resolve) => {
+      releases[index] = resolve
+    })
+    await page.unroute(glob)
+    await page.route(glob, async (route) => {
+      await ready
+      await route.fulfill({ json: { stargazers_count: index === 0 ? 5300 : 0 } })
+    })
+  }
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    for (const prefix of ['home-github', 'ecosystem-github']) {
+      const stars = page.getByTestId(`${prefix}-stars`)
+      await expect(stars).toHaveText('Loading stars')
+      await expect(stars).toHaveAttribute('aria-busy', 'true')
+      await expect(page.getByTestId(`${prefix}-link`)).toHaveAttribute(
+        'aria-label',
+        /loading stars$/
+      )
+    }
+    await page
+      .getByTestId('home-github-link')
+      .screenshot({ path: testInfo.outputPath('github-loading.png') })
+    releases[0]()
+    await expect(page.getByTestId('home-github-stars')).toHaveText('5.3K')
+    await expect(page.getByTestId('home-github-stars')).toHaveAttribute('aria-busy', 'false')
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('Loading stars')
+    releases[1]()
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('0')
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveAttribute('aria-busy', 'false')
+    await page
+      .getByTestId('home-github-link')
+      .screenshot({ path: testInfo.outputPath('github-loaded.png') })
+  } finally {
+    for (const release of releases) release()
+  }
+})
+
 test('loads each repository once per page load without sharing counts or polling', async ({
   page
 }) => {
@@ -125,23 +168,18 @@ test('loads each repository once per page load without sharing counts or polling
   expect(counts).toEqual([2, 2])
 })
 
-test('uses identical GitHub star formatting in both placements', async ({ page }) => {
-  await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
-  let body = '{}'
-  for (const glob of [GITHUB_REPOSITORY_API_GLOB, SKILLS_GITHUB_API_GLOB]) {
-    await page.unroute(glob)
-    await page.route(glob, (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body })
-    )
-  }
-
-  for (const [value, formatted] of [
-    [0, '0'],
-    [987, '987'],
-    [5500, '5.5K'],
-    [1250000, '1.3M']
-  ] as const) {
-    body = JSON.stringify({ stargazers_count: value })
+// Give each response its own page lifecycle so slow reloads do not share one test deadline.
+for (const [value, formatted] of [
+  [0, '0'],
+  [987, '987'],
+  [5500, '5.5K'],
+  [1250000, '1.3M']
+] as const) {
+  test(`formats GitHub count ${value} consistently in both placements`, async ({ page }) => {
+    for (const glob of [GITHUB_REPOSITORY_API_GLOB, SKILLS_GITHUB_API_GLOB]) {
+      await page.unroute(glob)
+      await page.route(glob, (route) => route.fulfill({ json: { stargazers_count: value } }))
+    }
     await page.reload({ waitUntil: 'domcontentloaded' })
     for (const [prefix, name] of [
       ['home-github', 'Open-Science'],
@@ -153,34 +191,31 @@ test('uses identical GitHub star formatting in both placements', async ({ page }
         `${name} on GitHub, ${formatted} stars`
       )
     }
-  }
-})
+  })
+}
 
-test('isolates Skills GitHub failures from the hero repository', async ({ page }) => {
-  await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
-  await page.unroute(SKILLS_GITHUB_API_GLOB)
-  let status = 200
-  let body = '{}'
-  await page.route(SKILLS_GITHUB_API_GLOB, (route) =>
-    route.fulfill({ status, contentType: 'application/json', body })
-  )
-
-  for (const failedResponse of [
-    { status: 403, body: '{"message":"API rate limit exceeded"}' },
-    { status: 200, body: '{}' },
-    { status: 200, body: '{"stargazers_count":-1}' },
-    { status: 200, body: '{"stargazers_count":"5500"}' },
-    { status: 200, body: 'invalid JSON' }
-  ]) {
-    status = failedResponse.status
-    body = failedResponse.body
-    const response = page.waitForResponse(SKILLS_GITHUB_API_GLOB)
+for (const { name, status, body } of [
+  { name: 'rate limit', status: 403, body: '{"message":"API rate limit exceeded"}' },
+  { name: 'missing count', status: 200, body: '{}' },
+  { name: 'negative count', status: 200, body: '{"stargazers_count":-1}' },
+  { name: 'string count', status: 200, body: '{"stargazers_count":"5500"}' },
+  { name: 'invalid JSON', status: 200, body: 'invalid JSON' }
+]) {
+  test(`isolates Skills GitHub ${name} from the hero repository`, async ({ page }) => {
+    await page.unroute(SKILLS_GITHUB_API_GLOB)
+    await page.route(SKILLS_GITHUB_API_GLOB, (route) =>
+      route.fulfill({ status, contentType: 'application/json', body })
+    )
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await (await response).finished()
     await expect(page.getByTestId('home-github-stars')).toHaveText('3.6K')
-    await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('1.9K')
-  }
-})
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('Unavailable')
+    await expect(page.getByTestId('ecosystem-github-stars')).toHaveAttribute('aria-busy', 'false')
+    await expect(page.getByTestId('ecosystem-github-link')).toHaveAttribute(
+      'aria-label',
+      'Medical Research Skills on GitHub, stars unavailable'
+    )
+  })
+}
 
 test('isolates hero GitHub failures from the Skills repository', async ({ page }) => {
   await page.unroute(GITHUB_REPOSITORY_API_GLOB)
@@ -194,7 +229,7 @@ test('isolates hero GitHub failures from the Skills repository', async ({ page }
     })
   )
   await page.reload()
-  await expect(page.getByTestId('home-github-stars')).toHaveText('3.5K')
+  await expect(page.getByTestId('home-github-stars')).toHaveText('Unavailable')
   await expect(page.getByTestId('ecosystem-github-stars')).toHaveText('9.9K')
 })
 

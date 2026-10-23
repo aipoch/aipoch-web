@@ -134,7 +134,7 @@ export const ShareRow = ({ url, title }: ShareRowProps) => {
         onClick={copyLink}
         aria-label={copied ? 'Link copied' : 'Copy link'}
         title="Copy link"
-        className={iconButtonClass}
+        className={`${iconButtonClass} cursor-pointer`}
       >
         {copied ? (
           <Check className="size-4 text-[#2d6a4f]" aria-hidden="true" />
