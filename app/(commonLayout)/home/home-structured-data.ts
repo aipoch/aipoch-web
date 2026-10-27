@@ -7,6 +7,7 @@ import {
 import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { openScienceScreenshotUrls } from '@/lib/open-science-media-assets'
+import { openScienceProductFacts } from '@/lib/open-science-product-facts'
 import { resolveSkillLibraryCount } from './home-data'
 
 export const HOMEPAGE_TITLE = 'AIPOCH | The Open-Source Harness for Scientific Research'
@@ -14,9 +15,9 @@ export const HOMEPAGE_DESCRIPTION =
   'AIPOCH builds the open-source harness for scientific research: a model-agnostic Open-Science workbench and a growing library of audited medical research agent skills.'
 
 // Keep this fallback tied to the visible product snapshot, not deployment or SEO edit dates.
-export const HOMEPAGE_LAST_MODIFIED = '2026-08-18'
+export const HOMEPAGE_LAST_MODIFIED = openScienceProductFacts.releaseDate
 // UI changes must not rewrite product release dates or video upload dates.
-export const HOMEPAGE_LAYOUT_LAST_MODIFIED = '2026-10-21'
+export const HOMEPAGE_LAYOUT_LAST_MODIFIED = '2026-10-27'
 const HOMEPAGE_VIDEO_ASSET_HOST = 'statics.aipoch.com'
 const OPEN_SCIENCE_VIDEO_DURATION = 'PT1M0.48S'
 const DEFAULT_HOMEPAGE_VIDEO_NAME = 'AIPOCH Open-Science product tour'
@@ -28,7 +29,7 @@ export interface HomepageLastUpdated {
 
 export const DEFAULT_HOMEPAGE_LAST_UPDATED: HomepageLastUpdated = {
   dateTime: HOMEPAGE_LAST_MODIFIED,
-  label: 'Aug 18, 2026'
+  label: openScienceProductFacts.releaseLabel
 }
 
 interface HomepageVideoFacts {

@@ -8,6 +8,7 @@
 - [AIPOCH Open-Science](https://aipoch.com/open-science): Product overview covering scientific agents, Python and R execution, scientific Connectors, traceable artifacts, model choice, and portable .science packages.
 - [AIPOCH Open-Science Downloads](https://aipoch.com/open-science/download): Current stable installers, supported operating systems, installation requirements, release information, and update guidance for the desktop application.
 - [AIPOCH Open-Science Documentation](https://aipoch.com/docs/): Maintained guides for installation, projects, models, tools, permissions, execution, research records, and sharing workflows.
+- [AIPOCH Open-Science Documentation Index for AI Assistants](https://aipoch.com/docs/llms.txt): Official documentation index with direct page links and summaries for installation, research workflows, tools, permissions, and .science packages.
 - [AIPOCH Open-Science Source Code](https://github.com/aipoch/open-science): Official Apache-2.0 source repository with implementation details, contribution guidance, issue tracking, and release history.
 - [Latest AIPOCH Open-Science Release](https://github.com/aipoch/open-science/releases/latest): Latest published release notes, installation assets, fixes, compatibility information, and version-specific changes.
 
@@ -35,6 +36,7 @@
 - [Scientific Skills Library](https://aipoch.com/agent-skills/list): Searchable website catalog of medical and scientific methods; this catalog is distinct from the desktop application's bundled resources.
 - [Skill Marketplace Guide](https://aipoch.com/docs/skills/marketplace/): Browse and install additional Skills, inspect resource details, and understand the marketplace workflow in the application.
 - [Specialists](https://aipoch.com/docs/specialists/overview/): Configure focused agent roles, assign capabilities, delegate scoped tasks, and review results within the researcher's permissions.
+- [AIPOCH Open-Science Benchmarks](https://aipoch.com/benchmark/open-science): Self-reported AstaBench and ASI-Bench results, with methods, task scopes, model configurations, and limits on cross-split and public-leaderboard comparisons.
 - [MedSkillAudit](https://aipoch.com/benchmark/medskillaudit): Evaluation framework explaining research-skill checks, veto gates, scoring methodology, supporting evidence, and release-readiness decisions.
 - [Skill Leaderboard](https://aipoch.com/leaderboard): Published skill evaluation results, scores, and category filters; evaluation scores are not clinical certification or universal performance guarantees.
 

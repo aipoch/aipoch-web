@@ -160,7 +160,7 @@ describe('Open-Science page', () => {
     const webpage = schemas.find((item) => item['@type'] === 'WebPage')
     const softwareApplication = schemas.find((item) => item['@type'] === 'SoftwareApplication')
 
-    expect(webpage?.dateModified).toBe('2026-10-21')
+    expect(webpage?.dateModified).toBe('2026-10-27')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v1.2.3',
       dateModified: '2026-09-07',
@@ -250,7 +250,7 @@ describe('Open-Science page', () => {
       subjectOf: { '@id': 'https://arxiv.org/abs/2610.17110#article' }
     })
     expect(schemas.find((item) => item['@type'] === 'SoftwareApplication')?.featureList).toContain(
-      '36 built-in Scientific Connectors'
+      '43 built-in Scientific Connectors'
     )
     expect(schemas.find((item) => item['@type'] === 'ScholarlyArticle')).toMatchObject({
       '@id': 'https://arxiv.org/abs/2610.17110#article',
@@ -621,7 +621,11 @@ describe('Open-Science page', () => {
     expect(text).toContain('Codex subscription')
     expect(text).toContain('xAI (Grok) OAuth')
     expect(text).toContain('Apodex')
-    expect(text).toContain('36 built-in Scientific Connectors')
+    expect(text).toContain('43 built-in Scientific Connectors')
+    expect(text).toContain('Some sources are off by default and require explicit opt-in')
+    expect(text).toContain('Semantic Scholar')
+    expect(text).toContain('headless CLI')
+    expect(text).toContain('does not execute code or restore credentials')
     expect(text).toContain(
       'they do not certify scientific correctness or replace expert validation'
     )

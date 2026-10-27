@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { openScienceProductFacts } from '@/lib/open-science-product-facts'
 import type { StaticImageFileName } from '@/lib/static-assets'
 import { OpenScienceImage } from './open-science-image'
 import { OpenScienceSectionHeading, openScienceContainer } from './open-science-section'
@@ -120,7 +121,12 @@ export function OpenScienceCapabilities() {
             items={[
               { title: 'Persistent Python and R kernels' },
               { title: 'Stateless shell execution with recorded history' },
-              { title: 'Supported remote SSH compute' }
+              { title: 'Supported remote SSH compute' },
+              {
+                title: 'Literature Library',
+                description:
+                  'Discover references and citing papers through Semantic Scholar, import PDFs and bibliography files by drag and drop, download supplementary attachments, and export Smart Screening decisions as CSV. External coverage and access depend on the source service.'
+              }
             ]}
           />
         </Capability>
@@ -139,8 +145,7 @@ export function OpenScienceCapabilities() {
             items={[
               {
                 title: 'Scientific Connectors',
-                description:
-                  'Open-Science includes 36 built-in Scientific Connectors covering scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Connector and tool access remains governed by workspace permissions, and researchers can add compatible custom connectors.'
+                description: `AIPOCH Open-Science includes ${openScienceProductFacts.builtInConnectors} built-in Scientific Connectors covering scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Some sources are off by default and require explicit opt-in. Access depends on source settings, required credentials, workspace permissions, and service availability. Researchers can also add compatible custom connectors.`
               },
               {
                 title: 'Specialists',
@@ -190,9 +195,9 @@ export function OpenScienceCapabilities() {
                   'Connect an artifact to available inputs, producer code, execution history, environment details, and the conversation branch that produced it.'
               },
               {
-                title: 'Reviewer checks',
+                title: 'Opt-in Reviewer checks',
                 description:
-                  'Compare completed agent work with available transcripts, execution records, and artifacts to identify unsupported claims, inconsistencies, or missing evidence.'
+                  'When enabled, compare completed agent work with the available transcripts, execution records, and artifacts for that work to identify unsupported claims, inconsistencies, or missing evidence. Review findings do not certify scientific correctness.'
               },
               {
                 title: 'Explicit evidence gaps',

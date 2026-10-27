@@ -60,10 +60,10 @@ describe('resolveHomeSpotlightContent', () => {
 
   test('keeps current release facts but no media when APIs are null', () => {
     expect(resolveHomeSpotlightContent(null, null)).toEqual({
-      releaseVersion: 'v0.16.0',
+      releaseVersion: 'v1.0.3',
       latestRelease: {
-        updateDate: 'Aug 16, 2026',
-        title: 'v0.16.0',
+        updateDate: 'Oct 26, 2026',
+        title: 'v1.0.3',
         description: '',
         features: []
       },

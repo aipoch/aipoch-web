@@ -32,7 +32,7 @@ export const openScienceFaqItems = [
   {
     question: 'What does a .science package contain in AIPOCH Open-Science?',
     answer:
-      'A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving. Included files depend on your export selection. Side Chat conversations, private reading bookmarks, and their notes are excluded. Review the export preview before sharing. See the .science package guide for content options and export steps.',
+      'A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving. Desktop, local Web sessions, and the headless CLI support export and import. Imported history is read-only and does not execute code or restore credentials. Included files depend on your export selection. Side Chat conversations, private reading bookmarks, and their notes are excluded. Received verification records describe the sender’s checks, not a rerun on the receiving computer. Review the export preview before sharing. See the .science package guide for content options and export steps.',
     answerLinks: [
       {
         label: '.science package guide',

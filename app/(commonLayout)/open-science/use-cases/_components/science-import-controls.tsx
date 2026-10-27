@@ -142,10 +142,10 @@ export const ScienceImportButton = ({
       }}
       className={
         variant === 'toolbar'
-          ? 'inline-flex h-9 w-60 shrink-0 items-center justify-center gap-2 bg-[#10110f] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a4b46] active:bg-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default max-sm:ml-auto max-sm:w-auto max-sm:max-w-full max-sm:gap-1 max-sm:px-2 max-sm:text-xs max-sm:leading-4'
+          ? 'inline-flex h-9 w-60 shrink-0 cursor-pointer items-center justify-center gap-2 bg-[#10110f] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a4b46] active:bg-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default max-sm:ml-auto max-sm:w-auto max-sm:max-w-full max-sm:gap-1 max-sm:px-2 max-sm:text-xs max-sm:leading-4'
           : variant === 'detail'
-            ? 'inline-flex min-h-11 items-center justify-center gap-2 bg-[#10110f] px-5 py-1 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a4b46] active:bg-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default'
-            : 'inline-flex min-h-10 w-full items-center justify-center gap-3 rounded-xl bg-[#10110f] px-5 py-1 text-sm font-semibold text-white transition-colors hover:bg-[#34352f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default sm:w-auto sm:min-w-56'
+            ? 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 bg-[#10110f] px-5 py-1 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a4b46] active:bg-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default'
+            : 'inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-[#10110f] px-5 py-1 text-sm font-semibold text-white transition-colors hover:bg-[#34352f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#10110f] disabled:cursor-default sm:w-auto sm:min-w-56'
       }
     >
       {progressing ? (

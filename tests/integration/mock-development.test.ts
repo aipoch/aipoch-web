@@ -114,10 +114,10 @@ describe('mock development end to end', () => {
       }
     }, 120000)
   }
-  test('server-renders both GitHub counts and loads independent browser-intercepted results', async () => {
+  test('server-renders GitHub placeholders and loads independent browser-intercepted results', async () => {
     const html = await renderedHtml(await fetch(web))
-    expect(html.match(/aria-label="Open-Science on GitHub, 3\.5K stars"/g)).toHaveLength(1)
-    expect(html).toContain('aria-label="Medical Research Skills on GitHub, 1.9K stars"')
+    expect(html).toContain('aria-label="Open-Science on GitHub, loading stars"')
+    expect(html).toContain('aria-label="Medical Research Skills on GitHub, loading stars"')
     expect(html).toContain('data-testid="ecosystem-github-stars"')
 
     const browser = await chromium.launch()

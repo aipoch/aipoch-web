@@ -47,13 +47,13 @@ describe('homepage GEO contracts', () => {
     expect(organization?.description).toBe(
       'AIPOCH builds the open-source harness for scientific research. Open-Science is a model-agnostic AI workbench with audited medical research agent skills.'
     )
-    expect(softwareApplication?.softwareVersion).toBe('v0.16.0')
+    expect(softwareApplication?.softwareVersion).toBe('v1.0.3')
     expect(lastUpdated).toEqual({
-      dateTime: '2026-08-18',
-      label: 'Aug 18, 2026'
+      dateTime: '2026-10-26',
+      label: 'Oct 26, 2026'
     })
     expect(softwareApplication).toMatchObject({
-      dateModified: '2026-08-18',
+      dateModified: '2026-10-26',
       mainEntityOfPage: { '@id': 'https://aipoch.com/open-science#webpage' },
       sameAs: ['https://github.com/aipoch/open-science']
     })
@@ -97,7 +97,7 @@ describe('homepage GEO contracts', () => {
     const { HomePage } = await import('../../app/(commonLayout)/home/home-page')
     const fallbackHtml = renderToStaticMarkup(<HomePage />)
     expect(fallbackHtml).toContain('Latest release')
-    expect(fallbackHtml).toContain('v0.16.0')
+    expect(fallbackHtml).toContain('v1.0.3')
   })
 
   test('uses homepage API release facts directly in machine-readable schemas', async () => {
@@ -115,7 +115,7 @@ describe('homepage GEO contracts', () => {
       dateTime: 'Aug 4, 2026',
       label: 'Aug 4, 2026'
     })
-    expect(webpage?.dateModified).toBe('2026-10-21T00:00:00.000Z')
+    expect(webpage?.dateModified).toBe('2026-10-27T00:00:00.000Z')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v0.20.4',
       dateModified: '2026-08-04',
@@ -246,7 +246,7 @@ console.log(renderToStaticMarkup(await Home()))`
     expect(schemas.find((schema) => schema['@type'] === 'WebPage')).toMatchObject({
       '@id': 'https://aipoch.com/#webpage',
       url: 'https://aipoch.com',
-      dateModified: '2026-10-21T00:00:00.000Z',
+      dateModified: '2026-10-27T00:00:00.000Z',
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: ['[data-testid="spotlight-title"]', '[data-homepage-summary]']
@@ -264,6 +264,7 @@ console.log(renderToStaticMarkup(await Home()))`
     })
     const videoSchemas = schemas.filter((schema) => schema['@type'] === 'VideoObject')
     expect(videoSchemas).toHaveLength(0)
+    // The explicit historical API fixture must take precedence over the current fallback snapshot.
     expect(schemas.find((schema) => schema['@type'] === 'SoftwareApplication')).toMatchObject({
       name: 'AIPOCH Open-Science',
       softwareVersion: 'v0.16.0',

@@ -6,6 +6,7 @@ import {
 import { commonLayoutLastModified } from '@/lib/common-layout-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
 import { openScienceScreenshotUrls } from '@/lib/open-science-media-assets'
+import { openScienceProductFacts } from '@/lib/open-science-product-facts'
 import {
   type DownloadManifest,
   formatDownloadVersionLabel,
@@ -15,9 +16,9 @@ import {
 import { openScienceFaqItems } from './open-science-faq-data'
 import { OPEN_SCIENCE_PAGE_LAST_MODIFIED, openScienceSeo } from './open-science-metadata'
 
-export const OPEN_SCIENCE_CURRENT_VERSION = 'v0.16.0'
-export const OPEN_SCIENCE_CURRENT_RELEASE_DATE = '2026-08-16'
-export const OPEN_SCIENCE_CURRENT_RELEASE_LABEL = 'Aug 16, 2026'
+export const OPEN_SCIENCE_CURRENT_VERSION = openScienceProductFacts.releaseVersion
+export const OPEN_SCIENCE_CURRENT_RELEASE_DATE = openScienceProductFacts.releaseDate
+export const OPEN_SCIENCE_CURRENT_RELEASE_LABEL = openScienceProductFacts.releaseLabel
 export const OPEN_SCIENCE_GITHUB_URL = 'https://github.com/aipoch/open-science'
 export const OPEN_SCIENCE_WEBPAGE_ID = `${SITE_DOMAIN}/open-science#webpage`
 export const OPEN_SCIENCE_PRODUCT_ID = `${SITE_DOMAIN}/#open-science`
@@ -30,7 +31,7 @@ export const OPEN_SCIENCE_PREPRINT_ID = `${OPEN_SCIENCE_PREPRINT_URL}#article`
 const OPEN_SCIENCE_PRODUCT_DESCRIPTION =
   'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux. It brings scientific agents, Python and R execution, scientific Connectors, and traceable artifacts into one workspace. A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving.'
 
-/** Bibliographic facts verified against the official arXiv abstract record on 2026-10-21. */
+/** Bibliographic facts verified against the official arXiv abstract record on 2026-10-27. */
 const buildOpenSciencePreprintSchema = (): Record<string, unknown> => ({
   '@type': 'ScholarlyArticle',
   '@id': OPEN_SCIENCE_PREPRINT_ID,
@@ -61,7 +62,7 @@ const MONTH_TO_NUMBER: Record<string, string> = {
 /** Normalize Schema.org dates to YYYY-MM-DD instead of mixing them with display formats. */
 export const toSchemaDate = (
   value?: string | null,
-  fallback = OPEN_SCIENCE_CURRENT_RELEASE_DATE
+  fallback: string = OPEN_SCIENCE_CURRENT_RELEASE_DATE
 ): string => {
   const raw = value?.trim()
   if (!raw) return fallback
@@ -199,7 +200,7 @@ export const buildOpenSciencePageGraph = ({
         featureList: [
           'Scientific agents',
           'Python and R execution',
-          '36 built-in Scientific Connectors',
+          `${openScienceProductFacts.builtInConnectors} built-in Scientific Connectors`,
           'Traceable artifacts',
           'Selected conversation branches, file versions, Notebook records, and verification evidence in .science packages'
         ],

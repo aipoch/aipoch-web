@@ -11,7 +11,7 @@ export const openScienceSeo = {
 } as const
 
 const openSciencePageUrl = `${SITE_DOMAIN}/open-science`
-export const OPEN_SCIENCE_PAGE_LAST_MODIFIED = '2026-10-21'
+export const OPEN_SCIENCE_PAGE_LAST_MODIFIED = '2026-10-27'
 const openScienceSocialAsset = staticImage('og-science-open-to-all-ab128c94.png')
 export const openScienceSocialImage = {
   url: openScienceSocialAsset.src,
