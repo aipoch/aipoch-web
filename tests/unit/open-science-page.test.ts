@@ -160,7 +160,7 @@ describe('Open-Science page', () => {
     const webpage = schemas.find((item) => item['@type'] === 'WebPage')
     const softwareApplication = schemas.find((item) => item['@type'] === 'SoftwareApplication')
 
-    expect(webpage?.dateModified).toBe('2026-10-27')
+    expect(webpage?.dateModified).toBe('2026-10-29')
     expect(softwareApplication).toMatchObject({
       softwareVersion: 'v1.2.3',
       dateModified: '2026-09-07',

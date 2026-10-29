@@ -1,4 +1,5 @@
 import { ArrowRight, Star } from 'lucide-react'
+import Image from 'next/image'
 import { OpenScienceDownload } from './open-science-download'
 import type { DownloadManifest } from './open-science-download-data'
 import { OpenScienceImage } from './open-science-image'
@@ -75,8 +76,11 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
           data-open-science-reveal="0.24"
           className="mt-12 pb-8 [mask-image:linear-gradient(black_20%,transparent_98%)] lg:mt-20 lg:pb-0"
         >
-          <OpenScienceImage
-            asset="open-science-setup-c4dee494.webp"
+          <Image
+            src="/open-science/setup-2026-10-29.webp"
+            width={3960}
+            height={2084}
+            quality={100}
             alt="Open-Science first-time setup — connect a model to your research workspace"
             sizes="(min-width: 1024px) 990px, calc(100vw - 48px)"
             preload
