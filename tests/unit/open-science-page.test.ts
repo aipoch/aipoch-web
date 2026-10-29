@@ -250,7 +250,7 @@ describe('Open-Science page', () => {
       subjectOf: { '@id': 'https://arxiv.org/abs/2610.17110#article' }
     })
     expect(schemas.find((item) => item['@type'] === 'SoftwareApplication')?.featureList).toContain(
-      '43 built-in Scientific Connectors'
+      '48 built-in Scientific Connectors'
     )
     expect(schemas.find((item) => item['@type'] === 'ScholarlyArticle')).toMatchObject({
       '@id': 'https://arxiv.org/abs/2610.17110#article',
@@ -621,7 +621,7 @@ describe('Open-Science page', () => {
     expect(text).toContain('Codex subscription')
     expect(text).toContain('xAI (Grok) OAuth')
     expect(text).toContain('Apodex')
-    expect(text).toContain('43 built-in Scientific Connectors')
+    expect(text).toContain('48 built-in Scientific Connectors')
     expect(text).toContain('Some sources are off by default and require explicit opt-in')
     expect(text).toContain('Semantic Scholar')
     expect(text).toContain('headless CLI')

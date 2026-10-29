@@ -18,7 +18,7 @@ export const HomeEcosystemSection = ({ skillsCount }: { skillsCount: number }) =
             Scientific AI workflows
           </h2>
           <p className="text-base leading-[26px] text-[#292929]/62">
-            Open Science runs and documents the work. Medical Research Skills provide vetted domain
+            Open-Science runs and documents the work. Medical Research Skills provide vetted domain
             methods, and MedSkillAudit checks each skill before release.
           </p>
         </div>
@@ -26,7 +26,7 @@ export const HomeEcosystemSection = ({ skillsCount }: { skillsCount: number }) =
       <div className="mt-12 grid gap-x-9 gap-y-12 md:grid-cols-3 md:gap-y-2 lg:mt-[86px]">
         {[
           {
-            title: 'Open-Science',
+            title: 'AIPOCH Open-Science',
             image: 'ecosystem-workbench.png',
             href: '/open-science',
             description: 'Organize projects, run analyses, and inspect outputs.',
