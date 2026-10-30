@@ -113,10 +113,10 @@ describe('Figma homepage with existing live data contracts', () => {
       '25',
       '4',
       '525',
-      '43'
+      '48'
     ])
     expect(hero).toContain('MARKETPLACE SKILLS')
-    expect(hero).toContain('23 BUILT-IN SKILLS')
+    expect(hero).toContain('24 BUILT-IN SKILLS')
     expect(hero).toContain('PROVIDER PRESETS')
   })
 
@@ -193,8 +193,8 @@ describe('Figma homepage with existing live data contracts', () => {
     const html = render()
     for (const step of ['plan', 'execute', 'produce', 'review', 'share'])
       expect(html).toContain(`aria-controls="workflow-${step}-detail"`)
-    expect(html).toContain('Export a session as a portable .science package')
-    expect(html).toContain('conversation branches, selected files, and recorded evidence')
+    expect(html).toContain('Export selected conversation branches, file versions, Notebook records')
+    expect(html).toContain('verification evidence as a portable .science package')
     expect(html).toContain('Open-Science plan workflow preview')
     expect(html).toContain('Search, assess, and synthesize research evidence.')
     expect(html).toContain(

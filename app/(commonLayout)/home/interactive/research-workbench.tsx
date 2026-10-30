@@ -9,13 +9,13 @@ const steps = [
     id: 'plan',
     title: 'Plan',
     description:
-      'Describe the task in plain language. The agent drafts a step-by-step execution plan for your review — nothing runs until you approve it.'
+      'Use Plan first to review the proposed methods, inputs, and outputs before execution. Plan approval and tool permissions are separate controls.'
   },
   {
     id: 'execute',
     title: 'Execute',
     description:
-      'Run commands, Python, R, search, and connectors in one persistent workspace. Every action stays visible, approval-gated, and open to review.'
+      'Run commands, Python, R, searches, and connectors in one persistent workspace. Operations follow the active approval mode, remembered grants, and resource permissions.'
   },
   {
     id: 'produce',
@@ -33,7 +33,7 @@ const steps = [
     id: 'share',
     title: 'Share',
     description:
-      'Export a session as a portable .science package with its conversation branches, selected files, and recorded evidence — so a collaborator can inspect how the result was produced, not just see the conclusion.'
+      'Export selected conversation branches, file versions, Notebook records, and verification evidence as a portable .science package for review, handoff, or archiving.'
   }
 ] as const
 

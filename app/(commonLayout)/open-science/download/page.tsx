@@ -64,9 +64,9 @@ const kickerClass =
 const headingClass = 'font-[Georgia,serif] font-normal tracking-normal'
 const sectionPaddingClass =
   'px-5 py-20 sm:px-10 sm:py-24 lg:px-[max(5.5vw,calc((100vw-1320px)/2))] lg:py-32'
-const pageTitle = 'Download Open-Science for macOS, Windows and Linux | AIPOCH'
+const pageTitle = 'Download AIPOCH Open-Science for macOS, Windows and Linux'
 const pageDescription =
-  'Download the latest stable Open-Science desktop app for Apple Silicon, Intel Mac, Windows x64, or Linux. Check system requirements and installation guidance.'
+  'Download AIPOCH Open-Science for macOS, Windows x64, and Linux x64 or ARM64. Choose a desktop installer and check installation guidance.'
 const pageUrl = `${SITE_DOMAIN}/open-science/download`
 const downloadPageId = `${pageUrl}#webpage`
 const downloadBreadcrumbId = `${pageUrl}#breadcrumb`
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: pageUrl,
     siteName: 'AIPOCH Open-Science',
-    title: 'Download Open-Science for macOS, Windows and Linux',
+    title: pageTitle,
     description:
       'Get the latest stable AIPOCH Open-Science desktop app with clear platform and installation guidance.',
     images: [
@@ -109,7 +109,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Download Open-Science for macOS, Windows and Linux',
+    title: pageTitle,
     description:
       'Get the latest stable AIPOCH Open-Science desktop app with clear platform and installation guidance.',
     images: [socialImage.src]

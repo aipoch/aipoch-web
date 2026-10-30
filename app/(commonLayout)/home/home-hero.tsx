@@ -49,9 +49,10 @@ export const HomeHero = () => (
           data-testid="home-hero-description"
           className="mt-8 max-w-[549px] text-[15px] leading-[25px] text-[#6b6b66]"
         >
-          Open-Science is AIPOCH&apos;s open-source, local-first AI research workbench. It combines
+          AIPOCH Open-Science is an open-source, local-first AI research workbench. It combines
           agent workflows, Python and R execution, scientific data connectors, and traceable
-          research artifacts in one inspectable workspace.
+          artifacts. Share selected research records as a .science package for review, handoff, or
+          archiving.
         </p>
         <HomeDownload />
         <div className="mt-12 flex flex-wrap items-center gap-6">

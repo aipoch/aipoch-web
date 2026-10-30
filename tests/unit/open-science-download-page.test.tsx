@@ -70,7 +70,7 @@ describe('Open-Science download page', () => {
     const openGraphImages = metadata?.openGraph?.images
     const openGraphImage = Array.isArray(openGraphImages) ? openGraphImages[0] : openGraphImages
 
-    expect(metadata?.title).toBe('Download Open-Science for macOS, Windows and Linux | AIPOCH')
+    expect(metadata?.title).toBe('Download AIPOCH Open-Science for macOS, Windows and Linux')
     expect(String(metadata?.alternates?.canonical)).toBe('https://aipoch.com/open-science/download')
     expect(
       typeof openGraphImage === 'string' || openGraphImage instanceof URL
