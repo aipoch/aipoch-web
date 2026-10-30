@@ -261,3 +261,82 @@ test('does not replace corrupt or unavailable review records with a silent archi
     expect(requests).not.toContain(info.url)
   }
 })
+
+test('buffers out-of-order records and unresolved dependencies until complete blocks can be finalized', async () => {
+  const source = {
+    version: 2,
+    session: {
+      title: 'Buffered order',
+      messages: [
+        {
+          id: 'answer',
+          role: 'agent',
+          content: '```ts\nconst x = 1\n```\n\n| A |\n| - |\n| B |',
+          createdAt: 20
+        }
+      ],
+      conversationGraph: {
+        activities: [
+          { id: 'after', createdAt: 30, providerToolName: 'Read' },
+          { id: 'before-a', createdAt: 10, providerToolName: 'Read' },
+          { id: 'before-b', createdAt: 15, providerToolName: 'Read' },
+          {
+            id: 'compact',
+            createdAt: 5,
+            providerToolName: 'ContextCompaction',
+            status: 'completed',
+            rawOutput: 'INTERNAL DO NOT DISPLAY'
+          }
+        ]
+      },
+      artifacts: []
+    }
+  }
+  const json = JSON.stringify(source)
+  let body!: ReadableStreamDefaultController<Uint8Array>
+  let records!: (value: Response) => void
+  globalThis.fetch = mock(async (url: string | URL) =>
+    String(url).endsWith('session.json')
+      ? new Response(
+          new ReadableStream({
+            start(controller) {
+              body = controller
+            }
+          })
+        )
+      : new Promise<Response>((resolve) => {
+          records = resolve
+        })
+  ) as unknown as typeof fetch
+  let settled = false
+  const pending = loadReplayPackage(info, 'buffered', () => {})
+  void pending.then(() => {
+    settled = true
+  })
+  const encoder = new TextEncoder()
+  for (let i = 0; i < 30; i++) await Promise.resolve()
+  const boundary = json.indexOf(',"conversationGraph"')
+  body.enqueue(encoder.encode(json.slice(0, boundary)))
+  for (let i = 0; i < 30; i++) await Promise.resolve()
+  expect(settled).toBe(false)
+  body.enqueue(encoder.encode(json.slice(boundary)))
+  body.close()
+  for (let i = 0; i < 80; i++) await Promise.resolve()
+  expect(settled).toBe(false)
+  records(new Response(null, { status: 404 }))
+  const result = await pending
+  expect(result.session.items.map((item) => item.id)).toEqual([
+    'compact',
+    'before-a',
+    'answer',
+    'after'
+  ])
+  const group = result.session.items[1]
+  expect(group.type === 'activity-group' && group.activities.map((item) => item.id)).toEqual([
+    'before-a',
+    'before-b'
+  ])
+  expect(JSON.stringify(result.session)).not.toContain('INTERNAL DO NOT DISPLAY')
+  expect(result.session.items[2]).toMatchObject({ content: source.session.messages[0].content })
+  expect(JSON.stringify(source)).toBe(json)
+})

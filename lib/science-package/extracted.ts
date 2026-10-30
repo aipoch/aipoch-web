@@ -1,5 +1,7 @@
 import type { UseCasePackage } from '../use-case-types'
 import { downloadPackage, type PackageProgress } from './archive'
+import { fetchReplayResponse } from './idle-response'
+import { readJsonStream } from './json-stream'
 import {
   parseExtractedSession,
   parsePackage,
@@ -7,19 +9,19 @@ import {
   sessionRecordFrom,
   storagePathFor
 } from './parse'
-
 import { reviewRecordsFrom } from './review-records'
 import { isReviewerCorrectionAttribution } from './reviewer'
 
 const MAX_METADATA_BYTES = 128 * 1024 ** 2
 
 // Bound streamed JSON reads before allocating the full body, just like archive JSON entries.
-const fetchMetadata = async (base: string, path: string, optional = false): Promise<unknown> => {
-  const response = await fetch(new URL(path, base), {
-    mode: 'cors',
-    credentials: 'omit',
-    signal: AbortSignal.timeout(30_000)
-  })
+const fetchMetadata = async (
+  base: string,
+  path: string,
+  optional = false,
+  signal?: AbortSignal
+): Promise<unknown> => {
+  const response = await fetchReplayResponse(new URL(path, base), signal)
   // S3 can return 403 for a missing object when bucket listing is disabled.
   if (optional && [403, 404].includes(response.status)) return undefined
   if (!response.ok || !response.body)
@@ -35,14 +37,15 @@ const fetchMetadata = async (base: string, path: string, optional = false): Prom
       }
     })
   )
-  return new Response(stream).json()
+  return readJsonStream(stream)
 }
 
 /** Read only the documents required for a transcript; artifact bytes load through their URLs. */
 export const loadReplayPackage = async (
   info: UseCasePackage,
   slug: string,
-  progress: (value: PackageProgress) => void
+  progress: (value: PackageProgress) => void,
+  signal?: AbortSignal
 ) => {
   if (info.extractedBaseUrl) {
     progress({ stage: 'metadata' })
@@ -56,7 +59,7 @@ export const loadReplayPackage = async (
       base.hash
     )
       throw new Error('Invalid extracted package URL.')
-    const file = await fetchMetadata(base.href, 'session.json', true)
+    const file = await fetchMetadata(base.href, 'session.json', true, signal)
     if (file !== undefined) {
       const session = sessionRecordFrom(file)
       // Notebook exports store runs under the session's project/id storage key.
@@ -70,7 +73,7 @@ export const loadReplayPackage = async (
         session.conversationGraph?.activities?.some((activity) => activity.executionInvocationId)
       ) {
         const path = storagePathFor(`notebooks/${session.projectId}/${session.id}/run.json`)
-        const run = await fetchMetadata(base.href, path, true)
+        const run = await fetchMetadata(base.href, path, true, signal)
         if (run !== undefined) {
           if (!run || typeof run !== 'object' || !Array.isArray((run as { runs?: unknown }).runs))
             throw new Error('Invalid notebook run metadata.')
@@ -80,13 +83,13 @@ export const loadReplayPackage = async (
       // Review tables are optional for old publications. Only sessions known to have reviews
       // need an archive fallback; unreviewed sessions keep the lightweight metadata path.
       let records = session.messages.length
-        ? await fetchMetadata(base.href, 'records.json', true)
+        ? await fetchMetadata(base.href, 'records.json', true, signal)
         : undefined
       const hasReviews =
         session.autoReviewEnabled === true ||
         session.messages.some((message) => isReviewerCorrectionAttribution(message.attribution))
       if (records === undefined && hasReviews) {
-        const archive = await readVerifiedPackage(await downloadPackage(info, progress))
+        const archive = await readVerifiedPackage(await downloadPackage(info, progress, signal))
         if (
           archive.session.id !== session.id ||
           archive.session.revision !== session.revision ||
@@ -107,7 +110,7 @@ export const loadReplayPackage = async (
   }
 
   // Old publications remain readable, with their original size and SHA-256 checks.
-  const archive = await downloadPackage(info, progress)
+  const archive = await downloadPackage(info, progress, signal)
   progress({ stage: 'parsing' })
   return parsePackage(archive, slug)
 }

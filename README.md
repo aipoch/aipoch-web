@@ -158,6 +158,14 @@ loads from `<manifest directory>/<case name>/extracted/`.
 - **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
   Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
   original filenames. SVG remains image-only.
+- **Streaming:** Downloads allow 30 seconds for the first nonempty body chunk, then
+  renew that idle deadline on each nonempty chunk. Metadata is parsed incrementally,
+  but no record is displayed until the document and its ordering/association dependencies
+  are complete. The existing export has separate messages and activities, not an ordered
+  block stream. The finalized transcript is then revealed in contiguous batches of whole
+  messages/activity groups; Markdown and tables are never split across batches. Worker
+  failures after rendering begins keep any visible prefix and label it incomplete. Archive
+  integrity checks still complete before any archive content is shown.
 - **Compaction:** `ContextCompaction` activities render as status-only rows. Provider
   payloads are excluded from the display model; the original package remains unchanged.
   Legacy summaries already flattened into ordinary messages have no reliable identity:

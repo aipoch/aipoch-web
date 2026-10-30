@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { reviewerResponseStates } from '@/lib/science-package/reviewer'
 import type { NormalizedActivity, UseCaseSession } from '@/lib/use-case-types'
 import { SessionActivityGroup } from './activity-group'
@@ -48,61 +49,70 @@ const SessionPlanItem = ({ activity }: { activity: NormalizedActivity }) => {
 
 // Read-only replay of one exported Open-Science session. The centered column matches the app's
 // transcript width (max-w-4xl = 56rem); each row carries the app's own horizontal padding.
-export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
-  const turnFinal = turnFinalMessageIds(session.items)
-  const correctionStates = reviewerResponseStates(session.items)
+export const SessionTranscript = ({
+  session,
+  visibleCount = session.items.length
+}: {
+  session: UseCaseSession
+  visibleCount?: number
+}) => {
+  // Cache finalized row elements and full-context markers so revealing more blocks does not
+  // rerun earlier Markdown/renderers or recalculate turn/group boundaries.
+  const rows = useMemo(() => {
+    const turnFinal = turnFinalMessageIds(session.items)
+    const correctionStates = reviewerResponseStates(session.items)
+    return session.items.map((item) => {
+      // content-visibility skips rendering for offscreen rows — the main
+      // lever against long-transcript jank (the app does the same).
+      const rowClassName = '[content-visibility:auto] [contain-intrinsic-size:auto_240px]'
+      if (item.type === 'compaction') {
+        return (
+          <div key={item.id} data-replay-block={item.id} className={rowClassName}>
+            <SessionCompactionItem item={item} />
+          </div>
+        )
+      }
+      if (item.type === 'message') {
+        return (
+          <div key={item.id} data-replay-block={item.id} className={rowClassName}>
+            <SessionMessageItem
+              message={item}
+              showTurnCompletion={turnFinal.has(item.id)}
+              reviewerCorrectionState={correctionStates.get(item.id)}
+            />
+            {session.reviews
+              ?.filter((review) => review.anchorMessageId === item.id)
+              .map((review) => (
+                <ReviewerCard key={review.id} review={review} />
+              ))}
+          </div>
+        )
+      }
+      if (item.type === 'activity-group') {
+        return (
+          <div key={item.id} data-replay-block={item.id} className={rowClassName}>
+            <SessionActivityGroup activities={item.activities} assets={session.assets} />
+          </div>
+        )
+      }
+      if (item.type === 'plan') {
+        return (
+          <div key={item.id} data-replay-block={item.id} className={rowClassName}>
+            <SessionPlanItem activity={item.activity} />
+          </div>
+        )
+      }
+      return (
+        <div key={item.id} data-replay-block={item.id} className={rowClassName}>
+          <SessionElicitationCard item={item} />
+        </div>
+      )
+    })
+  }, [session])
   return (
     <div className="osp-session text-text-000">
       <FilePreviewProvider>
-        <div className="mx-auto w-full max-w-4xl pb-4 pt-4">
-          {session.items.map((item) => {
-            // content-visibility skips rendering for offscreen rows — the main
-            // lever against long-transcript jank (the app does the same).
-            const rowClassName = '[content-visibility:auto] [contain-intrinsic-size:auto_240px]'
-            if (item.type === 'compaction') {
-              return (
-                <div key={item.id} className={rowClassName}>
-                  <SessionCompactionItem item={item} />
-                </div>
-              )
-            }
-            if (item.type === 'message') {
-              return (
-                <div key={item.id} className={rowClassName}>
-                  <SessionMessageItem
-                    message={item}
-                    showTurnCompletion={turnFinal.has(item.id)}
-                    reviewerCorrectionState={correctionStates.get(item.id)}
-                  />
-                  {session.reviews
-                    ?.filter((review) => review.anchorMessageId === item.id)
-                    .map((review) => (
-                      <ReviewerCard key={review.id} review={review} />
-                    ))}
-                </div>
-              )
-            }
-            if (item.type === 'activity-group') {
-              return (
-                <div key={item.id} className={rowClassName}>
-                  <SessionActivityGroup activities={item.activities} assets={session.assets} />
-                </div>
-              )
-            }
-            if (item.type === 'plan') {
-              return (
-                <div key={item.id} className={rowClassName}>
-                  <SessionPlanItem activity={item.activity} />
-                </div>
-              )
-            }
-            return (
-              <div key={item.id} className={rowClassName}>
-                <SessionElicitationCard item={item} />
-              </div>
-            )
-          })}
-        </div>
+        <div className="mx-auto w-full max-w-4xl pb-4 pt-4">{rows.slice(0, visibleCount)}</div>
       </FilePreviewProvider>
     </div>
   )

@@ -145,12 +145,22 @@ export const ReplayView = ({
     : (error ?? 'Research package not found.')
   return (
     <ReplayFrame slug={slug} packageInfo={packageInfo ?? undefined}>
+      {'data' in state && state.data && !refreshing ? (
+        <SessionTranscript
+          session={state.data}
+          visibleCount={'visibleCount' in state ? state.visibleCount : undefined}
+        />
+      ) : null}
       {refreshing ? (
         <ReplayProgress progress={{ stage: 'metadata' }} />
       ) : failure ? (
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
           <div role="alert">
-            <p className="font-medium">This use case could not be loaded.</p>
+            <p className="font-medium">
+              {state.status === 'error' && state.data
+                ? 'Loading incomplete. The blocks already loaded are shown above.'
+                : 'This use case could not be loaded.'}
+            </p>
             <p className="mt-2 text-sm text-[#777872]">{failure}</p>
           </div>
           <button
@@ -165,10 +175,13 @@ export const ReplayView = ({
           </button>
         </div>
       ) : state.status === 'ready' ? (
-        <>
-          <SessionTranscript session={state.data} />
-          {packageInfo ? <ImportComposer /> : null}
-        </>
+        packageInfo ? (
+          <ImportComposer />
+        ) : null
+      ) : state.status === 'rendering' ? (
+        <p role="status" className="py-6 text-center text-sm text-[#777872]">
+          Loading remaining conversation blocks…
+        </p>
       ) : state.status === 'loading' ? (
         <ReplayProgress progress={state.progress} />
       ) : null}

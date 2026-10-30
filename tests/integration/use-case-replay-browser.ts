@@ -15,7 +15,7 @@ export const verifyCompactionReplay = async (page: Page, url: string, archive: b
   const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 180000 })
   expect(response?.status()).toBe(200)
   const rows = page.getByTestId('context-compaction')
-  await expect(rows).toHaveCount(4, { timeout: 30000 })
+  await expect(rows).toHaveCount(4, { timeout: 60000 })
   await expect(rows).toHaveText([
     'Compacting context',
     'Context compacted',

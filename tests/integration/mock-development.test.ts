@@ -483,6 +483,98 @@ describe('mock development end to end', () => {
     }
   }, 120000)
 
+  test('partial replay failure preserves rendered blocks and reports incomplete loading', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      // Inject a worker transport failure after its first fully normalized response.
+      await page.addInitScript(() => {
+        const NativeWorker = window.Worker
+        window.Worker = class extends NativeWorker {
+          constructor(url: string | URL, options?: WorkerOptions) {
+            super(url, options)
+            this.addEventListener('message', (event) => {
+              if (event.data?.type === 'ready')
+                setTimeout(
+                  () =>
+                    this.dispatchEvent(
+                      new MessageEvent('message', {
+                        data: { type: 'error', message: 'Interrupted worker transport' }
+                      })
+                    ),
+                  0
+                )
+            })
+          }
+        }
+      })
+      const response = await page.goto(
+        `${web}/open-science/use-cases/${manifestSample[0].name}/replay`
+      )
+      expect(response?.status()).toBe(200)
+      await browserExpect(
+        page.getByText('Loading incomplete. The blocks already loaded are shown above.')
+      ).toBeVisible({ timeout: 30000 })
+      const blocks = page.locator('[data-replay-block]')
+      await browserExpect(blocks).toHaveCount(8)
+      const prefix = await blocks.evaluateAll((nodes) =>
+        nodes.map((node) => [node.getAttribute('data-replay-block'), node.textContent])
+      )
+      await page.waitForTimeout(100)
+      expect(
+        await blocks.evaluateAll((nodes) =>
+          nodes.map((node) => [node.getAttribute('data-replay-block'), node.textContent])
+        )
+      ).toEqual(prefix)
+      await browserExpect(
+        page.getByText('Run the renderer coverage scenario.', { exact: true })
+      ).toBeVisible()
+      await browserExpect(page.locator('.osp-session')).not.toContainText(
+        'COMPACTION_INTERNAL_INSTRUCTIONS'
+      )
+      await browserExpect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible()
+      const rejectCookies = page.getByRole('button', { name: 'Reject non-essential', exact: true })
+      if (await rejectCookies.isVisible()) await rejectCookies.click()
+      const screenshots = join(process.cwd(), '.codex/replay-compaction')
+      mkdirSync(screenshots, { recursive: true })
+      await page.screenshot({ path: join(screenshots, 'incomplete-loading.png'), fullPage: true })
+    } finally {
+      await browser.close()
+    }
+  }, 120000)
+
+  for (const archive of [false, true]) {
+    test(`slow active replay download survives 30 seconds (${archive ? 'archive' : 'metadata'})`, async () => {
+      const control = `${api}/__mock/use-case-manifest`
+      const configure = (replayChunkDelayMs: number) =>
+        fetch(control, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ replayChunkDelayMs })
+        })
+      const browser = await chromium.launch()
+      try {
+        expect((await configure(2000)).ok).toBe(true)
+        const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+        const page = await context.newPage()
+        const started = Date.now()
+        await verifyCompactionReplay(
+          page,
+          `${web}/open-science/use-cases/${manifestSample[0].name}/replay`,
+          archive
+        )
+        expect(Date.now() - started).toBeGreaterThan(30_000)
+        await browserExpect(page.getByText('Loading remaining conversation blocks…')).toHaveCount(0)
+        await browserExpect(
+          page.getByText('This use case could not be loaded.', { exact: true })
+        ).toHaveCount(0)
+      } finally {
+        await configure(0)
+        await browser.close()
+      }
+    }, 120000)
+  }
+
   for (const mobile of [false, true]) {
     for (const archive of [false, true]) {
       test(`${mobile ? 'mobile' : 'desktop'}: compaction replay from ${archive ? 'archive' : 'extracted'} keeps only safe lifecycle`, async () => {

@@ -140,3 +140,41 @@ for (const status of [undefined, null, '', 'stop', '__proto__', 'constructor']) 
     expect(session.items[1]).toMatchObject({ type: 'compaction', status: 'unknown' })
   })
 }
+
+test('a growing visible prefix keeps full Markdown, activity groups and final-turn boundaries stable', async () => {
+  const session = parse({
+    ...compactionSession,
+    messages: [
+      {
+        ...compactionSession.messages[1],
+        id: 'draft',
+        createdAt: 1,
+        content: '```ts\nconst x = 1\n```\n\n| A |\n| - |\n| B |'
+      },
+      { ...compactionSession.messages[1], id: 'final', createdAt: 10, content: 'Final answer' }
+    ],
+    conversationGraph: {
+      activities: [
+        { id: 'tool-2', createdAt: 3, providerToolName: 'Read', title: 'Second read' },
+        { id: 'tool-1', createdAt: 2, providerToolName: 'Read', title: 'First read' }
+      ]
+    }
+  })
+  const html = async (visibleCount: number) =>
+    new Response(
+      await renderToReadableStream(
+        <SessionTranscript session={session} visibleCount={visibleCount} />
+      )
+    ).text()
+  const first = await html(1)
+  expect(first).toContain('const')
+  expect(first).toContain('<table')
+  expect(first).not.toContain('Completed ·')
+  expect(first).not.toContain('Final answer')
+  const second = await html(2)
+  expect(second).toContain('2 steps')
+  expect(second).not.toContain('Completed ·')
+  const complete = await html(3)
+  expect(complete.match(/Completed ·/g)).toHaveLength(1)
+  expect(complete).toContain('Final answer')
+})
