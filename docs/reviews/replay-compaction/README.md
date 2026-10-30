@@ -119,3 +119,44 @@ Validation for independent reviews (2026-10-30):
   highlighting/thumbnail updates; the assertion now checks body identity and semantic content.
 - Acceptance screenshots remain local or GitHub attachments, never tracked repository files.
   No local production build was run for this follow-up.
+
+## MathJax delimiter rendering
+
+Source: [molecular-handedness replay](https://aipoch.com/open-science/use-cases/99-pure-does-molecular-handedness-matter/replay), message
+`message-stream-6d050fddf2784ecc`. The downloaded, unchanged `extracted/session.json`
+has SHA-256 `0ddf485dc34ec9fdb6c65a02dc71b7cab4092a097aa917a770017b9e46c1aca1`.
+Decoded text uses single-backslash `\(...\)` and `\[...\]` delimiters, with correctly
+escaped `\%` inside formulas; JSON represents each backslash as `\\`. Ordinary prose
+percent signs need no conversion.
+
+`remark-mathjax-delimiters@0.1.0` was checked against the installed Streamdown 2.6.0
+and its existing KaTeX integration. Default remark/GFM plugins remain enabled.
+The upstream parser nests display math inside paragraphs: a small AST transform lifts
+those math nodes to flow level. Inline wrappers retain their formatting and links;
+only the standard `math-display` code class is additionally allowed through sanitation.
+No source-text regex or export rewrite is used. Static mode and incomplete-Markdown
+settings, body ordering, compaction filtering and archive verification are unchanged.
+
+Validation on 2026-10-30:
+
+- Initial regression: 5 failing formula cases before the fix, 9 passing protection cases.
+- 20 math regressions cover inline/display, `$`/`$$`, mixed delimiters, escaped delimiters,
+  literal and TeX-comment percent signs, code, unclosed delimiters, GFM tables, nested
+  formatting and direct/reference links. The link tests also cover a review finding.
+- 172 focused replay/package unit tests pass; TypeScript and scoped Biome checks pass.
+- Desktop/mobile renderer and compact-safety browser tests use the real mock launcher,
+  export worker and replay UI. Math assertions check KaTeX nodes, display structure,
+  TeX annotations, plain text and code preservation.
+- A separate browser check feeds the unchanged original session bytes to the local
+  replay route on desktop/mobile: seven KaTeX nodes, one display formula, no KaTeX
+  errors and no page errors. Optional Notebook metadata and Reviewer records are
+  stubbed for this rendering check; it is not a live-backend integration test.
+- The public URL returned HTTP 200, but the probe did not observe the transcript within
+  60 seconds. No deployment or production verification is claimed.
+- One source table formula contains unescaped `|` (`100|L-R|/(L+R)`), which GFM treats
+  as column boundaries before inline parsing. That malformed cell remains unsupported;
+  this change neither guesses table structure nor rewrites the source.
+- Screenshots are GitHub PR attachments, not repository files. Runtime/build scripts,
+  deployment settings and environment files are unchanged; only the parser dependency
+  and its lock entry are added. Existing replay sitemap dates remain 2026-10-30 for
+  the same 128 canonical replay URLs listed above; no gallery/overview date changes.

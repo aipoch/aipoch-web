@@ -135,6 +135,18 @@ export async function verifyReplayCoverage(page: Page, url: string) {
   const rejectCookies = page.getByRole('button', { name: 'Reject non-essential', exact: true })
   if (await rejectCookies.isVisible()) await rejectCookies.click()
 
+  const mathMessage = page.locator('[data-replay-block="cov-md-1"]')
+  await expect(mathMessage.locator('.katex')).toHaveCount(3)
+  await expect(mathMessage.locator('.katex-display')).toHaveCount(1)
+  await expect(mathMessage.locator('.katex-error')).toHaveCount(0)
+  await expect(mathMessage.locator('p .katex-display')).toHaveCount(0)
+  await expect(mathMessage).toContainText('Ordinary 99%.')
+  await expect(mathMessage).toContainText('Ordinary [x+1] and (x+1).')
+  await expect(mathMessage.locator('code').filter({ hasText: '\\(x\\) 99%' })).toHaveCount(1)
+  await expect(mathMessage.locator('annotation').first()).toHaveText(
+    String.raw`(89.1+9.9)/100 \times 100=99\%`
+  )
+
   // -- user bubble -------------------------------------------------------------
   await expect(page.getByText('Run the renderer coverage scenario.')).toBeVisible()
 

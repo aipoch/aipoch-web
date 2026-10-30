@@ -214,7 +214,18 @@ export const coverageFixtureSession: UseCaseSession = {
         'plain fence coverage without a language',
         '```',
         '',
-        'Emoji coverage 🧪✅ and CJK coverage 覆盖渲染测试。'
+        'Emoji coverage 🧪✅ and CJK coverage 覆盖渲染测试。',
+        '',
+        // Exact formula excerpts from the published molecular-handedness session.
+        String.raw`Chemical purity: \((89.1+9.9)/100 \times 100=99\%\). Ordinary 99%.`,
+        '',
+        String.raw`\[`,
+        String.raw`\%L=\frac{100+ee}{2},\qquad \%R=\frac{100-ee}{2}.`,
+        String.raw`\]`,
+        '',
+        'Existing dollar math: $x+1$.',
+        '',
+        'Ordinary [x+1] and (x+1). Code: `\\(x\\) 99%`.'
       ].join('\n'),
       status: 'complete',
       createdAt: 1790133052000,
