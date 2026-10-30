@@ -1,5 +1,9 @@
 # Context compaction replay validation
 
+The final ordered-stream follow-up is documented in [Ordered replay v1](ordered-replay.md).
+It supersedes the earlier EOF-only body limitation for newly published ordered projections;
+legacy publications still use the conservative path described below.
+
 The replay parser projects structurally identified `ContextCompaction` activities into
 status-only rows. Both extracted metadata and verified archives use this projection;
 source packages remain unchanged. Unmarked summaries in older ordinary messages are

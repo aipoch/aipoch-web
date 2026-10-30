@@ -238,8 +238,9 @@ export const parseExtractedSession = (
   slug: string,
   assetBaseUrl: string,
   runDocument?: JsonObject,
-  records?: ReviewRecords
-) => normalizeSession(session, slug, { assetBaseUrl, runDocument, records })
+  records?: ReviewRecords,
+  uploadMessages?: JsonObject[]
+) => normalizeSession(session, slug, { assetBaseUrl, runDocument, records, uploadMessages })
 
 function normalizeSession(
   session: SessionRecord,
@@ -248,12 +249,14 @@ function normalizeSession(
     archive,
     assetBaseUrl,
     runDocument,
-    records
+    records,
+    uploadMessages
   }: {
     archive?: { manifest: Manifest; objects: Map<string, ArchiveEntry>; records?: ReviewRecords }
     assetBaseUrl?: string
     runDocument?: JsonObject
     records?: ReviewRecords
+    uploadMessages?: JsonObject[]
   }
 ) {
   const resources: { id: string; blob: Blob }[] = []
@@ -341,7 +344,7 @@ function normalizeSession(
     typeof session.id === 'string' &&
     session.id
   ) {
-    for (const message of session.messages) {
+    for (const message of uploadMessages ?? session.messages) {
       for (const upload of Array.isArray(message.uploads) ? message.uploads : []) {
         if (!upload || typeof upload !== 'object') continue
         const record = upload as JsonObject
