@@ -104,7 +104,7 @@ describe('sitemap', () => {
         new Date(date)
       )
     }
-    // The new replay toolbar import action updates replay pages independently of the gallery.
+    // Compaction presentation updates replay pages independently of the gallery and overview.
     for (const path of [
       '/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ/replay',
       '/open-science/use-cases/nvda-all-at-once-or-four-weeks/replay',
@@ -112,7 +112,7 @@ describe('sitemap', () => {
       '/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle/replay'
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
-        new Date('2026-10-23')
+        new Date('2026-10-30')
       )
     }
   })

@@ -158,6 +158,12 @@ loads from `<manifest directory>/<case name>/extracted/`.
 - **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
   Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
   original filenames. SVG remains image-only.
+- **Compaction:** `ContextCompaction` activities render as status-only rows. Provider
+  payloads are excluded from the display model; the original package remains unchanged.
+  Legacy summaries already flattened into ordinary messages have no reliable identity:
+  replay does not guess from headings or paths. Repairing those cases requires verified
+  source metadata or an explicitly identified package/message; upgrading the viewer alone
+  does not repair old publications.
 - **Fallback:** An initial session 403/404 loads the size- and SHA-256-verified
   `.science` archive. Other errors remain retryable. Extracted metadata has size
   limits and schema checks; asset integrity relies on the CDN.

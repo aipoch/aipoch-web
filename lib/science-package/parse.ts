@@ -409,6 +409,10 @@ function normalizeSession(
   // --- activities ------------------------------------------------------------
   const graphActivities = session.conversationGraph?.activities ?? []
   const activityItems: { ts: number; item: TranscriptItem }[] = []
+  const compactions = new Map<
+    string,
+    { ts: number; updatedAt: number; item: Extract<TranscriptItem, { type: 'compaction' }> }
+  >()
   for (const activity of graphActivities) {
     // sortIndex is trustworthy only on an epoch scale: some exports carry
     // small sequence numbers (107, 108, …), which would sort every activity
@@ -418,6 +422,37 @@ function normalizeSession(
       typeof activity.sortIndex === 'number' && activity.sortIndex > 1_000_000_000_000
         ? activity.sortIndex
         : Number(activity.createdAt)
+    // Classify before generic cards: summaries and provider errors must never become details.
+    if (activity.providerToolName === 'ContextCompaction') {
+      const id = String(activity.id)
+      const updatedAt = Number(activity.updatedAt)
+      const revisionTime = Number.isFinite(updatedAt) ? updatedAt : ts
+      const previous = compactions.get(id)
+      if (!previous || revisionTime >= previous.updatedAt) {
+        compactions.set(id, {
+          ts,
+          updatedAt: revisionTime,
+          item: {
+            type: 'compaction',
+            id,
+            status:
+              // App exports persist cancellation as completed with this fixed lifecycle title.
+              activity.status === 'cancelled' ||
+              (activity.status === 'completed' &&
+                typeof activity.title === 'string' &&
+                activity.title.trim() === 'Context compaction cancelled')
+                ? 'cancelled'
+                : activity.status === 'in_progress' ||
+                    activity.status === 'completed' ||
+                    activity.status === 'failed'
+                  ? activity.status
+                  : 'unknown',
+            createdAt: Number(activity.createdAt)
+          }
+        })
+      }
+      continue
+    }
     // App parity (workspace-conversation-items.ts): plan step updates never
     // render as transcript rows; their state lives in the plan card itself.
     const activityNames = [activity.providerToolName, activity.title]
@@ -763,7 +798,9 @@ function normalizeSession(
   // --- timeline: merge by timestamp, fold consecutive activities into groups ---
   // Plan cards and elicitations are standalone items; only adjacent activity
   // groups fold together (app: groupConversationItems).
-  const merged = [...messageItems, ...activityItems].sort((a, b) => a.ts - b.ts)
+  const merged = [...messageItems, ...activityItems, ...compactions.values()].sort(
+    (a, b) => a.ts - b.ts
+  )
   const items: TranscriptItem[] = []
   for (const { item } of merged) {
     const last = items[items.length - 1]

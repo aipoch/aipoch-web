@@ -1,6 +1,7 @@
 import { reviewerResponseStates } from '@/lib/science-package/reviewer'
 import type { NormalizedActivity, UseCaseSession } from '@/lib/use-case-types'
 import { SessionActivityGroup } from './activity-group'
+import { SessionCompactionItem } from './compaction-item'
 import { SessionElicitationCard } from './elicitation-card'
 import { FilePreviewProvider } from './file-preview'
 import { SessionMessageItem } from './message-item'
@@ -58,6 +59,13 @@ export const SessionTranscript = ({ session }: { session: UseCaseSession }) => {
             // content-visibility skips rendering for offscreen rows — the main
             // lever against long-transcript jank (the app does the same).
             const rowClassName = '[content-visibility:auto] [contain-intrinsic-size:auto_240px]'
+            if (item.type === 'compaction') {
+              return (
+                <div key={item.id} className={rowClassName}>
+                  <SessionCompactionItem item={item} />
+                </div>
+              )
+            }
             if (item.type === 'message') {
               return (
                 <div key={item.id} className={rowClassName}>

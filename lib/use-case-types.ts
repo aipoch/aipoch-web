@@ -150,6 +150,13 @@ export interface ReviewerCorrectionAttribution {
 
 export type TranscriptItem =
   | {
+      /** Display-only lifecycle; provider content never crosses this boundary. */
+      type: 'compaction'
+      id: string
+      status: 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'unknown'
+      createdAt: number
+    }
+  | {
       type: 'message'
       id: string
       role: 'user' | 'assistant'

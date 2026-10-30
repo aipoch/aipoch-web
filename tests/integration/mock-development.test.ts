@@ -6,6 +6,7 @@ import { expect as browserExpect, chromium, devices } from '@playwright/test'
 import manifestSample from '../../mocks/fixtures/use-case-manifest.json'
 import { verifyImportPreparation } from './use-case-import-browser'
 import {
+  verifyCompactionReplay,
   verifyPreviewSwitching,
   verifyReplayCoverage,
   verifyReplayDownload,
@@ -483,6 +484,31 @@ describe('mock development end to end', () => {
   }, 120000)
 
   for (const mobile of [false, true]) {
+    for (const archive of [false, true]) {
+      test(`${mobile ? 'mobile' : 'desktop'}: compaction replay from ${archive ? 'archive' : 'extracted'} keeps only safe lifecycle`, async () => {
+        const browser = await chromium.launch()
+        try {
+          const context = await browser.newContext(
+            mobile ? devices['Pixel 5'] : { viewport: { width: 1440, height: 1000 } }
+          )
+          const page = await context.newPage()
+          await verifyCompactionReplay(
+            page,
+            `${web}/open-science/use-cases/${manifestSample[0].name}/replay`,
+            archive
+          )
+          if (!archive) {
+            const screenshots = join(process.cwd(), '.codex/replay-compaction')
+            mkdirSync(screenshots, { recursive: true })
+            await page.screenshot({
+              path: join(screenshots, `${mobile ? 'mobile' : 'desktop'}.png`)
+            })
+          }
+        } finally {
+          await browser.close()
+        }
+      }, 120000)
+    }
     for (const [name, verify] of [
       ['renderer coverage', verifyReplayCoverage],
       ['preview switching', verifyPreviewSwitching],

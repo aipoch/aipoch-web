@@ -1,5 +1,48 @@
 import { expect, type Page } from '@playwright/test'
 
+export const verifyCompactionReplay = async (page: Page, url: string, archive: boolean) => {
+  const requests: string[] = []
+  const errors: string[] = []
+  page.context().on('request', (request) => requests.push(request.url()))
+  page.on('pageerror', (error) => errors.push(error.message))
+  // Exercise the real worker's verified-archive fallback, not a replacement transcript.
+  if (archive) {
+    await page
+      .context()
+      .route('**/extracted/session.json', (route) => route.fulfill({ status: 404 }))
+  }
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 180000 })
+  expect(response?.status()).toBe(200)
+  const rows = page.getByTestId('context-compaction')
+  await expect(rows).toHaveCount(4, { timeout: 30000 })
+  await expect(rows).toHaveText([
+    'Compacting context',
+    'Context compacted',
+    'Context compaction failed',
+    'Context compaction status unavailable'
+  ])
+  await expect(rows.locator('button, details, a, [aria-expanded]')).toHaveCount(0)
+  const transcript = page.locator('.osp-session')
+  await expect(transcript).not.toContainText('COMPACTION_INTERNAL_INSTRUCTIONS')
+  await expect(transcript).not.toContainText('private.md')
+  await expect(page.getByText('Run the renderer coverage scenario.', { exact: true })).toBeVisible()
+  await expect(page.getByTitle('Preview coverage_report.md').first()).toBeAttached()
+
+  const rejectCookies = page.getByRole('button', { name: 'Reject non-essential', exact: true })
+  if (await rejectCookies.isVisible()) await rejectCookies.click()
+  const copy = transcript.getByRole('button', { name: 'Copy message', exact: true }).last()
+  await copy.scrollIntoViewIfNeeded()
+  await copy.click()
+  const copied = await page.evaluate(() => navigator.clipboard.readText())
+  expect(copied).toContain('Deliverables are ready')
+  expect(copied).not.toContain('COMPACTION_INTERNAL_INSTRUCTIONS')
+  expect(copied).not.toContain('Context compacted')
+  expect(requests.some((request) => new URL(request).pathname.endsWith('.science'))).toBe(archive)
+  expect(errors).toEqual([])
+  await rows.first().scrollIntoViewIfNeeded()
+}
+
 export async function verifyReplayDownload(page: Page, url: string) {
   await page.goto(url.replace(/\/replay$/, ''))
   const overviewDownload = page.getByRole('link', {
