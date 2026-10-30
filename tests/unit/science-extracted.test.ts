@@ -74,7 +74,7 @@ for (const status of [403, 404]) {
     )
     const result = await loadReplayPackage(info, 'sample', () => {})
     expect(result.session.title).toBe('Extracted sample')
-    expect(requests).toEqual([`${base}session.json`, info.url])
+    expect(requests).toEqual([`${base}session.json`, `${base}records.json`, info.url])
     expect(result.session.assets['files/coverage_report.md'].url).toStartWith('science-asset:')
   })
 }
@@ -90,10 +90,10 @@ test('rejects corrupt metadata without silently downloading a large archive', as
 test('does not fall back on transient storage failures', async () => {
   const { requests } = await setup(() => new Response(null, { status: 503 }))
   await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('503')
-  expect(requests).toHaveLength(1)
+  expect(requests).toHaveLength(2)
 })
 
-test('only requests session metadata when the session has no notebook or artifacts', async () => {
+test('empty sessions need no notebook or archive after the independent metadata requests', async () => {
   const { requests } = await setup((path) =>
     path === 'session.json'
       ? Response.json({ version: 2, session: { title: 'Empty session', messages: [] } })
@@ -102,7 +102,7 @@ test('only requests session metadata when the session has no notebook or artifac
   const result = await loadReplayPackage(info, 'sample', () => {})
   expect(result.session.title).toBe('Empty session')
   expect(result.session.items).toEqual([])
-  expect(requests).toEqual([`${base}session.json`])
+  expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
 })
 
 for (const extracted of [true, false]) {
@@ -179,7 +179,7 @@ test('rejects a JSON null session rather than falling back to the archive', asyn
     path === 'session.json' ? Response.json(null) : undefined
   )
   await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('invalid session.json')
-  expect(requests).toEqual([`${base}session.json`])
+  expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
 })
 
 for (const storageKey of [
@@ -203,7 +203,7 @@ for (const storageKey of [
         : undefined
     )
     await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('storage key')
-    expect(requests).toEqual([`${base}session.json`])
+    expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
   })
 }
 
@@ -232,8 +232,8 @@ test('loads full notebook outputs from the restored notebook directory', async (
   const { session } = await loadReplayPackage(info, 'sample', () => {})
   expect(requests).toEqual([
     `${base}session.json`,
-    `${base}notebooks/mock-project/mock-session/run.json`,
-    `${base}records.json`
+    `${base}records.json`,
+    `${base}notebooks/mock-project/mock-session/run.json`
   ])
   expect(
     session.items.some(

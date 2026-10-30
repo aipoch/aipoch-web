@@ -44,7 +44,7 @@ interface SessionRecord extends JsonObject {
   artifacts?: JsonObject[]
 }
 
-const buildSanitizer = (session: SessionRecord, runDocument: JsonObject | undefined) => {
+export const buildSanitizer = (session: SessionRecord, runDocument: JsonObject | undefined) => {
   const prefixes: string[] = []
   const cwd = typeof session.cwd === 'string' ? session.cwd : ''
   if (cwd.startsWith('/')) prefixes.push(cwd)
@@ -330,7 +330,7 @@ function normalizeSession(
     }
   }
 
-  // Extracted mode has no records.json. The publisher keeps the original
+  // Extracted attachment resolution does not need records.json. The publisher keeps the original
   // package layout, so upload blobs sit at a derivable storage path built from
   // session.json alone: uploads/<projectId>/<sessionId>/<fileId>/versions/
   // <versionId>/content (same scheme extracted.ts uses for notebook run.json).

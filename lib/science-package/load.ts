@@ -1,7 +1,7 @@
 import { waitForBrowserMock } from '../../mocks/ready'
 import type { UseCasePackage, UseCaseSession } from '../use-case-types'
 import type { PackageProgress } from './archive'
-import type { WorkerReply } from './protocol'
+import type { ReviewState, WorkerReply } from './protocol'
 
 export type ReplayState =
   | { status: 'loading'; progress: PackageProgress }
@@ -12,11 +12,15 @@ export type ReplayState =
 export function loadReplay(
   slug: string,
   info: UseCasePackage,
-  update: (state: ReplayState) => void
+  update: (state: ReplayState) => void,
+  updateReviews: (state: ReviewState) => void = () => {}
 ) {
   const urls: string[] = []
   let worker: Worker | undefined
   let active = true
+  let bodyFinished = false
+  let reviewsFinished = false
+  let reviewState: ReviewState = { status: 'loading' }
   let prepared: UseCaseSession | undefined
   let visibleCount = 0
   let renderTimer: ReturnType<typeof setTimeout> | undefined
@@ -43,20 +47,24 @@ export function loadReplay(
       ...(visibleCount > 0 ? { data: prepared, visibleCount } : {})
     })
   }
-  // All ordering, compaction filtering and dependencies are settled before exposing any block.
+  // Body ordering, compaction filtering and body dependencies settle before any block.
   // Keep the full model for turn/reviewer context; only the visible prefix grows.
   const reveal = () => {
     if (!active || !prepared) return
     visibleCount = Math.min(visibleCount + 8, prepared.items.length)
     if (visibleCount === prepared.items.length) {
-      active = false
-      stop()
+      bodyFinished = true
+      if (reviewsFinished) {
+        active = false
+        stop()
+      }
       update({ status: 'ready', data: prepared })
     } else {
       update({ status: 'rendering', data: prepared, visibleCount })
       if (active) renderTimer = setTimeout(reveal, 16)
     }
   }
+  updateReviews(reviewState)
   update({
     status: 'loading',
     progress: { stage: info.extractedBaseUrl ? 'metadata' : 'downloading' }
@@ -73,7 +81,15 @@ export function loadReplay(
         )
       worker.onmessage = ({ data }: MessageEvent<WorkerReply>) => {
         if (!active) return
-        if (data.type === 'error') fail(data.message)
+        if (data.type === 'reviews') {
+          reviewState = data.state
+          reviewsFinished = data.state.status === 'ready'
+          updateReviews(data.state)
+          if (bodyFinished && reviewsFinished) {
+            active = false
+            stop()
+          }
+        } else if (data.type === 'error') fail(data.message)
         else if (prepared) return
         else if (data.type === 'progress') update({ status: 'loading', progress: data.progress })
         else if (data.type === 'resources') {
@@ -100,8 +116,16 @@ export function loadReplay(
         fail(error instanceof Error ? error.message : 'Could not start the package worker.')
     }
   })()
-  return () => {
+  const cancel = () => {
     active = false
     release()
   }
+  return Object.assign(cancel, {
+    retryReviews: () => {
+      if (!active || reviewState.status !== 'error' || !worker) return
+      reviewState = { status: 'loading' }
+      updateReviews(reviewState)
+      worker.postMessage({ type: 'retry-reviews' })
+    }
+  })
 }

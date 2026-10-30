@@ -25,7 +25,7 @@ published manifest snapshot retrieved on 2026-10-30. Their template date source 
 A separate local sitemap run using that snapshot checked every listed URL. Existing
 sitemap tests also verify unchanged gallery/overview dates and excluded routes.
 
-## Idle downloads and conservative progressive rendering
+## Initial idle-download and progressive-rendering validation
 
 The follow-up keeps the existing export format. A published Wordle session was inspected:
 `messages` precedes `artifacts` and `conversationGraph`, and the current viewer merges
@@ -68,3 +68,54 @@ Follow-up validation on 2026-10-30:
 This improves parsing and final rendering responsiveness; it does not promise a first block
 before all legacy metadata downloads finish. Supporting that would require a separately
 reviewed publisher-generated, version-bound ordered block stream with complete dependencies.
+
+
+## Independent Reviewer loading
+
+The final extracted loader starts `session.json` and `records.json` concurrently. Notebook
+runs depend on project/session identifiers and start after the session is parsed. The body
+waits only for its complete session and Notebook dependencies, then receives the same
+sorted, grouped and compact-filtered model as before. Extracted artifact/upload URLs derive
+from session metadata; they do not require records tables.
+
+Reviewer cards use a separate worker reply and loading state. JSON values are assembled
+incrementally, but reviews are not published until records EOF: later Finding, disposition
+and ArtifactVersion tables can change completeness and ordering. Normalization sorts cards
+by createdAt/id and checks by their existing deterministic order. Only review slots consume
+new data; cached body rows and their full-turn markers remain unchanged. Errors use the
+fixed notice “评审加载未完成” and review-only retry. Both streams finish/cancel their existing
+idle timers; the worker remains available for retry after review failure and is terminated
+once body and reviews finish or the page unmounts. Owned Blob URLs survive until unmount.
+
+Archive-only replay remains conservative: its records tables also resolve attachment
+filenames and upload mappings, so body rendering waits for them and all existing integrity
+checks. A missing extracted records fallback runs independently of the body and still
+verifies the archive and session match. No original data, publication format, deployment or
+runtime configuration changes are included. Affected sitemap URLs retain the same actual
+modification date, 2026-10-30, as the earlier change in this PR.
+
+
+Validation for independent reviews (2026-10-30):
+
+- 123 focused unit/contract tests passed, including body dependency barriers, cross-chunk
+  association ordering, review-only retry, active records downloads beyond 30 seconds,
+  stalled records, invalid-session cancellation and unmount/late-response handling.
+- Typecheck passed. Scoped Biome has no errors and one pre-existing console warning.
+- The full unit run reported 583 passed and 15 failures: configured `SITE_DOMAIN` resolves
+  to `https://www.aipoch.xyz`, while untouched metadata tests expect `https://aipoch.com`.
+  The untouched page-metadata test reproduces this mismatch in a separate run. No environment
+  or operational settings were changed to make those assertions pass.
+- The full mock integration run reported 41 passed and 17 failed. Three stale replay/date
+  expectations were updated for the new review-only error/retry flow, coalescible short
+  parsing status, and the existing PR's 2026-10-30 sitemap date. Remaining failures are in
+  unchanged homepage/blog/skill/leaderboard scenarios and a mobile download font-size
+  expectation. They are recorded as unresolved full-suite failures, not a passing baseline.
+- Final targeted browser rerun: 7 passed, including the three updated expectations, three
+  independent-review scenarios and interrupted-body preservation.
+- The slow-records browser case passes with about 37 seconds of continuous download while
+  the complete body is already displayed. Failure and verified-archive-fallback failure both
+  keep body block nodes and complete Markdown/code/table text stable through review retry.
+  The first version compared whole HTML and also observed normal asynchronous syntax
+  highlighting/thumbnail updates; the assertion now checks body identity and semantic content.
+- Acceptance screenshots remain local or GitHub attachments, never tracked repository files.
+  No local production build was run for this follow-up.

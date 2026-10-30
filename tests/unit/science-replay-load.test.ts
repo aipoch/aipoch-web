@@ -189,3 +189,26 @@ test('unmount cancels a partially rendered replay without publishing later block
   expect(states).toHaveLength(count)
   expect(worker.terminate).toHaveBeenCalledTimes(1)
 })
+
+test('independent review failure and retry never replace the ready transcript', async () => {
+  prepare()
+  const states: import('../../lib/science-package/load').ReplayState[] = []
+  const reviews = mock(() => {})
+  const cancel = loadReplay('case', info, (state) => states.push(state), reviews)
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({ type: 'ready', data: session })
+  await new Promise((r) => setTimeout(r, 100))
+  const before = states.at(-1)
+  worker.emit({ type: 'reviews', state: { status: 'error' } })
+  expect(reviews).toHaveBeenLastCalledWith({ status: 'error' })
+  cancel.retryReviews()
+  expect(worker.postMessage).toHaveBeenLastCalledWith({ type: 'retry-reviews' })
+  worker.emit({ type: 'reviews', state: { status: 'ready', reviews: [] } })
+  expect(states.at(-1)).toBe(before)
+  expect(before).toEqual({ status: 'ready', data: session })
+  cancel()
+  const count = reviews.mock.calls.length
+  worker.emit({ type: 'reviews', state: { status: 'ready', reviews: [] } })
+  expect(reviews.mock.calls).toHaveLength(count)
+})

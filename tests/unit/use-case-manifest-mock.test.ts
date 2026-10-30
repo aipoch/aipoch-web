@@ -150,3 +150,36 @@ test('mock release downloads and static import URLs both serve the same archive'
   expect(asset?.status).toBe(200)
   expect(await release?.arrayBuffer()).toEqual(await asset?.arrayBuffer())
 })
+
+test('review mock failures and chunking leave session bytes unchanged and reset on retry', async () => {
+  const origin = 'http://127.0.0.1:3203'
+  const handlers = useCaseManifestHandlers(origin)
+  const base = `${origin}/use-case-manifest/can-a-simple-algorithm-beat-ai-at-wordle/extracted/`
+  const configure = (value: unknown) =>
+    getResponse(
+      handlers,
+      new Request(`${origin}/__mock/use-case-manifest`, {
+        method: 'PUT',
+        body: JSON.stringify(value)
+      })
+    )
+  const read = (path: string) => getResponse(handlers, new Request(base + path))
+  const original = await (await read('session.json'))?.text()
+  const records = await (await read('records.json'))?.text()
+  for (const [recordsMode, status] of [
+    ['error', 503],
+    ['missing', 404]
+  ] as const) {
+    expect((await configure({ recordsMode }))?.status).toBe(200)
+    expect((await read('records.json'))?.status).toBe(status)
+    expect(await (await read('session.json'))?.text()).toBe(original)
+  }
+  expect((await configure({ recordsChunkDelayMs: 1 }))?.status).toBe(200)
+  expect(await (await read('records.json'))?.text()).toBe(records)
+  for (const value of [
+    { recordsChunkDelayMs: -1 },
+    { recordsChunkDelayMs: 5001 },
+    { recordsMode: 'unknown' }
+  ])
+    expect((await configure(value))?.status).toBe(400)
+})

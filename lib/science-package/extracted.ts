@@ -3,13 +3,14 @@ import { downloadPackage, type PackageProgress } from './archive'
 import { fetchReplayResponse } from './idle-response'
 import { readJsonStream } from './json-stream'
 import {
+  buildSanitizer,
   parseExtractedSession,
   parsePackage,
   readVerifiedPackage,
   sessionRecordFrom,
   storagePathFor
 } from './parse'
-import { reviewRecordsFrom } from './review-records'
+import { normalizeReviews, reviewRecordsFrom } from './review-records'
 import { isReviewerCorrectionAttribution } from './reviewer'
 
 const MAX_METADATA_BYTES = 128 * 1024 ** 2
@@ -41,7 +42,7 @@ const fetchMetadata = async (
 }
 
 /** Read only the documents required for a transcript; artifact bytes load through their URLs. */
-export const loadReplayPackage = async (
+export const prepareReplayPackage = async (
   info: UseCasePackage,
   slug: string,
   progress: (value: PackageProgress) => void,
@@ -59,58 +60,100 @@ export const loadReplayPackage = async (
       base.hash
     )
       throw new Error('Invalid extracted package URL.')
-    const file = await fetchMetadata(base.href, 'session.json', true, signal)
-    if (file !== undefined) {
-      const session = sessionRecordFrom(file)
-      // Notebook exports store runs under the session's project/id storage key.
-      // This optional document enriches the transcript; it is not an inventory.
-      let runDocument: Record<string, unknown> | undefined
-      if (
-        typeof session.projectId === 'string' &&
-        session.projectId &&
-        typeof session.id === 'string' &&
-        session.id &&
-        session.conversationGraph?.activities?.some((activity) => activity.executionInvocationId)
-      ) {
-        const path = storagePathFor(`notebooks/${session.projectId}/${session.id}/run.json`)
-        const run = await fetchMetadata(base.href, path, true, signal)
-        if (run !== undefined) {
-          if (!run || typeof run !== 'object' || !Array.isArray((run as { runs?: unknown }).runs))
-            throw new Error('Invalid notebook run metadata.')
-          runDocument = run as Record<string, unknown>
-        }
-      }
-      // Review tables are optional for old publications. Only sessions known to have reviews
-      // need an archive fallback; unreviewed sessions keep the lightweight metadata path.
-      let records = session.messages.length
-        ? await fetchMetadata(base.href, 'records.json', true, signal)
-        : undefined
-      const hasReviews =
-        session.autoReviewEnabled === true ||
-        session.messages.some((message) => isReviewerCorrectionAttribution(message.attribution))
-      if (records === undefined && hasReviews) {
-        const archive = await readVerifiedPackage(await downloadPackage(info, progress, signal))
-        if (
-          archive.session.id !== session.id ||
-          archive.session.revision !== session.revision ||
-          JSON.stringify(archive.session.messages) !== JSON.stringify(session.messages)
-        )
-          throw new Error('Review history does not match the published session.')
-        records = archive.records
-      }
-      progress({ stage: 'parsing' })
-      return parseExtractedSession(
-        session,
-        slug,
-        base.href,
-        runDocument,
-        records === undefined ? undefined : reviewRecordsFrom(records)
+    const recordsController = new AbortController()
+    const recordsSignal = signal
+      ? AbortSignal.any([signal, recordsController.signal])
+      : recordsController.signal
+    // Start independent documents together. Capture rejection immediately while the body loads.
+    const sessionRequest = fetchMetadata(base.href, 'session.json', true, signal)
+    const settleRecords = () =>
+      fetchMetadata(base.href, 'records.json', true, recordsSignal).then(
+        (value) => ({ value }),
+        (error) => ({ error })
       )
+    let initialRecords: ReturnType<typeof settleRecords> | undefined = settleRecords()
+    try {
+      const file = await sessionRequest
+      if (file !== undefined) {
+        const session = sessionRecordFrom(file)
+        // Notebook exports store runs under the session's project/id storage key.
+        // This optional document enriches the transcript; it is not an inventory.
+        let runDocument: Record<string, unknown> | undefined
+        if (
+          typeof session.projectId === 'string' &&
+          session.projectId &&
+          typeof session.id === 'string' &&
+          session.id &&
+          session.conversationGraph?.activities?.some((activity) => activity.executionInvocationId)
+        ) {
+          const path = storagePathFor(`notebooks/${session.projectId}/${session.id}/run.json`)
+          const run = await fetchMetadata(base.href, path, true, signal)
+          if (run !== undefined) {
+            if (!run || typeof run !== 'object' || !Array.isArray((run as { runs?: unknown }).runs))
+              throw new Error('Invalid notebook run metadata.')
+            runDocument = run as Record<string, unknown>
+          }
+        }
+        progress({ stage: 'parsing' })
+        const result = parseExtractedSession(session, slug, base.href, runDocument)
+        const { sanitize } = buildSanitizer(session, runDocument)
+        // Reviews cannot alter the finalized body. Each attempt waits for the entire records
+        // document, including findings/dispositions/version associations arriving after reviews.
+        const loadReviews = async () => {
+          const request = initialRecords ?? settleRecords()
+          initialRecords = undefined
+          const settled = await request
+          if ('error' in settled) throw settled.error
+          let records = settled.value
+          const hasReviews =
+            session.autoReviewEnabled === true ||
+            session.messages.some((message) => isReviewerCorrectionAttribution(message.attribution))
+          if (records === undefined && hasReviews) {
+            const archive = await readVerifiedPackage(await downloadPackage(info, () => {}, signal))
+            if (
+              archive.session.id !== session.id ||
+              archive.session.revision !== session.revision ||
+              JSON.stringify(archive.session.messages) !== JSON.stringify(session.messages)
+            )
+              throw new Error('Review history does not match the published session.')
+            records = archive.records
+          }
+          return normalizeReviews(
+            session,
+            records === undefined ? undefined : reviewRecordsFrom(records),
+            sanitize
+          )
+        }
+        return { ...result, loadReviews }
+      }
+      recordsController.abort()
+    } catch (error) {
+      recordsController.abort()
+      throw error
     }
   }
 
   // Old publications remain readable, with their original size and SHA-256 checks.
   const archive = await downloadPackage(info, progress, signal)
   progress({ stage: 'parsing' })
-  return parsePackage(archive, slug)
+  // Archive records also supply attachment filenames and upload mappings, so they remain
+  // body dependencies behind the full integrity barrier. Do not guess those associations.
+  const result = await parsePackage(archive, slug)
+  const reviews = result.session.reviews ?? []
+  result.session.reviews = []
+  return { ...result, loadReviews: async () => reviews }
+}
+
+/** Complete-model API for consumers that explicitly need both the transcript and its reviews. */
+export const loadReplayPackage = async (
+  info: UseCasePackage,
+  slug: string,
+  progress: (value: PackageProgress) => void,
+  signal?: AbortSignal
+) => {
+  const result = await prepareReplayPackage(info, slug, progress, signal)
+  return {
+    session: { ...result.session, reviews: await result.loadReviews() },
+    resources: result.resources
+  }
 }

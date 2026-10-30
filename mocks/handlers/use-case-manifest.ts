@@ -20,6 +20,8 @@ export const useCaseManifestHandlers = (origin: string) => {
   let packageDelayMs = 0
   let packageRequests = 0
   let replayChunkDelayMs = 0
+  let recordsChunkDelayMs = 0
+  let recordsMode = 'normal'
   return [
     http.get(`${origin}/use-case-manifest/manifest.json`, async ({ request }) => {
       requests += 1
@@ -74,6 +76,8 @@ export const useCaseManifestHandlers = (origin: string) => {
         packageMode?: string
         packageDelayMs?: number
         replayChunkDelayMs?: number
+        recordsChunkDelayMs?: number
+        recordsMode?: string
       }
       if (
         (update.discoveryMode !== undefined &&
@@ -93,6 +97,12 @@ export const useCaseManifestHandlers = (origin: string) => {
           (!Number.isInteger(update.replayChunkDelayMs) ||
             update.replayChunkDelayMs < 0 ||
             update.replayChunkDelayMs > 5000)) ||
+        (update.recordsChunkDelayMs !== undefined &&
+          (!Number.isInteger(update.recordsChunkDelayMs) ||
+            update.recordsChunkDelayMs < 0 ||
+            update.recordsChunkDelayMs > 5000)) ||
+        (update.recordsMode !== undefined &&
+          !['normal', 'error', 'missing'].includes(update.recordsMode)) ||
         (update.delayMs !== undefined &&
           (!Number.isInteger(update.delayMs) || update.delayMs < 0 || update.delayMs > 5000))
       )
@@ -104,6 +114,8 @@ export const useCaseManifestHandlers = (origin: string) => {
       packageMode = update.packageMode ?? 'normal'
       packageDelayMs = update.packageDelayMs ?? 0
       replayChunkDelayMs = update.replayChunkDelayMs ?? 0
+      recordsChunkDelayMs = update.recordsChunkDelayMs ?? 0
+      recordsMode = update.recordsMode ?? 'normal'
       revision += 1
       return HttpResponse.json({ revision })
     }),
@@ -116,12 +128,18 @@ export const useCaseManifestHandlers = (origin: string) => {
         const prefix = `${item.name}/extracted/`
         if (path.startsWith(prefix)) {
           const file = path.slice(prefix.length)
+          if (file === 'records.json' && recordsMode !== 'normal')
+            return new HttpResponse(null, { status: recordsMode === 'missing' ? 404 : 503 })
           const bytes = packages.get(item.name)?.extractedFiles[file]
           if (!bytes) return new HttpResponse(null, { status: 404 })
+          const chunkDelay =
+            file === 'session.json'
+              ? replayChunkDelayMs
+              : file === 'records.json'
+                ? recordsChunkDelayMs
+                : 0
           return new HttpResponse(
-            file === 'session.json' && replayChunkDelayMs
-              ? delayedBody(bytes, replayChunkDelayMs)
-              : (bytes as BodyInit),
+            chunkDelay ? delayedBody(bytes, chunkDelay) : (bytes as BodyInit),
             {
               headers: {
                 'Content-Type': file.endsWith('.json')

@@ -299,7 +299,7 @@ describe('mock development end to end', () => {
           `/open-science/use-cases/${item.name}</loc><lastmod>2026-10-28T00:00:00.000Z</lastmod>`
         )
         expect(sitemap).toContain(
-          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-23T00:00:00.000Z</lastmod>`
+          `/open-science/use-cases/${item.name}/replay</loc><lastmod>2026-10-30T00:00:00.000Z</lastmod>`
         )
         const detailHtml = await (await fetch(`${web}/open-science/use-cases/${item.name}`)).text()
         expect(detailHtml).toContain(`href="/open-science/use-cases/${item.name}/replay"`)
@@ -367,7 +367,8 @@ describe('mock development end to end', () => {
       const states = await page.evaluate(
         () => (window as typeof window & { replayStates: string[] }).replayStates
       )
-      expect(states).toContain('Parsing research session…')
+      // React may coalesce short metadata/parsing stages once the body is ready.
+      expect(states).not.toContain('Downloading research package…')
       expect(requests.some((url) => /\/extracted\/manifest\.json$/.test(url))).toBe(false)
       expect(requests).toContain(`${api}/use-case-manifest/${item.name}/extracted/records.json`)
       // Retry after the extracted session fails schema validation.
@@ -439,10 +440,10 @@ describe('mock development end to end', () => {
       // A transient service failure must remain visible and retryable.
       await context.route(recordsUrl, (route) => route.fulfill({ status: 503, body: '' }))
       await page.reload()
-      await page.getByRole('alert').filter({ hasText: 'HTTP 503' }).waitFor()
+      await page.getByRole('alert').filter({ hasText: '评审加载未完成' }).waitFor()
       expect(archiveRequests()).toBe(1)
       await context.unroute(recordsUrl)
-      await page.getByRole('button', { name: 'Retry', exact: true }).click()
+      await page.getByRole('button', { name: 'Retry reviews', exact: true }).click()
       await browserExpect(cards).toHaveCount(2)
       expect(archiveRequests()).toBe(1)
     } finally {
@@ -483,6 +484,116 @@ describe('mock development end to end', () => {
     }
   }, 120000)
 
+  for (const scenario of ['slow', 'error', 'archive-error'] as const) {
+    test(`independent reviews: ${scenario} records keep the complete body stable`, async () => {
+      const control = `${api}/__mock/use-case-manifest`
+      const configure = (options: Record<string, unknown>) =>
+        fetch(control, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(options)
+        })
+      const browser = await chromium.launch()
+      try {
+        expect(
+          (
+            await configure(
+              scenario === 'slow'
+                ? { recordsChunkDelayMs: 2000 }
+                : scenario === 'error'
+                  ? { recordsMode: 'error' }
+                  : { recordsMode: 'missing', packageMode: 'error' }
+            )
+          ).ok
+        ).toBe(true)
+        const page = await browser.newPage()
+        const requests: string[] = []
+        page.on('request', (request) => requests.push(request.url()))
+        const started = Date.now()
+        expect(
+          (
+            await page.goto(`${web}/open-science/use-cases/${manifestSample[0].name}/replay`)
+          )?.status()
+        ).toBe(200)
+        await browserExpect(page.locator('[data-replay-block="cov-md-artifacts"]')).toBeAttached({
+          timeout: 15000
+        })
+        await browserExpect(page.getByText('Loading remaining conversation blocks…')).toHaveCount(0)
+        expect(Date.now() - started).toBeLessThan(20000)
+        const snapshot = () => {
+          const nodes = Array.from(document.querySelectorAll('[data-replay-block]'))
+          const html = nodes.map((node) => {
+            const clone = node.cloneNode(true) as Element
+            clone.querySelectorAll('section[aria-label="Message reviews"]').forEach((review) => {
+              review.remove()
+            })
+            // Syntax highlighting and asset thumbnails finish independently. Compare the
+            // complete Markdown/code/table text, while node identity checks detect replacement.
+            return Array.from(clone.querySelectorAll('.agent-markdown, pre code, table')).map(
+              (content) => content.textContent
+            )
+          })
+          return { nodes, html }
+        }
+        await page.evaluate(snapshot).then((value) => expect(value.html.length).toBeGreaterThan(8))
+        await page.evaluate(() => {
+          ;(window as unknown as { replayNodes: Element[] }).replayNodes = Array.from(
+            document.querySelectorAll('[data-replay-block]')
+          )
+        })
+        const before = await page.evaluate(snapshot).then((value) => value.html)
+        await browserExpect(page.getByTestId('reviewer-card')).toHaveCount(0)
+        if (scenario === 'slow') {
+          await browserExpect(page.getByText('Loading reviews…')).toBeVisible()
+        } else {
+          await browserExpect(page.getByText('评审加载未完成', { exact: true })).toBeVisible()
+          if (scenario === 'error') {
+            await page.setViewportSize({ width: 1440, height: 1000 })
+            const cookies = page.getByRole('button', { name: 'Reject non-essential', exact: true })
+            if (await cookies.isVisible()) await cookies.click()
+            await page.locator('[data-replay-block]').last().scrollIntoViewIfNeeded()
+            await page.getByText('评审加载未完成', { exact: true }).scrollIntoViewIfNeeded()
+            await page.evaluate(
+              () =>
+                new Promise<void>((resolve) =>
+                  requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+                )
+            )
+            const directory = join(process.cwd(), '.codex/replay-compaction')
+            mkdirSync(directory, { recursive: true })
+            await page.screenshot({ path: join(directory, 'reviewer-incomplete.png') })
+          }
+          expect((await configure({})).ok).toBe(true)
+          await page.getByRole('button', { name: 'Retry reviews', exact: true }).click()
+        }
+        await browserExpect(page.getByTestId('reviewer-card')).toHaveCount(2, { timeout: 60000 })
+        if (scenario === 'slow') expect(Date.now() - started).toBeGreaterThan(30000)
+        await browserExpect(page.getByText('评审加载未完成', { exact: true })).toHaveCount(0)
+        await browserExpect(page.getByText('Loading reviews…')).toHaveCount(0)
+        expect(
+          await page.evaluate(() => {
+            const before = (window as unknown as { replayNodes: Element[] }).replayNodes
+            const after = Array.from(document.querySelectorAll('[data-replay-block]'))
+            return (
+              before.length === after.length && before.every((node, index) => node === after[index])
+            )
+          })
+        ).toBe(true)
+        expect(await page.evaluate(snapshot).then((value) => value.html)).toEqual(before)
+        expect(requests.filter((url) => url.endsWith('/session.json'))).toHaveLength(1)
+        expect(requests.filter((url) => url.endsWith('/records.json'))).toHaveLength(
+          scenario === 'slow' ? 1 : 2
+        )
+        await browserExpect(page.locator('.osp-session')).not.toContainText(
+          'COMPACTION_INTERNAL_INSTRUCTIONS'
+        )
+      } finally {
+        await configure({})
+        await browser.close()
+      }
+    }, 120000)
+  }
+
   test('partial replay failure preserves rendered blocks and reports incomplete loading', async () => {
     const browser = await chromium.launch()
     try {
@@ -515,6 +626,7 @@ describe('mock development end to end', () => {
       await browserExpect(
         page.getByText('Loading incomplete. The blocks already loaded are shown above.')
       ).toBeVisible({ timeout: 30000 })
+      await browserExpect(page.getByText('Loading reviews…')).toHaveCount(0)
       const blocks = page.locator('[data-replay-block]')
       await browserExpect(blocks).toHaveCount(8)
       const prefix = await blocks.evaluateAll((nodes) =>

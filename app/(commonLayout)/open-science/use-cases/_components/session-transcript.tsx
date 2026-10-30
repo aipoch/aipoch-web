@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import { reviewerResponseStates } from '@/lib/science-package/reviewer'
-import type { NormalizedActivity, UseCaseSession } from '@/lib/use-case-types'
+import type { NormalizedActivity, ReplayReview, UseCaseSession } from '@/lib/use-case-types'
 import { SessionActivityGroup } from './activity-group'
 import { SessionCompactionItem } from './compaction-item'
 import { SessionElicitationCard } from './elicitation-card'
@@ -47,14 +47,30 @@ const SessionPlanItem = ({ activity }: { activity: NormalizedActivity }) => {
   )
 }
 
+// Only these slots subscribe to late review data; finalized message elements stay cached.
+const EMPTY_REVIEWS: ReplayReview[] = []
+const ReviewContext = createContext<ReplayReview[]>(EMPTY_REVIEWS)
+const MessageReviews = ({ messageId }: { messageId: string }) => {
+  const reviews = useContext(ReviewContext).filter((review) => review.anchorMessageId === messageId)
+  return reviews.length ? (
+    <section aria-label="Message reviews">
+      {reviews.map((review) => (
+        <ReviewerCard key={review.id} review={review} />
+      ))}
+    </section>
+  ) : null
+}
+
 // Read-only replay of one exported Open-Science session. The centered column matches the app's
 // transcript width (max-w-4xl = 56rem); each row carries the app's own horizontal padding.
 export const SessionTranscript = ({
   session,
-  visibleCount = session.items.length
+  visibleCount = session.items.length,
+  reviews = session.reviews ?? EMPTY_REVIEWS
 }: {
   session: UseCaseSession
   visibleCount?: number
+  reviews?: ReplayReview[]
 }) => {
   // Cache finalized row elements and full-context markers so revealing more blocks does not
   // rerun earlier Markdown/renderers or recalculate turn/group boundaries.
@@ -80,11 +96,7 @@ export const SessionTranscript = ({
               showTurnCompletion={turnFinal.has(item.id)}
               reviewerCorrectionState={correctionStates.get(item.id)}
             />
-            {session.reviews
-              ?.filter((review) => review.anchorMessageId === item.id)
-              .map((review) => (
-                <ReviewerCard key={review.id} review={review} />
-              ))}
+            <MessageReviews messageId={item.id} />
           </div>
         )
       }
@@ -112,7 +124,9 @@ export const SessionTranscript = ({
   return (
     <div className="osp-session text-text-000">
       <FilePreviewProvider>
-        <div className="mx-auto w-full max-w-4xl pb-4 pt-4">{rows.slice(0, visibleCount)}</div>
+        <ReviewContext.Provider value={reviews}>
+          <div className="mx-auto w-full max-w-4xl pb-4 pt-4">{rows.slice(0, visibleCount)}</div>
+        </ReviewContext.Provider>
       </FilePreviewProvider>
     </div>
   )

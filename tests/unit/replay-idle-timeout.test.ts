@@ -22,16 +22,17 @@ const flush = async () => {
 const start = (options: { archive?: boolean; signal?: AbortSignal } = {}) => {
   jest.useFakeTimers()
   const canceled = mock(() => {})
-  globalThis.fetch = mock(
-    async () =>
-      new Response(
-        new ReadableStream<Uint8Array>({
-          start(controller) {
-            source = controller
-          },
-          cancel: canceled
-        })
-      )
+  globalThis.fetch = mock(async (url: string | URL) =>
+    String(url).endsWith('records.json')
+      ? new Response(null, { status: 404 })
+      : new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              source = controller
+            },
+            cancel: canceled
+          })
+        )
   ) as unknown as typeof fetch
   const hash = new Sha256()
   hash.update(document)

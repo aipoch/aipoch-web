@@ -159,13 +159,19 @@ loads from `<manifest directory>/<case name>/extracted/`.
   Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
   original filenames. SVG remains image-only.
 - **Streaming:** Downloads allow 30 seconds for the first nonempty body chunk, then
-  renew that idle deadline on each nonempty chunk. Metadata is parsed incrementally,
-  but no record is displayed until the document and its ordering/association dependencies
-  are complete. The existing export has separate messages and activities, not an ordered
-  block stream. The finalized transcript is then revealed in contiguous batches of whole
-  messages/activity groups; Markdown and tables are never split across batches. Worker
-  failures after rendering begins keep any visible prefix and label it incomplete. Archive
-  integrity checks still complete before any archive content is shown.
+  renew that idle deadline on each nonempty chunk. Extracted `session.json` and
+  `records.json` start in parallel; Notebook metadata starts once the session identifies
+  its storage path. The body waits for complete session/body dependencies, sorting and
+  compact filtering, then reveals contiguous batches of whole messages/activity groups.
+  Markdown, code and tables are never split. Reviewer loading cannot hold up this body.
+- **Reviews:** Records are parsed incrementally and cached until the complete document
+  supplies all associations. Complete cards are sorted and inserted in independent slots
+  below their anchored messages, without replacing body blocks or regrouping activities.
+  Review failure shows “评审加载未完成”; retry fetches reviews again while preserving the
+  body. Missing legacy review records can still use a verified, matching archive fallback.
+  Archive-only replay remains behind full integrity checks and records-based attachment
+  mappings; it does not promise early body display during archive download/parsing.
+  Cancellation/unmount stops pending work and releases owned resources.
 - **Compaction:** `ContextCompaction` activities render as status-only rows. Provider
   payloads are excluded from the display model; the original package remains unchanged.
   Legacy summaries already flattened into ordinary messages have no reliable identity:
