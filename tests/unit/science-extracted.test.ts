@@ -4,6 +4,12 @@ import { loadReplayPackage } from '../../lib/science-package/extracted'
 import type { Manifest } from '../../lib/science-package/parse'
 import { buildCoveragePackage } from '../../mocks/fixtures/science-coverage-package'
 
+// Legacy fixture storage has no optional ordered replay projection.
+const legacy = (fetcher: typeof fetch): typeof fetch =>
+  ((input, init) =>
+    String(input).includes('/replay-v1/')
+      ? Promise.resolve(new Response(null, { status: 404 }))
+      : fetcher(input, init)) as typeof fetch
 const originalFetch = globalThis.fetch
 afterEach(() => {
   globalThis.fetch = originalFetch
@@ -33,14 +39,16 @@ const setup = async (override?: (path: string, blob: Blob | undefined) => Respon
     if (entry.storageKey && file) extracted.set(entry.storageKey, file)
   }
   const requests: string[] = []
-  globalThis.fetch = mock(async (input: string | URL | Request) => {
-    const url = String(input)
-    requests.push(url)
-    if (url === info.url) return new Response(sample.bytes as BodyInit)
-    const path = decodeURIComponent(url.slice(base.length))
-    const blob = extracted.get(path)?.blob
-    return override?.(path, blob) ?? new Response(blob, { status: blob ? 200 : 404 })
-  }) as unknown as typeof fetch
+  globalThis.fetch = legacy(
+    mock(async (input: string | URL | Request) => {
+      const url = String(input)
+      requests.push(url)
+      if (url === info.url) return new Response(sample.bytes as BodyInit)
+      const path = decodeURIComponent(url.slice(base.length))
+      const blob = extracted.get(path)?.blob
+      return override?.(path, blob) ?? new Response(blob, { status: blob ? 200 : 404 })
+    }) as unknown as typeof fetch
+  )
   return { files, requests }
 }
 
@@ -74,7 +82,7 @@ for (const status of [403, 404]) {
     )
     const result = await loadReplayPackage(info, 'sample', () => {})
     expect(result.session.title).toBe('Extracted sample')
-    expect(requests).toEqual([`${base}session.json`, info.url])
+    expect(requests).toEqual([`${base}session.json`, `${base}records.json`, info.url])
     expect(result.session.assets['files/coverage_report.md'].url).toStartWith('science-asset:')
   })
 }
@@ -90,10 +98,10 @@ test('rejects corrupt metadata without silently downloading a large archive', as
 test('does not fall back on transient storage failures', async () => {
   const { requests } = await setup(() => new Response(null, { status: 503 }))
   await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('503')
-  expect(requests).toHaveLength(1)
+  expect(requests).toHaveLength(2)
 })
 
-test('only requests session metadata when the session has no notebook or artifacts', async () => {
+test('empty sessions need no notebook or archive after the independent metadata requests', async () => {
   const { requests } = await setup((path) =>
     path === 'session.json'
       ? Response.json({ version: 2, session: { title: 'Empty session', messages: [] } })
@@ -102,7 +110,7 @@ test('only requests session metadata when the session has no notebook or artifac
   const result = await loadReplayPackage(info, 'sample', () => {})
   expect(result.session.title).toBe('Empty session')
   expect(result.session.items).toEqual([])
-  expect(requests).toEqual([`${base}session.json`])
+  expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
 })
 
 for (const extracted of [true, false]) {
@@ -179,7 +187,7 @@ test('rejects a JSON null session rather than falling back to the archive', asyn
     path === 'session.json' ? Response.json(null) : undefined
   )
   await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('invalid session.json')
-  expect(requests).toEqual([`${base}session.json`])
+  expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
 })
 
 for (const storageKey of [
@@ -203,7 +211,7 @@ for (const storageKey of [
         : undefined
     )
     await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow('storage key')
-    expect(requests).toEqual([`${base}session.json`])
+    expect(requests).toEqual([`${base}session.json`, `${base}records.json`])
   })
 }
 
@@ -232,8 +240,8 @@ test('loads full notebook outputs from the restored notebook directory', async (
   const { session } = await loadReplayPackage(info, 'sample', () => {})
   expect(requests).toEqual([
     `${base}session.json`,
-    `${base}notebooks/mock-project/mock-session/run.json`,
-    `${base}records.json`
+    `${base}records.json`,
+    `${base}notebooks/mock-project/mock-session/run.json`
   ])
   expect(
     session.items.some(
@@ -260,4 +268,85 @@ test('does not replace corrupt or unavailable review records with a silent archi
     await expect(loadReplayPackage(info, 'sample', () => {})).rejects.toThrow()
     expect(requests).not.toContain(info.url)
   }
+})
+
+test('buffers out-of-order records and unresolved dependencies until complete blocks can be finalized', async () => {
+  const source = {
+    version: 2,
+    session: {
+      title: 'Buffered order',
+      messages: [
+        {
+          id: 'answer',
+          role: 'agent',
+          content: '```ts\nconst x = 1\n```\n\n| A |\n| - |\n| B |',
+          createdAt: 20
+        }
+      ],
+      conversationGraph: {
+        activities: [
+          { id: 'after', createdAt: 30, providerToolName: 'Read' },
+          { id: 'before-a', createdAt: 10, providerToolName: 'Read' },
+          { id: 'before-b', createdAt: 15, providerToolName: 'Read' },
+          {
+            id: 'compact',
+            createdAt: 5,
+            providerToolName: 'ContextCompaction',
+            status: 'completed',
+            rawOutput: 'INTERNAL DO NOT DISPLAY'
+          }
+        ]
+      },
+      artifacts: []
+    }
+  }
+  const json = JSON.stringify(source)
+  let body!: ReadableStreamDefaultController<Uint8Array>
+  let records!: (value: Response) => void
+  globalThis.fetch = legacy(
+    mock(async (url: string | URL) =>
+      String(url).endsWith('session.json')
+        ? new Response(
+            new ReadableStream({
+              start(controller) {
+                body = controller
+              }
+            })
+          )
+        : new Promise<Response>((resolve) => {
+            records = resolve
+          })
+    ) as unknown as typeof fetch
+  )
+  let settled = false
+  const pending = loadReplayPackage(info, 'buffered', () => {})
+  void pending.then(() => {
+    settled = true
+  })
+  const encoder = new TextEncoder()
+  for (let i = 0; i < 30; i++) await Promise.resolve()
+  const boundary = json.indexOf(',"conversationGraph"')
+  body.enqueue(encoder.encode(json.slice(0, boundary)))
+  for (let i = 0; i < 30; i++) await Promise.resolve()
+  expect(settled).toBe(false)
+  body.enqueue(encoder.encode(json.slice(boundary)))
+  body.close()
+  for (let i = 0; i < 80; i++) await Promise.resolve()
+  expect(settled).toBe(false)
+  records(new Response(null, { status: 404 }))
+  const result = await pending
+  expect(result.session.items.map((item) => item.id)).toEqual([
+    'compact',
+    'before-a',
+    'answer',
+    'after'
+  ])
+  const group = result.session.items[1]
+  expect(group.type === 'activity-group' && group.activities.map((item) => item.id)).toEqual([
+    'before-a',
+    'before-b'
+  ])
+  expect(JSON.stringify(result.session)).not.toContain('INTERNAL DO NOT DISPLAY')
+  expect(result.session.items[2]).toMatchObject({ content: source.session.messages[0].content })
+  expect(JSON.stringify(source)).toBe(json)
 })

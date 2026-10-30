@@ -4,8 +4,10 @@ import { cjk } from '@streamdown/cjk'
 import { code } from '@streamdown/code'
 import { createMathPlugin } from '@streamdown/math'
 import { useEffect, useMemo, useState } from 'react'
-import { type Components, defaultRehypePlugins, Streamdown } from 'streamdown'
+import remarkMathjaxDelimiters from 'remark-mathjax-delimiters'
+import { type Components, defaultRehypePlugins, defaultRemarkPlugins, Streamdown } from 'streamdown'
 import type { PluggableList, Plugin } from 'unified'
+import { remarkMathjaxBlocks } from '@/lib/science-package/remark-mathjax-blocks'
 import { AssetImage } from './asset-image'
 import { FileDownloadLink } from './file-download-link'
 import { type PreviewFile, previewKindFor, useFilePreview } from './file-preview'
@@ -15,11 +17,16 @@ import 'katex/dist/katex.min.css'
 // prose tightening, minus streaming machinery, the link-safety modal, and session links.
 const math = createMathPlugin({ singleDollarTextMath: true })
 const basePlugins = { code, math, cjk }
+const remarkPlugins: PluggableList = [
+  ...Object.values(defaultRemarkPlugins),
+  remarkMathjaxDelimiters,
+  remarkMathjaxBlocks
+]
 
 // Keep Streamdown's HTML sanitization while allowing verified package resources.
 const [sanitize, schema] = defaultRehypePlugins.sanitize as [
   Plugin,
-  { protocols: Record<string, string[]> }
+  { protocols: Record<string, string[]>; attributes: Record<string, unknown[]> }
 ]
 const rehypePlugins: PluggableList = [
   defaultRehypePlugins.raw,
@@ -27,6 +34,13 @@ const rehypePlugins: PluggableList = [
     sanitize,
     {
       ...schema,
+      attributes: {
+        ...schema.attributes,
+        // Display formulas inside links/emphasis use phrasing code, not pre.
+        code: schema.attributes.code.map((rule) =>
+          Array.isArray(rule) && rule[0] === 'className' ? [...rule, 'math-display'] : rule
+        )
+      },
       protocols: {
         ...schema.protocols,
         href: [...schema.protocols.href, 'blob'],
@@ -163,6 +177,7 @@ const SessionMarkdownStreamdown = ({ content }: { content: string }) => {
       <Streamdown
         className="agent-markdown prose prose-sm prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2"
         plugins={plugins}
+        remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}
         controls={controls}
         components={{ a: linkComponent, img: imageComponent }}

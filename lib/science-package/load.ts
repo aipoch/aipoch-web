@@ -1,34 +1,72 @@
 import { waitForBrowserMock } from '../../mocks/ready'
 import type { UseCasePackage, UseCaseSession } from '../use-case-types'
 import type { PackageProgress } from './archive'
-import type { WorkerReply } from './protocol'
+import type { ReviewState, WorkerReply } from './protocol'
 
 export type ReplayState =
   | { status: 'loading'; progress: PackageProgress }
+  | { status: 'rendering'; data: UseCaseSession; visibleCount: number }
   | { status: 'ready'; data: UseCaseSession }
-  | { status: 'error'; message: string }
+  | { status: 'error'; message: string; data?: UseCaseSession; visibleCount?: number }
 
 export function loadReplay(
   slug: string,
   info: UseCasePackage,
-  update: (state: ReplayState) => void
+  update: (state: ReplayState) => void,
+  updateReviews: (state: ReviewState) => void = () => {}
 ) {
   const urls: string[] = []
   let worker: Worker | undefined
   let active = true
-  const release = () => {
+  let bodyFinished = false
+  let downloadFinished = true
+  let reviewsFinished = false
+  let reviewState: ReviewState = { status: 'loading' }
+  let prepared: UseCaseSession | undefined
+  let visibleCount = 0
+  let renderTimer: ReturnType<typeof setTimeout> | undefined
+  const stop = () => {
+    clearTimeout(renderTimer)
+    renderTimer = undefined
     worker?.terminate()
     worker = undefined
+  }
+  const release = () => {
+    stop()
     for (const url of urls) URL.revokeObjectURL(url)
     urls.length = 0
   }
   const fail = (message: string) => {
     if (!active) return
     active = false
-    release()
+    if (visibleCount > 0) stop()
+    else release()
     console.error('[use-case-replay] load.failed', { slug, message })
-    update({ status: 'error', message })
+    update({
+      status: 'error',
+      message,
+      ...(visibleCount > 0 ? { data: prepared, visibleCount } : {})
+    })
   }
+  // Body ordering, compaction filtering and body dependencies settle before any block.
+  // Keep the full model for turn/reviewer context; only the visible prefix grows.
+  const reveal = () => {
+    renderTimer = undefined
+    if (!active || !prepared) return
+    visibleCount = Math.min(visibleCount + 8, prepared.items.length)
+    if (downloadFinished && visibleCount === prepared.items.length) {
+      bodyFinished = true
+      if (reviewsFinished) {
+        active = false
+        stop()
+      }
+      update({ status: 'ready', data: prepared })
+    } else {
+      update({ status: 'rendering', data: prepared, visibleCount })
+      if (active && visibleCount < prepared.items.length) renderTimer = setTimeout(reveal, 16)
+    }
+  }
+  updateReviews(reviewState)
   update({
     status: 'loading',
     progress: { stage: info.extractedBaseUrl ? 'metadata' : 'downloading' }
@@ -45,7 +83,62 @@ export function loadReplay(
         )
       worker.onmessage = ({ data }: MessageEvent<WorkerReply>) => {
         if (!active) return
-        if (data.type === 'error') fail(data.message)
+        if (data.type === 'reviews') {
+          reviewState = data.state
+          reviewsFinished = data.state.status === 'ready'
+          updateReviews(data.state)
+          if (bodyFinished && reviewsFinished) {
+            active = false
+            stop()
+          }
+        } else if (data.type === 'ordered') {
+          if (data.event.type === 'start') {
+            if (prepared) {
+              fail('Duplicate ordered replay header.')
+              return
+            }
+            prepared = data.event.session
+            downloadFinished = false
+          } else {
+            if (!prepared || downloadFinished) {
+              fail('Missing ordered replay header.')
+              return
+            }
+            try {
+              const mapping = Object.fromEntries(
+                data.event.resources.map(({ id, blob }) => {
+                  const url = URL.createObjectURL(blob)
+                  urls.push(url)
+                  return [id, url]
+                })
+              )
+              const resolve = (value: unknown): unknown => {
+                if (typeof value === 'string')
+                  return value.replace(/science-asset:\d+/g, (id) => mapping[id] ?? id)
+                if (Array.isArray(value)) return value.map(resolve)
+                if (value && typeof value === 'object')
+                  return Object.fromEntries(
+                    Object.entries(value).map(([key, entry]) => [key, resolve(entry)])
+                  )
+                return value
+              }
+              prepared = {
+                ...prepared,
+                items: [
+                  ...prepared.items,
+                  resolve(data.event.item) as UseCaseSession['items'][number]
+                ]
+              }
+              if (renderTimer === undefined) renderTimer = setTimeout(reveal, 0)
+            } catch (error) {
+              fail(error instanceof Error ? error.message : 'Could not create package resources.')
+            }
+          }
+        } else if (data.type === 'ordered-end') {
+          downloadFinished = true
+          if (renderTimer === undefined) renderTimer = setTimeout(reveal, 0)
+        } else if (data.type === 'error') fail(data.message)
+        else if (prepared) return
         else if (data.type === 'progress') update({ status: 'loading', progress: data.progress })
         else if (data.type === 'resources') {
           try {
@@ -61,11 +154,8 @@ export function loadReplay(
             fail(error instanceof Error ? error.message : 'Could not create package resources.')
           }
         } else {
-          active = false
-          console.info('[use-case-replay] load.complete', { slug })
-          worker?.terminate()
-          worker = undefined
-          update({ status: 'ready', data: data.data })
+          prepared = data.data
+          reveal()
         }
       }
       worker.postMessage({ type: 'load', slug, info })
@@ -74,8 +164,16 @@ export function loadReplay(
         fail(error instanceof Error ? error.message : 'Could not start the package worker.')
     }
   })()
-  return () => {
+  const cancel = () => {
     active = false
     release()
   }
+  return Object.assign(cancel, {
+    retryReviews: () => {
+      if (!active || reviewState.status !== 'error' || !worker) return
+      reviewState = { status: 'loading' }
+      updateReviews(reviewState)
+      worker.postMessage({ type: 'retry-reviews' })
+    }
+  })
 }

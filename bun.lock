@@ -39,6 +39,7 @@
         "rehype-slug": "^6.0.0",
         "remark-flexible-toc": "^1.2.4",
         "remark-gfm": "^4.0.1",
+        "remark-mathjax-delimiters": "0.1.0",
         "streamdown": "^2.5.0",
         "tailwind-merge": "^3.3.1",
         "zustand": "^5.0.12",
@@ -1281,6 +1282,8 @@
     "remark-gfm": ["remark-gfm@4.0.1", "https://registry.npmmirror.com/remark-gfm/-/remark-gfm-4.0.1.tgz", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-gfm": "^3.0.0", "micromark-extension-gfm": "^3.0.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "unified": "^11.0.0" } }, "sha512-1quofZ2RQ9EWdeN34S79+KExV1764+wCUGop5CPL1WGdD0ocPpu91lzPGbwWMECpEpd42kJGQwzRfyov9j4yNg=="],
 
     "remark-math": ["remark-math@6.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-math": "^3.0.0", "micromark-extension-math": "^3.0.0", "unified": "^11.0.0" } }, "sha512-MMqgnP74Igy+S3WwnhQ7kqGlEerTETXMvJhrUzDikVZ2/uogJCb+WHUg97hK9/jcfc0dkD73s3LN8zU49cTEtA=="],
+
+    "remark-mathjax-delimiters": ["remark-mathjax-delimiters@0.1.0", "", { "dependencies": { "micromark-util-character": "^2.1.1", "micromark-util-symbol": "^2.0.1" } }, "sha512-b1wuml5nOOpPIN2XTAE8Y7lJth+SWfXuqb6ocmUWL4ds5ynroz9eXLWI3Id2F67FjhjAxd7QxhFLNtAK/6EPUQ=="],
 
     "remark-mdx": ["remark-mdx@3.1.1", "https://registry.npmmirror.com/remark-mdx/-/remark-mdx-3.1.1.tgz", { "dependencies": { "mdast-util-mdx": "^3.0.0", "micromark-extension-mdxjs": "^3.0.0" } }, "sha512-Pjj2IYlUY3+D8x00UJsIOg5BEvfMyeI+2uLPn9VO9Wg4MEtN/VTIq2NEJQfde9PnX15KgtHyl9S0BcTnWrIuWg=="],
 

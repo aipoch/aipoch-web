@@ -108,3 +108,141 @@ test('leaving before mock readiness never starts a worker or performs a fetch', 
   expect(globalThis.fetch).not.toHaveBeenCalled()
   expect(update).toHaveBeenCalledTimes(1)
 })
+
+const session: import('../../lib/use-case-types').UseCaseSession = {
+  schemaVersion: 1,
+  slug: 'case',
+  title: 'Ordered',
+  projectName: '',
+  exportedAt: 0,
+  sessionCreatedAt: 0,
+  assets: {},
+  omissions: [],
+  excludedFiles: [],
+  items: Array.from({ length: 25 }, (_, index) => ({
+    type: 'message' as const,
+    id: `m${index}`,
+    role: 'assistant' as const,
+    content: `Complete block ${index}`,
+    createdAt: index,
+    status: 'complete'
+  }))
+}
+test('reveals only contiguous complete blocks and never revises already published blocks', async () => {
+  prepare()
+  const states: import('../../lib/science-package/load').ReplayState[] = []
+  const cancel = loadReplay('case', info, (state) => states.push(state))
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({ type: 'ready', data: session })
+  expect(states.at(-1)?.status).toBe('rendering')
+  const first = states.at(-1)
+  expect(first && 'visibleCount' in first && first.visibleCount).toBeGreaterThan(0)
+  expect(first && 'visibleCount' in first && first.visibleCount).toBeLessThan(25)
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  expect(states.at(-1)).toEqual({ status: 'ready', data: session })
+  let previous = 0
+  for (const state of states) {
+    if (state.status !== 'rendering') continue
+    expect(state.data).toBe(session)
+    expect(state.visibleCount).toBeGreaterThan(previous)
+    expect(state.data.items.slice(0, previous)).toEqual(session.items.slice(0, previous))
+    previous = state.visibleCount
+  }
+  cancel()
+})
+test('a failure after partial rendering retains its prefix and asset URLs until unmount', async () => {
+  prepare()
+  const states: import('../../lib/science-package/load').ReplayState[] = []
+  const cancel = loadReplay('case', info, (state) => states.push(state))
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({
+    type: 'resources',
+    resources: [{ id: 'science-asset:0', blob: new Blob(['asset']) }]
+  })
+  worker.emit({ type: 'ready', data: session })
+  const before = states.at(-1)
+  worker.emit({ type: 'error', message: 'Worker disconnected' })
+  const failed = states.at(-1)
+  expect(failed).toMatchObject({ status: 'error', message: 'Worker disconnected', data: session })
+  expect(failed && 'visibleCount' in failed && failed.visibleCount).toBe(
+    before && 'visibleCount' in before && before.visibleCount
+  )
+  expect(URL.revokeObjectURL).not.toHaveBeenCalled()
+  const count = states.length
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  expect(states).toHaveLength(count)
+  cancel()
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test')
+})
+test('unmount cancels a partially rendered replay without publishing later blocks', async () => {
+  prepare()
+  const states: import('../../lib/science-package/load').ReplayState[] = []
+  const cancel = loadReplay('case', info, (state) => states.push(state))
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({ type: 'ready', data: session })
+  cancel()
+  const count = states.length
+  await new Promise((resolve) => setTimeout(resolve, 40))
+  expect(states).toHaveLength(count)
+  expect(worker.terminate).toHaveBeenCalledTimes(1)
+})
+
+test('independent review failure and retry never replace the ready transcript', async () => {
+  prepare()
+  const states: import('../../lib/science-package/load').ReplayState[] = []
+  const reviews = mock(() => {})
+  const cancel = loadReplay('case', info, (state) => states.push(state), reviews)
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({ type: 'ready', data: session })
+  await new Promise((r) => setTimeout(r, 100))
+  const before = states.at(-1)
+  worker.emit({ type: 'reviews', state: { status: 'error' } })
+  expect(reviews).toHaveBeenLastCalledWith({ status: 'error' })
+  cancel.retryReviews()
+  expect(worker.postMessage).toHaveBeenLastCalledWith({ type: 'retry-reviews' })
+  worker.emit({ type: 'reviews', state: { status: 'ready', reviews: [] } })
+  expect(states.at(-1)).toBe(before)
+  expect(before).toEqual({ status: 'ready', data: session })
+  cancel()
+  const count = reviews.mock.calls.length
+  worker.emit({ type: 'reviews', state: { status: 'ready', reviews: [] } })
+  expect(reviews.mock.calls).toHaveLength(count)
+})
+
+test('ordered blocks render before EOF and preserve their identity on later arrivals and failure', async () => {
+  prepare()
+  const updates: import('../../lib/science-package/load').ReplayState[] = []
+  const cancel = loadReplay('case', info, (state) => updates.push(state))
+  await tick()
+  const worker = TestWorker.instances[0]
+  worker.emit({
+    type: 'ordered',
+    event: {
+      type: 'start',
+      session: { ...session, items: [], rowMetadata: { m0: { turnFinal: false } } }
+    }
+  })
+  worker.emit({ type: 'ordered', event: { type: 'block', item: session.items[0], resources: [] } })
+  await tick()
+  const first = updates.at(-1)
+  expect(first?.status).toBe('rendering')
+  if (first?.status !== 'rendering') throw new Error('Missing prefix')
+  expect(first.visibleCount).toBe(1)
+  worker.emit({ type: 'ordered', event: { type: 'block', item: session.items[1], resources: [] } })
+  await tick()
+  const next = updates.at(-1)
+  expect(next?.status).toBe('rendering')
+  if (next?.status !== 'rendering') throw new Error('Missing continuation')
+  expect(next.data.items[0]).toBe(first.data.items[0])
+  worker.emit({ type: 'error', message: 'Interrupted ordered stream' })
+  expect(updates.at(-1)).toMatchObject({ status: 'error', visibleCount: 2 })
+  const count = updates.length
+  cancel()
+  worker.emit({ type: 'ordered-end' })
+  await tick()
+  expect(updates).toHaveLength(count)
+})

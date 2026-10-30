@@ -150,6 +150,13 @@ export interface ReviewerCorrectionAttribution {
 
 export type TranscriptItem =
   | {
+      /** Display-only lifecycle; provider content never crosses this boundary. */
+      type: 'compaction'
+      id: string
+      status: 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'unknown'
+      createdAt: number
+    }
+  | {
       type: 'message'
       id: string
       role: 'user' | 'assistant'
@@ -213,6 +220,9 @@ export interface ReplayReview {
 }
 
 export interface UseCaseSession {
+  /** Final markers supplied before ordered blocks arrive, so earlier rows never change. */
+  rowMetadata?: Record<string, { turnFinal: boolean; reviewerState?: 'completed' | 'failed' }>
+
   schemaVersion: 1
   slug: string
   title: string

@@ -44,7 +44,7 @@ interface SessionRecord extends JsonObject {
   artifacts?: JsonObject[]
 }
 
-const buildSanitizer = (session: SessionRecord, runDocument: JsonObject | undefined) => {
+export const buildSanitizer = (session: SessionRecord, runDocument: JsonObject | undefined) => {
   const prefixes: string[] = []
   const cwd = typeof session.cwd === 'string' ? session.cwd : ''
   if (cwd.startsWith('/')) prefixes.push(cwd)
@@ -238,8 +238,9 @@ export const parseExtractedSession = (
   slug: string,
   assetBaseUrl: string,
   runDocument?: JsonObject,
-  records?: ReviewRecords
-) => normalizeSession(session, slug, { assetBaseUrl, runDocument, records })
+  records?: ReviewRecords,
+  uploadMessages?: JsonObject[]
+) => normalizeSession(session, slug, { assetBaseUrl, runDocument, records, uploadMessages })
 
 function normalizeSession(
   session: SessionRecord,
@@ -248,12 +249,14 @@ function normalizeSession(
     archive,
     assetBaseUrl,
     runDocument,
-    records
+    records,
+    uploadMessages
   }: {
     archive?: { manifest: Manifest; objects: Map<string, ArchiveEntry>; records?: ReviewRecords }
     assetBaseUrl?: string
     runDocument?: JsonObject
     records?: ReviewRecords
+    uploadMessages?: JsonObject[]
   }
 ) {
   const resources: { id: string; blob: Blob }[] = []
@@ -330,7 +333,7 @@ function normalizeSession(
     }
   }
 
-  // Extracted mode has no records.json. The publisher keeps the original
+  // Extracted attachment resolution does not need records.json. The publisher keeps the original
   // package layout, so upload blobs sit at a derivable storage path built from
   // session.json alone: uploads/<projectId>/<sessionId>/<fileId>/versions/
   // <versionId>/content (same scheme extracted.ts uses for notebook run.json).
@@ -341,7 +344,7 @@ function normalizeSession(
     typeof session.id === 'string' &&
     session.id
   ) {
-    for (const message of session.messages) {
+    for (const message of uploadMessages ?? session.messages) {
       for (const upload of Array.isArray(message.uploads) ? message.uploads : []) {
         if (!upload || typeof upload !== 'object') continue
         const record = upload as JsonObject
@@ -409,6 +412,10 @@ function normalizeSession(
   // --- activities ------------------------------------------------------------
   const graphActivities = session.conversationGraph?.activities ?? []
   const activityItems: { ts: number; item: TranscriptItem }[] = []
+  const compactions = new Map<
+    string,
+    { ts: number; updatedAt: number; item: Extract<TranscriptItem, { type: 'compaction' }> }
+  >()
   for (const activity of graphActivities) {
     // sortIndex is trustworthy only on an epoch scale: some exports carry
     // small sequence numbers (107, 108, …), which would sort every activity
@@ -418,6 +425,37 @@ function normalizeSession(
       typeof activity.sortIndex === 'number' && activity.sortIndex > 1_000_000_000_000
         ? activity.sortIndex
         : Number(activity.createdAt)
+    // Classify before generic cards: summaries and provider errors must never become details.
+    if (activity.providerToolName === 'ContextCompaction') {
+      const id = String(activity.id)
+      const updatedAt = Number(activity.updatedAt)
+      const revisionTime = Number.isFinite(updatedAt) ? updatedAt : ts
+      const previous = compactions.get(id)
+      if (!previous || revisionTime >= previous.updatedAt) {
+        compactions.set(id, {
+          ts,
+          updatedAt: revisionTime,
+          item: {
+            type: 'compaction',
+            id,
+            status:
+              // App exports persist cancellation as completed with this fixed lifecycle title.
+              activity.status === 'cancelled' ||
+              (activity.status === 'completed' &&
+                typeof activity.title === 'string' &&
+                activity.title.trim() === 'Context compaction cancelled')
+                ? 'cancelled'
+                : activity.status === 'in_progress' ||
+                    activity.status === 'completed' ||
+                    activity.status === 'failed'
+                  ? activity.status
+                  : 'unknown',
+            createdAt: Number(activity.createdAt)
+          }
+        })
+      }
+      continue
+    }
     // App parity (workspace-conversation-items.ts): plan step updates never
     // render as transcript rows; their state lives in the plan card itself.
     const activityNames = [activity.providerToolName, activity.title]
@@ -763,7 +801,9 @@ function normalizeSession(
   // --- timeline: merge by timestamp, fold consecutive activities into groups ---
   // Plan cards and elicitations are standalone items; only adjacent activity
   // groups fold together (app: groupConversationItems).
-  const merged = [...messageItems, ...activityItems].sort((a, b) => a.ts - b.ts)
+  const merged = [...messageItems, ...activityItems, ...compactions.values()].sort(
+    (a, b) => a.ts - b.ts
+  )
   const items: TranscriptItem[] = []
   for (const { item } of merged) {
     const last = items[items.length - 1]

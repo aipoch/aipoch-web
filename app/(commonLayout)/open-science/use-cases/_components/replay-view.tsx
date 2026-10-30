@@ -2,9 +2,10 @@
 
 import { Download } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import type { PackageProgress } from '@/lib/science-package/archive'
 import { loadReplay, type ReplayState } from '@/lib/science-package/load'
+import type { ReviewState } from '@/lib/science-package/protocol'
 import type { UseCasePackage } from '@/lib/use-case-types'
 import { ImportComposer } from './import-composer'
 import {
@@ -129,6 +130,8 @@ export const ReplayView = ({
 }) => {
   const router = useRouter()
   const [refreshing, startRefresh] = useTransition()
+  const retryReviews = useRef<(() => void) | undefined>(undefined)
+  const [reviews, setReviews] = useState<ReviewState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<ReplayState>({
     status: 'loading',
@@ -136,7 +139,13 @@ export const ReplayView = ({
   })
   useEffect(() => {
     void attempt
-    if (packageInfo) return loadReplay(slug, packageInfo, setState)
+    if (!packageInfo) return
+    const cancel = loadReplay(slug, packageInfo, setState, setReviews)
+    retryReviews.current = cancel.retryReviews
+    return () => {
+      retryReviews.current = undefined
+      cancel()
+    }
   }, [slug, packageInfo, attempt])
   const failure = packageInfo
     ? state.status === 'error'
@@ -145,12 +154,47 @@ export const ReplayView = ({
     : (error ?? 'Research package not found.')
   return (
     <ReplayFrame slug={slug} packageInfo={packageInfo ?? undefined}>
+      {'data' in state && state.data && !refreshing ? (
+        <SessionTranscript
+          session={state.data}
+          reviews={reviews.status === 'ready' ? reviews.reviews : []}
+          visibleCount={'visibleCount' in state ? state.visibleCount : undefined}
+        />
+      ) : null}
+      {'data' in state &&
+      state.data &&
+      state.status !== 'error' &&
+      !refreshing &&
+      reviews.status !== 'ready' ? (
+        <section aria-label="Reviewer loading" className="mx-auto max-w-4xl px-4 py-6 text-center">
+          {reviews.status === 'error' ? (
+            <>
+              <p role="alert">评审加载未完成</p>
+              <button
+                type="button"
+                className="mt-3 rounded-full border px-4 py-2 text-sm"
+                onClick={() => retryReviews.current?.()}
+              >
+                Retry reviews
+              </button>
+            </>
+          ) : (
+            <p role="status" className="text-sm text-[#777872]">
+              Loading reviews…
+            </p>
+          )}
+        </section>
+      ) : null}
       {refreshing ? (
         <ReplayProgress progress={{ stage: 'metadata' }} />
       ) : failure ? (
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
           <div role="alert">
-            <p className="font-medium">This use case could not be loaded.</p>
+            <p className="font-medium">
+              {state.status === 'error' && state.data
+                ? 'Loading incomplete. The blocks already loaded are shown above.'
+                : 'This use case could not be loaded.'}
+            </p>
             <p className="mt-2 text-sm text-[#777872]">{failure}</p>
           </div>
           <button
@@ -165,10 +209,13 @@ export const ReplayView = ({
           </button>
         </div>
       ) : state.status === 'ready' ? (
-        <>
-          <SessionTranscript session={state.data} />
-          {packageInfo ? <ImportComposer /> : null}
-        </>
+        packageInfo ? (
+          <ImportComposer />
+        ) : null
+      ) : state.status === 'rendering' ? (
+        <p role="status" className="py-6 text-center text-sm text-[#777872]">
+          Loading remaining conversation blocks…
+        </p>
       ) : state.status === 'loading' ? (
         <ReplayProgress progress={state.progress} />
       ) : null}
