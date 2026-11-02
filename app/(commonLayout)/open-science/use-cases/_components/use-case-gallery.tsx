@@ -13,6 +13,31 @@ type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview' | 'vide
 type ImageSize = { width: number; height: number }
 type GalleryView = { count: number; images: Record<string, ImageSize> }
 
+const FALLBACK_IMAGE_RATIO = 406 / 190
+
+const CoverPlaceholder = ({ loading }: { loading: boolean }) => (
+  <div
+    data-testid="use-case-cover-placeholder"
+    data-loading={loading}
+    aria-hidden="true"
+    className="absolute inset-0 overflow-hidden bg-[#e8e8e4]"
+  >
+    <span
+      className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/45 to-transparent ${loading ? 'animate-[pulse_2.4s_ease-in-out_infinite]' : 'opacity-0'}`}
+    />
+    <svg
+      className="absolute left-1/2 top-1/2 h-[58%] w-[42%] -translate-x-1/2 -translate-y-1/2 text-[#b7b8b1]"
+      viewBox="0 0 220 120"
+      fill="none"
+    >
+      <rect x="20" y="18" width="180" height="84" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M42 78 75 57l26 14 34-28 43 35" stroke="currentColor" strokeWidth="2" />
+      <path d="M42 88h136" stroke="currentColor" strokeWidth="2" />
+      <circle cx="75" cy="42" r="7" fill="currentColor" />
+    </svg>
+  </div>
+)
+
 const GalleryCard = ({
   useCase,
   imageSize,
@@ -23,6 +48,10 @@ const GalleryCard = ({
   onImageLoad: (image: HTMLImageElement) => void
 }) => {
   const [active, setActive] = useState(false)
+  const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
+    useCase.preview?.image ? 'loading' : 'error'
+  )
+  const imageRatio = imageSize ? imageSize.width / imageSize.height : FALLBACK_IMAGE_RATIO
   return (
     <Link
       onMouseEnter={() => setActive(true)}
@@ -32,21 +61,29 @@ const GalleryCard = ({
       href={`/open-science/use-cases/${useCase.slug}`}
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
-      <div className={`relative bg-[#e8e8e4] ${useCase.preview?.image ? '' : 'aspect-[406/190]'}`}>
-        {useCase.preview?.image ? (
+      <div
+        className={`relative bg-[#e8e8e4] ${imageState === 'loaded' ? '' : 'aspect-[406/190]'}`}
+        style={imageState === 'loaded' ? undefined : { aspectRatio: imageRatio }}
+      >
+        {useCase.preview?.image && imageState !== 'error' ? (
           // biome-ignore lint/performance/noImgElement: manifest images retain their published URLs.
           <img
             src={useCase.preview.image}
             alt=""
             aria-hidden="true"
-            className="block h-auto w-full"
+            className={`block h-auto w-full transition-opacity duration-300 ${imageState === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
             decoding="async"
             width={imageSize?.width}
             height={imageSize?.height}
-            onLoad={(event) => onImageLoad(event.currentTarget)}
+            onLoad={(event) => {
+              onImageLoad(event.currentTarget)
+              setImageState('loaded')
+            }}
+            onError={() => setImageState('error')}
           />
         ) : null}
+        {imageState !== 'loaded' ? <CoverPlaceholder loading={imageState === 'loading'} /> : null}
         {useCase.video ? (
           <>
             <span
