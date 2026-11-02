@@ -13,7 +13,9 @@ type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview' | 'vide
 type ImageSize = { width: number; height: number }
 type GalleryView = { count: number; images: Record<string, ImageSize> }
 
-const FALLBACK_IMAGE_RATIO = 406 / 190
+// Published use-case covers use a shared 1097x617 canvas; reserve it before the image responds.
+const FALLBACK_IMAGE_SIZE: ImageSize = { width: 1097, height: 617 }
+const FALLBACK_IMAGE_RATIO = FALLBACK_IMAGE_SIZE.width / FALLBACK_IMAGE_SIZE.height
 
 const CoverPlaceholder = ({ loading }: { loading: boolean }) => (
   <div
@@ -23,7 +25,7 @@ const CoverPlaceholder = ({ loading }: { loading: boolean }) => (
     className="absolute inset-0 overflow-hidden bg-[#e8e8e4]"
   >
     <span
-      className={`absolute inset-y-0 left-[-35%] w-[70%] bg-gradient-to-r from-transparent via-white/55 to-transparent ${loading ? 'animate-[pulse_2.4s_ease-in-out_infinite] motion-reduce:animate-none' : 'opacity-0'}`}
+      className={`pointer-events-none absolute inset-y-0 left-[-30%] w-[30%] bg-gradient-to-r from-transparent via-white/55 to-transparent ${loading ? 'animate-[use-case-cover-shimmer_1.8s_ease-in-out_infinite] motion-reduce:animate-none' : 'opacity-0'}`}
     />
     <svg
       className={`absolute left-1/2 top-1/2 h-[64%] w-[34%] -translate-x-1/2 -translate-y-1/2 text-[#b7b8b1] ${loading ? 'animate-[pulse_2.8s_ease-in-out_infinite] motion-reduce:animate-none' : ''}`}
@@ -51,7 +53,6 @@ const GalleryCard = ({
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
     useCase.preview?.image ? 'loading' : 'error'
   )
-  const imageRatio = imageSize ? imageSize.width / imageSize.height : FALLBACK_IMAGE_RATIO
   return (
     <Link
       onMouseEnter={() => setActive(true)}
@@ -62,8 +63,8 @@ const GalleryCard = ({
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
       <div
-        className={`relative bg-[#e8e8e4] ${imageState === 'loaded' ? '' : 'aspect-[406/190]'}`}
-        style={imageState === 'loaded' ? undefined : { aspectRatio: imageRatio }}
+        className={`relative bg-[#e8e8e4] ${imageState === 'loaded' ? '' : 'aspect-[1097/617]'}`}
+        style={imageState === 'loaded' ? undefined : { aspectRatio: FALLBACK_IMAGE_RATIO }}
       >
         {useCase.preview?.image && imageState !== 'error' ? (
           // biome-ignore lint/performance/noImgElement: manifest images retain their published URLs.
@@ -74,8 +75,8 @@ const GalleryCard = ({
             className={`block h-auto w-full transition-opacity duration-300 ${imageState === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
             decoding="async"
-            width={imageSize?.width}
-            height={imageSize?.height}
+            width={imageSize?.width ?? FALLBACK_IMAGE_SIZE.width}
+            height={imageSize?.height ?? FALLBACK_IMAGE_SIZE.height}
             onLoad={(event) => {
               onImageLoad(event.currentTarget)
               setImageState('loaded')

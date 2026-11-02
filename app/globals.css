@@ -5,6 +5,26 @@
 
 @plugin "@tailwindcss/typography";
 
+@keyframes use-case-cover-shimmer {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(420%);
+  }
+}
+
 .markdown-body {
   @apply prose prose-sm prose-slate min-w-0 max-w-none break-words;
 

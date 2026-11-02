@@ -1145,7 +1145,7 @@ describe('mock development end to end', () => {
           const { width, height } = element.getBoundingClientRect()
           return width / height
         })
-        expect(ratio).toBeCloseTo(406 / 190, 2)
+        expect(ratio).toBeCloseTo(1097 / 617, 2)
 
         const iconRatio = await placeholder.locator('svg').evaluate((element) => {
           const { width, height } = element.getBoundingClientRect()
