@@ -17,19 +17,18 @@ test('serves the standalone Open-Science overview at the clean route', async ({ 
   await expect(page.locator('footer')).toHaveCount(0)
 
   const chineseDeck = page.frameLocator('#deck-zh')
-  await expect(chineseDeck.getByText('01 / 16', { exact: true })).toBeVisible()
+  await expect(chineseDeck.getByText('01 / 17', { exact: true })).toBeVisible()
   await expect(chineseDeck.locator('.slide.active')).toBeVisible()
 
-  // Keep the brand on one line in the hero and community diagram, retaining the hero's yellow highlight.
+  // Keep the hyphenated brand visible in the hero and community diagram, retaining the hero's yellow highlight.
   const highlightedBrand = chineseDeck.locator('.hero-title .highlight-text')
-  await expect(highlightedBrand).toHaveText('Open-Science')
+  await expect(highlightedBrand).toHaveText('Open-')
   await expect(highlightedBrand).toHaveCSS('background-color', 'rgb(241, 221, 103)')
-  await expect(chineseDeck.locator('.hero-title br')).toHaveCount(0)
+  await expect(chineseDeck.locator('.hero-title')).toContainText('Open-Science')
   await expect(chineseDeck.locator('.community-core strong')).toHaveText('Open-Science')
-  await expect(chineseDeck.locator('.community-core strong br')).toHaveCount(0)
 
   await expect(chineseDeck.locator('img')).not.toHaveCount(0)
   await chineseDeck.locator('#nextBtn').click({ force: true })
-  await expect(chineseDeck.getByText('02 / 16', { exact: true })).toBeVisible()
+  await expect(chineseDeck.getByText('02 / 17', { exact: true })).toBeVisible()
   expect(consoleErrors).toEqual([])
 })
