@@ -23,17 +23,17 @@ const CoverPlaceholder = ({ loading }: { loading: boolean }) => (
     className="absolute inset-0 overflow-hidden bg-[#e8e8e4]"
   >
     <span
-      className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/45 to-transparent ${loading ? 'animate-[pulse_2.4s_ease-in-out_infinite]' : 'opacity-0'}`}
+      className={`absolute inset-y-0 left-[-35%] w-[70%] bg-gradient-to-r from-transparent via-white/55 to-transparent ${loading ? 'animate-[pulse_2.4s_ease-in-out_infinite] motion-reduce:animate-none' : 'opacity-0'}`}
     />
     <svg
-      className="absolute left-1/2 top-1/2 h-[58%] w-[42%] -translate-x-1/2 -translate-y-1/2 text-[#b7b8b1]"
-      viewBox="0 0 220 120"
+      className={`absolute left-1/2 top-1/2 h-[64%] w-[34%] -translate-x-1/2 -translate-y-1/2 text-[#b7b8b1] ${loading ? 'animate-[pulse_2.8s_ease-in-out_infinite] motion-reduce:animate-none' : ''}`}
+      viewBox="0 0 180 130"
       fill="none"
     >
-      <rect x="20" y="18" width="180" height="84" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M42 78 75 57l26 14 34-28 43 35" stroke="currentColor" strokeWidth="2" />
-      <path d="M42 88h136" stroke="currentColor" strokeWidth="2" />
-      <circle cx="75" cy="42" r="7" fill="currentColor" />
+      <rect x="35" y="20" width="110" height="86" rx="3" stroke="currentColor" strokeWidth="2" />
+      <path d="m52 82 22-19 19 12 19-25 20 18" stroke="currentColor" strokeWidth="2" />
+      <path d="M52 92h80" stroke="currentColor" strokeWidth="2" />
+      <circle cx="75" cy="43" r="7" fill="currentColor" />
     </svg>
   </div>
 )
