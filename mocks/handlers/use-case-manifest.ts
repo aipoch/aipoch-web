@@ -19,6 +19,9 @@ export const useCaseManifestHandlers = (origin: string) => {
   let packageMode = 'normal'
   let packageDelayMs = 0
   let packageRequests = 0
+  let replayChunkDelayMs = 0
+  let recordsChunkDelayMs = 0
+  let recordsMode = 'normal'
   return [
     http.get(`${origin}/use-case-manifest/manifest.json`, async ({ request }) => {
       requests += 1
@@ -72,6 +75,9 @@ export const useCaseManifestHandlers = (origin: string) => {
         delayMs?: number
         packageMode?: string
         packageDelayMs?: number
+        replayChunkDelayMs?: number
+        recordsChunkDelayMs?: number
+        recordsMode?: string
       }
       if (
         (update.discoveryMode !== undefined &&
@@ -87,6 +93,16 @@ export const useCaseManifestHandlers = (origin: string) => {
           (!Number.isInteger(update.packageDelayMs) ||
             update.packageDelayMs < 0 ||
             update.packageDelayMs > 5000)) ||
+        (update.replayChunkDelayMs !== undefined &&
+          (!Number.isInteger(update.replayChunkDelayMs) ||
+            update.replayChunkDelayMs < 0 ||
+            update.replayChunkDelayMs > 5000)) ||
+        (update.recordsChunkDelayMs !== undefined &&
+          (!Number.isInteger(update.recordsChunkDelayMs) ||
+            update.recordsChunkDelayMs < 0 ||
+            update.recordsChunkDelayMs > 5000)) ||
+        (update.recordsMode !== undefined &&
+          !['normal', 'error', 'missing'].includes(update.recordsMode)) ||
         (update.delayMs !== undefined &&
           (!Number.isInteger(update.delayMs) || update.delayMs < 0 || update.delayMs > 5000))
       )
@@ -97,6 +113,9 @@ export const useCaseManifestHandlers = (origin: string) => {
       delayMs = update.delayMs ?? 0
       packageMode = update.packageMode ?? 'normal'
       packageDelayMs = update.packageDelayMs ?? 0
+      replayChunkDelayMs = update.replayChunkDelayMs ?? 0
+      recordsChunkDelayMs = update.recordsChunkDelayMs ?? 0
+      recordsMode = update.recordsMode ?? 'normal'
       revision += 1
       return HttpResponse.json({ revision })
     }),
@@ -109,15 +128,26 @@ export const useCaseManifestHandlers = (origin: string) => {
         const prefix = `${item.name}/extracted/`
         if (path.startsWith(prefix)) {
           const file = path.slice(prefix.length)
+          if (file === 'records.json' && recordsMode !== 'normal')
+            return new HttpResponse(null, { status: recordsMode === 'missing' ? 404 : 503 })
           const bytes = packages.get(item.name)?.extractedFiles[file]
           if (!bytes) return new HttpResponse(null, { status: 404 })
-          return new HttpResponse(bytes as BodyInit, {
-            headers: {
-              'Content-Type': file.endsWith('.json')
-                ? 'application/json'
-                : 'application/octet-stream'
+          const chunkDelay =
+            file === 'session.json'
+              ? replayChunkDelayMs
+              : file === 'records.json'
+                ? recordsChunkDelayMs
+                : 0
+          return new HttpResponse(
+            chunkDelay ? delayedBody(bytes, chunkDelay) : (bytes as BodyInit),
+            {
+              headers: {
+                'Content-Type': file.endsWith('.json')
+                  ? 'application/json'
+                  : 'application/octet-stream'
+              }
             }
-          })
+          )
         }
         if (path === `${item.name}/${item.cover.file_name}`) {
           return new HttpResponse(
@@ -144,16 +174,43 @@ export const useCaseManifestHandlers = (origin: string) => {
             })
           const sample = packages.get(item.name)
           if (!sample) return new HttpResponse(null, { status: 404 })
-          return new HttpResponse(sample.bytes as BodyInit, {
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'Content-Length': String(sample.sizeBytes),
-              'Content-Disposition': 'attachment; filename="sample.science"'
+          return new HttpResponse(
+            replayChunkDelayMs
+              ? delayedBody(sample.bytes, replayChunkDelayMs)
+              : (sample.bytes as BodyInit),
+            {
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': String(sample.sizeBytes),
+                'Content-Disposition': 'attachment; filename="sample.science"'
+              }
             }
-          })
+          )
         }
       }
       return new HttpResponse(null, { status: 404 })
     })
   ]
+}
+
+// Slow but active response bodies exercise idle deadlines through the real HTTP adapter.
+const delayedBody = (bytes: Uint8Array, delayMs: number) => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let offset = 0
+  const size = Math.ceil(bytes.length / 18)
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      const send = () => {
+        const end = Math.min(offset + size, bytes.length)
+        controller.enqueue(bytes.slice(offset, end))
+        offset = end
+        if (offset === bytes.length) controller.close()
+        else timer = setTimeout(send, delayMs)
+      }
+      send()
+    },
+    cancel() {
+      clearTimeout(timer)
+    }
+  })
 }

@@ -1,4 +1,6 @@
 import type { UseCasePackage } from '../use-case-types'
+import { fetchReplayResponse } from './idle-response'
+import { readJsonStream } from './json-stream'
 import { Sha256 } from './sha256'
 
 export type PackageStage = 'metadata' | 'downloading' | 'verifying' | 'parsing'
@@ -27,9 +29,10 @@ export async function downloadPackage(
   progress({ stage: 'downloading', loaded: 0 })
   let response: Response
   try {
-    response = await fetch(info.url, { mode: 'cors', credentials: 'omit', signal })
+    response = await fetchReplayResponse(info.url, signal)
   } catch (error) {
-    if (signal?.aborted) throw error
+    if (signal?.aborted || (error instanceof DOMException && error.name === 'TimeoutError'))
+      throw error
     throw new Error(
       'Package download failed. Check your connection and the download host’s CORS permissions.'
     )
@@ -175,7 +178,7 @@ export async function readJson<T>(entry: ArchiveEntry | undefined, name: string)
   if (!entry) throw new Error(`Package is missing ${name}.`)
   if (entry.blob.size > MAX_JSON_BYTES) throw new Error(`${name} exceeds the 128 MiB JSON limit.`)
   try {
-    return JSON.parse(await entry.blob.text()) as T
+    return (await readJsonStream(entry.blob.stream())) as T
   } catch {
     throw new Error(`Invalid JSON in ${name}.`)
   }

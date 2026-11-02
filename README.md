@@ -158,6 +158,12 @@ loads from `<manifest directory>/<case name>/extracted/`.
 - **Resolve:** Map `$DATA/<storageKey>` to `<extracted root>/<encoded storageKey>`.
   Assets load on demand; previews recover PDF/SVG MIME types and downloads retain
   original filenames. SVG remains image-only.
+- **Streaming:** Downloads use a 30-second first-chunk and renewable idle timeout.
+  Once body dependencies are complete, replay reveals ordered, whole blocks in batches.
+- **Reviews:** Session and review records download in parallel. Review loading and retry
+  preserve the displayed body; cards appear only after their associations are complete.
+- **Compaction:** Identified compaction activities show status only, without provider
+  payloads. Original exports stay unchanged; unmarked legacy summaries are not inferred.
 - **Fallback:** An initial session 403/404 loads the size- and SHA-256-verified
   `.science` archive. Other errors remain retryable. Extracted metadata has size
   limits and schema checks; asset integrity relies on the CDN.

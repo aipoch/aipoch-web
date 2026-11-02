@@ -1,3 +1,4 @@
+import { compactionActivities } from './compaction'
 import { reviewerRecords } from './reviewer-records'
 import { buildSciencePackage, digest } from './science-package'
 import { coverageFixtureSession } from './use-case-coverage'
@@ -60,6 +61,7 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
   })
   const activities = sample.items.flatMap<Record<string, unknown>>((item) => {
     if (item.type === 'message') return []
+    if (item.type === 'compaction') return [{ ...item, providerToolName: 'ContextCompaction' }]
     if (item.type === 'elicitation') return [{ ...item, elicitation: item }]
     const itemActivities = item.type === 'plan' ? [item.activity] : item.activities
     return itemActivities.map((activity) => {
@@ -90,7 +92,11 @@ export function buildCoveragePackage(title = coverageFixtureSession.title) {
   }
   return buildSciencePackage(
     title,
-    { messages, artifacts, conversationGraph: { activities } },
+    {
+      messages,
+      artifacts,
+      conversationGraph: { activities: [...activities, ...compactionActivities] }
+    },
     objects,
     { tables: { ...reviewerRecords().tables, ArtifactVersion: records } }
   )
