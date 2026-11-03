@@ -18,7 +18,7 @@ import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-10-21'
-const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-10-28'
+const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-11-02'
 // Track overview and replay template changes separately from the gallery.
 const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-28'
 // Replay adds safe compaction rows, idle downloads, complete blocks and independent reviews.

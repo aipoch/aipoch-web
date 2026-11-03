@@ -1121,6 +1121,42 @@ describe('mock development end to end', () => {
       }
     }, 90000)
 
+    test('failed gallery covers keep a same-size placeholder', async () => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        let failedCover = false
+        await page.route('**/*.png', async (route) => {
+          if (!failedCover) {
+            failedCover = true
+            await route.abort()
+            return
+          }
+          await route.continue()
+        })
+        await page.goto(`${web}/open-science/use-cases`)
+
+        const firstCard = page.getByRole('link', { name: manifestSample[0].title, exact: true })
+        const placeholder = firstCard.getByTestId('use-case-cover-placeholder')
+        await browserExpect(placeholder).toBeVisible()
+        await browserExpect(firstCard.getByRole('img')).toHaveCount(0)
+
+        const ratio = await placeholder.evaluate((element) => {
+          const { width, height } = element.getBoundingClientRect()
+          return width / height
+        })
+        expect(ratio).toBeCloseTo(1097 / 617, 2)
+
+        const iconRatio = await placeholder.locator('svg').evaluate((element) => {
+          const { width, height } = element.getBoundingClientRect()
+          return width / height
+        })
+        expect(iconRatio).toBeLessThan(1.35)
+      } finally {
+        await browser.close()
+      }
+    }, 60000)
+
     test(`gallery appends cases on scroll with ${mobile ? 'mobile' : 'desktop'} layout and no browser manifest fetch`, async () => {
       const browser = await chromium.launch()
       try {
