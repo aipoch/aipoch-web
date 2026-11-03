@@ -111,7 +111,7 @@ describe('Figma homepage with existing live data contracts', () => {
     expect(hero).toContain('https://github.com/aipoch/open-science?tab=Apache-2.0-1-ov-file')
     expect([...hero.matchAll(/<strong[^>]*>([^<]+)<\/strong>/g)].map((match) => match[1])).toEqual([
       '25',
-      '4',
+      '5',
       '525',
       '48'
     ])
