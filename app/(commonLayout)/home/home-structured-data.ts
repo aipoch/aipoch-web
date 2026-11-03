@@ -17,7 +17,7 @@ export const HOMEPAGE_DESCRIPTION =
 // Keep this fallback tied to the visible product snapshot, not deployment or SEO edit dates.
 export const HOMEPAGE_LAST_MODIFIED = openScienceProductFacts.releaseDate
 // UI changes must not rewrite product release dates or video upload dates.
-export const HOMEPAGE_LAYOUT_LAST_MODIFIED = '2026-10-27'
+export const HOMEPAGE_LAYOUT_LAST_MODIFIED = '2026-11-03'
 const HOMEPAGE_VIDEO_ASSET_HOST = 'statics.aipoch.com'
 const OPEN_SCIENCE_VIDEO_DURATION = 'PT1M0.48S'
 const DEFAULT_HOMEPAGE_VIDEO_NAME = 'AIPOCH Open-Science product tour'
