@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { UseCaseVideo } from '@/lib/use-case-types'
 import { loadYouTubePlayer, type YouTubePlayer } from '@/lib/youtube-player'
 
-/** Show preview loading immediately; details retain their cover until playback starts. */
+/** Keep the cover or placeholder visible until playback starts, including previews. */
 export function UseCaseVideoPlayer({
   video,
   preview = false
@@ -80,7 +80,7 @@ export function UseCaseVideoPlayer({
       data-playing={playing}
       aria-hidden={preview || !playing}
       inert={preview || !playing}
-      className={`absolute inset-0 h-full w-full ${preview || playing ? 'opacity-100' : 'pointer-events-none opacity-0'} ${preview ? 'pointer-events-none' : ''}`}
+      className={`absolute inset-0 h-full w-full ${playing ? 'opacity-100' : 'pointer-events-none opacity-0'} ${preview ? 'pointer-events-none' : ''}`}
     >
       <div ref={container} className="absolute inset-0 h-full w-full" />
     </div>

@@ -22,7 +22,7 @@ const CoverPlaceholder = ({ loading }: { loading: boolean }) => (
     data-testid="use-case-cover-placeholder"
     data-loading={loading}
     aria-hidden="true"
-    className="absolute inset-0 overflow-hidden bg-[#e8e8e4]"
+    className="absolute inset-0 -z-10 overflow-hidden bg-[#e8e8e4]"
   >
     <span
       className={`pointer-events-none absolute inset-y-0 left-[-30%] w-[30%] bg-gradient-to-r from-transparent via-white/55 to-transparent ${loading ? 'animate-[use-case-cover-shimmer_1.8s_ease-in-out_infinite] motion-reduce:animate-none' : 'opacity-0'}`}
@@ -50,9 +50,23 @@ const GalleryCard = ({
   onImageLoad: (image: HTMLImageElement) => void
 }) => {
   const [active, setActive] = useState(false)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
     useCase.preview?.image ? 'loading' : 'error'
   )
+
+  useEffect(() => {
+    // Cached SSR images can finish before hydration attaches the load listener.
+    const image = imageRef.current
+    if (!image?.complete) return
+    if (image.naturalWidth > 0) {
+      onImageLoad(image)
+      setImageState('loaded')
+    } else {
+      setImageState('error')
+    }
+  }, [onImageLoad])
+
   return (
     <Link
       onMouseEnter={() => setActive(true)}
@@ -63,16 +77,17 @@ const GalleryCard = ({
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
       <div
-        className={`relative bg-[#e8e8e4] ${imageState === 'loaded' ? '' : 'aspect-[1097/617]'}`}
+        className={`relative isolate bg-[#e8e8e4] ${imageState === 'loaded' ? '' : 'aspect-[1097/617]'}`}
         style={imageState === 'loaded' ? undefined : { aspectRatio: FALLBACK_IMAGE_RATIO }}
       >
         {useCase.preview?.image && imageState !== 'error' ? (
           // biome-ignore lint/performance/noImgElement: manifest images retain their published URLs.
           <img
+            ref={imageRef}
             src={useCase.preview.image}
             alt=""
             aria-hidden="true"
-            className={`block h-auto w-full transition-opacity duration-300 ${imageState === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
+            className="block h-auto w-full"
             loading="lazy"
             decoding="async"
             width={imageSize?.width ?? FALLBACK_IMAGE_SIZE.width}
