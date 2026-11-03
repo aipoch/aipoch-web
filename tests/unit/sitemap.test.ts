@@ -95,7 +95,7 @@ describe('sitemap', () => {
     expect(routes.some((route) => route.url.includes('/replay/dot-science'))).toBe(false)
     // Track gallery and overview media changes independently from replay pages.
     for (const [path, date] of [
-      ['/open-science/use-cases', '2026-11-02'],
+      ['/open-science/use-cases', '2026-11-03'],
       ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-28'],
       ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-28'],
       ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-28']
