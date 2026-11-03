@@ -229,6 +229,7 @@ describe('mock development end to end', () => {
       await page.goto(`${web}/open-science/use-cases`)
       await page.getByRole('heading', { name: manifestSample[14].title, exact: true }).waitFor()
       expect(await page.locator('main img').count()).toBe(6)
+      await browserExpect(page.locator('main img').first()).toHaveCSS('opacity', '1')
       expect(
         await page
           .locator('main img')
@@ -745,6 +746,7 @@ describe('mock development end to end', () => {
 
   test('video covers survive loading/errors and previews preserve card navigation', async () => {
     const browser = await chromium.launch()
+    const coverReady = Promise.withResolvers<void>()
     try {
       // Keep the YouTube transport stub observable after MSW takes control on reload.
       const page = await browser.newPage({ serviceWorkers: 'block' })
@@ -776,11 +778,27 @@ describe('mock development end to end', () => {
         page.evaluate((value) => {
           window.dispatchEvent(new CustomEvent('test-video', { detail: value }))
         }, value)
-      await page.goto(`${web}/open-science/use-cases`)
+      await page.route(
+        `**/use-case-manifest/${manifestSample[0].name}/${encodeURIComponent(manifestSample[0].cover.file_name)}`,
+        async (route) => {
+          await coverReady.promise
+          await route.continue()
+        }
+      )
+      await page.goto(`${web}/open-science/use-cases?page=3`, { waitUntil: 'domcontentloaded' })
+      await browserExpect(page.getByTestId('use-case-grid')).toHaveAttribute(
+        'data-scroll-restoration-pending',
+        'false'
+      )
       const cards = page.getByTestId('use-case-grid').getByRole('link')
-      const card = cards.first()
+      const card = cards.filter({
+        has: page.getByRole('heading', { name: manifestSample[0].title, exact: true })
+      })
+      const nonVideoCard = cards.filter({
+        has: page.getByRole('heading', { name: manifestSample[1].title, exact: true })
+      })
       await browserExpect(card.getByTestId('video-play-indicator')).toBeVisible()
-      await browserExpect(cards.nth(1).getByTestId('video-play-indicator')).toHaveCount(0)
+      await browserExpect(nonVideoCard.getByTestId('video-play-indicator')).toHaveCount(0)
       await browserExpect(page.locator('iframe[data-video-id]')).toHaveCount(0)
       await card.hover()
       await browserExpect(card.getByText('Loading video…')).toHaveCount(0)
@@ -793,9 +811,18 @@ describe('mock development end to end', () => {
         'background-color',
         'rgba(0, 0, 0, 0)'
       )
-      // The player is visible during loading, before any PLAYING event.
-      await browserExpect(card.getByTestId('use-case-video')).toHaveCSS('opacity', '1')
-      await browserExpect(card.locator('iframe')).toBeVisible()
+      // A ready iframe must not cover the placeholder while video and cover are pending.
+      await browserExpect(card.getByTestId('use-case-video')).toHaveCSS('opacity', '0')
+      await browserExpect(card.getByTestId('use-case-cover-placeholder')).toBeVisible()
+      await browserExpect(card.getByTestId('use-case-cover-placeholder')).toHaveAttribute(
+        'data-loading',
+        'true'
+      )
+      coverReady.resolve()
+      await browserExpect(card.getByTestId('use-case-cover-placeholder')).toHaveCount(0)
+      await browserExpect(card.locator('img')).toHaveCSS('opacity', '1')
+      // A loaded cover also remains exposed until a PLAYING event.
+      await browserExpect(card.getByTestId('use-case-video')).toHaveCSS('opacity', '0')
       await browserExpect(card.locator('iframe')).toHaveCSS('pointer-events', 'none')
       await browserExpect(card.getByTestId('video-preview-hit-area')).toBeVisible()
       await signal('play')
@@ -803,7 +830,8 @@ describe('mock development end to end', () => {
         'data-playing',
         'true'
       )
-      await cards.nth(1).hover()
+      await browserExpect(card.getByTestId('use-case-video')).toHaveCSS('opacity', '1')
+      await nonVideoCard.hover()
       await browserExpect(card.locator('iframe')).toHaveCount(0)
       await card.hover()
       await browserExpect(card.locator('iframe')).toHaveCount(1)
@@ -846,6 +874,7 @@ describe('mock development end to end', () => {
         page.getByRole('img', { name: manifestSample[1].title, exact: true })
       ).toBeVisible()
     } finally {
+      coverReady.resolve()
       await browser.close()
     }
   }, 120000)
@@ -1121,19 +1150,57 @@ describe('mock development end to end', () => {
       }
     }, 90000)
 
+    test(`gallery reveals covers loaded before hydration on ${mobile ? 'mobile' : 'desktop'}`, async () => {
+      const browser = await chromium.launch()
+      const scriptsReady = Promise.withResolvers<void>()
+      try {
+        const page = await browser.newPage(
+          mobile ? devices['Pixel 5'] : { viewport: { width: 1440, height: 900 } }
+        )
+        await page.route('**/_next/static/**', async (route) => {
+          if (route.request().resourceType() === 'script') await scriptsReady.promise
+          await route.continue()
+        })
+        await page.goto(`${web}/open-science/use-cases`, { waitUntil: 'commit' })
+        const grid = page.getByTestId('use-case-grid')
+        const firstCard = grid.getByRole('link').first()
+        // Finish an SSR image before any client script can attach its load listener.
+        await browserExpect
+          .poll(() =>
+            firstCard.locator('img').evaluate((image) => {
+              const element = image as HTMLImageElement
+              return element.complete && element.naturalWidth > 0
+            })
+          )
+          .toBe(true)
+        // Native image rendering must not wait for hydration to remove opacity.
+        await browserExpect(firstCard.locator('img')).toHaveCSS('opacity', '1')
+        scriptsReady.resolve()
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(firstCard.locator('img')).toHaveCSS('opacity', '1')
+        await browserExpect(firstCard.getByTestId('use-case-cover-placeholder')).toHaveCount(0)
+
+        // A refresh must also reconcile already completed images.
+        await page.unroute('**/_next/static/**')
+        await page.reload()
+        await browserExpect(grid).toHaveAttribute('data-scroll-restoration-pending', 'false')
+        await browserExpect(firstCard.locator('img')).toHaveCSS('opacity', '1')
+        await browserExpect(firstCard.getByTestId('use-case-cover-placeholder')).toHaveCount(0)
+      } finally {
+        scriptsReady.resolve()
+        await browser.close()
+      }
+    }, 60000)
+
     test('failed gallery covers keep a same-size placeholder', async () => {
       const browser = await chromium.launch()
       try {
         const page = await browser.newPage()
-        let failedCover = false
-        await page.route('**/*.png', async (route) => {
-          if (!failedCover) {
-            failedCover = true
-            await route.abort()
-            return
-          }
-          await route.continue()
-        })
+        const cover = manifestSample[14]
+        await page.route(
+          `**/use-case-manifest/${cover.name}/${encodeURIComponent(cover.cover.file_name)}`,
+          (route) => route.abort()
+        )
         await page.goto(`${web}/open-science/use-cases`)
 
         const firstCard = page.getByRole('link', { name: manifestSample[14].title, exact: true })
