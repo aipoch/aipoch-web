@@ -35,7 +35,11 @@ type PageProps = {
 
 export default async function OpenScienceUseCasesPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const useCases = await fetchUseCaseList()
+  const manifest = await fetchUseCaseList()
+  // New cases are appended to the manifest. Show those first before filtering
+  // or revealing batches, without mutating the shared cached snapshot.
+  // The manifest has no publication dates; this is reverse source order.
+  const useCases = manifest ? [...manifest].reverse() : null
   const loadFailed = useCases === null
 
   // Categories derive from the manifest catalog/catalog_name fields; counts

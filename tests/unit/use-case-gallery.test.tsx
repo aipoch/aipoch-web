@@ -17,11 +17,19 @@ const { default: UseCasesPage } = await import(
 const render = async (page?: string, category?: string) =>
   renderToStaticMarkup(await UseCasesPage({ searchParams: Promise.resolve({ page, category }) }))
 
-test('server-renders the first batch with real case links and a progressive loading fallback', async () => {
+test('server-renders appended cases first without mutating the source snapshot', async () => {
   result = entries
   const html = await render()
-  expect(html).toContain('href="/open-science/use-cases/research-6"')
-  expect(html).not.toContain('href="/open-science/use-cases/research-7"')
+  expect(html).toContain('href="/open-science/use-cases/research-15"')
+  expect(html).toContain('href="/open-science/use-cases/research-10"')
+  expect(html).not.toContain('href="/open-science/use-cases/research-9"')
+  expect(html.indexOf('title="Research case 15"')).toBeLessThan(
+    html.indexOf('title="Research case 14"')
+  )
+  expect(result.map((entry) => entry.slug)).toEqual(
+    Array.from({ length: 15 }, (_, index) => `research-${index + 1}`)
+  )
+  expect(await render()).toBe(html)
   expect(html).toContain('href="/open-science/use-cases?page=2#use-case-grid"')
   expect(html).toContain('Showing 6 of 15 use cases')
   expect(html).not.toContain('Use case pages')
@@ -36,6 +44,8 @@ test('old page links reveal cumulative batches and clamp invalid or excessive pa
     expect(await render(page)).toContain('Showing 6 of 15 use cases')
   }
   const last = await render('3')
+  const titles = [...last.matchAll(/title="Research case (\d+)"/g)].map((match) => Number(match[1]))
+  expect(titles).toEqual(Array.from({ length: 15 }, (_, index) => 15 - index))
   expect(last).toContain('All use cases loaded')
   expect(last).not.toContain('Load more use cases')
   expect(last).toContain('href="/open-science/use-cases/research-1"')
@@ -90,6 +100,7 @@ test('derives the category strip from catalog fields and filters by URL param', 
   const filtered = await render(undefined, 'science')
   expect(filtered).toContain('href="/open-science/use-cases/a"')
   expect(filtered).toContain('href="/open-science/use-cases/b"')
+  expect(filtered.indexOf('title="Beta"')).toBeLessThan(filtered.indexOf('title="Alpha"'))
   expect(filtered).not.toContain('href="/open-science/use-cases/c"')
   expect(filtered).not.toContain('href="/open-science/use-cases/d"')
   // The gallery counter describes the filtered view.

@@ -182,11 +182,11 @@ describe('mock development end to end', () => {
     const first = await fetch(pageUrl)
     expect(first.status).toBe(200)
     const html = await renderedHtml(first)
-    expect(html).toContain(manifestSample[0].title)
-    expect(html).toContain('Can%20a%20Simple%20Algorithm')
-    expect(html).not.toContain(manifestSample[0].cover.sha256)
+    expect(html).toContain(manifestSample[14].title)
+    expect(html).toContain('Extended%20Gallery%20Case%206')
+    expect(html).not.toContain(manifestSample[14].cover.sha256)
     expect(html).not.toContain(manifestSample[6].title)
-    expect(html).toContain('/can-a-simple-algorithm-beat-ai-at-wordle/Can%20a%20Simple')
+    expect(html).toContain('/extended-gallery-case-6/Extended%20Gallery')
     await (await fetch(pageUrl)).text()
     await eventually(async () => (await stats()).notModified > 0)
     expect((await stats()).lastValidator).toMatch(/^"use-case-manifest-/)
@@ -194,9 +194,9 @@ describe('mock development end to end', () => {
     // The response uses its old snapshot even when S3 needs time to return a new body.
     await update({ titleSuffix: ' Updated', delayMs: 1000 })
     const stale = await renderedHtml(await fetch(pageUrl))
-    expect(stale).not.toContain(`${manifestSample[0].title} Updated`)
+    expect(stale).not.toContain(`${manifestSample[14].title} Updated`)
     await eventually(async () =>
-      (await renderedHtml(await fetch(pageUrl))).includes(`${manifestSample[0].title} Updated`)
+      (await renderedHtml(await fetch(pageUrl))).includes(`${manifestSample[14].title} Updated`)
     )
 
     // HTTP and HTTP-200 JSON failures must both preserve the SSR snapshot.
@@ -206,7 +206,7 @@ describe('mock development end to end', () => {
       await (await fetch(pageUrl)).text()
       await eventually(async () => (await stats()).requests > beforeFailure)
       expect(await renderedHtml(await fetch(pageUrl))).toContain(
-        `${manifestSample[0].title} Updated`
+        `${manifestSample[14].title} Updated`
       )
     }
 
@@ -216,7 +216,7 @@ describe('mock development end to end', () => {
     )
     await update({})
     await eventually(async () =>
-      (await renderedHtml(await fetch(pageUrl))).includes(manifestSample[0].title)
+      (await renderedHtml(await fetch(pageUrl))).includes(manifestSample[14].title)
     )
   }, 120000)
 
@@ -227,7 +227,7 @@ describe('mock development end to end', () => {
       const context = await browser.newContext({ javaScriptEnabled: false })
       const page = await context.newPage()
       await page.goto(`${web}/open-science/use-cases`)
-      await page.getByRole('heading', { name: manifestSample[0].title, exact: true }).waitFor()
+      await page.getByRole('heading', { name: manifestSample[14].title, exact: true }).waitFor()
       expect(await page.locator('main img').count()).toBe(6)
       expect(
         await page
@@ -474,7 +474,7 @@ describe('mock development end to end', () => {
       await page.goto(`${web}/open-science/use-cases/${item.name}/replay`)
       await page.getByRole('alert').filter({ hasText: 'Research package not found.' }).waitFor()
       await update('normal')
-      await waitForCatalog(manifestSample[0].title)
+      await waitForCatalog(manifestSample[14].title)
       await page.getByRole('button', { name: 'Retry', exact: true }).click()
       await page.getByText(`Local sample replay for ${item.title}.`, { exact: true }).waitFor()
       expect(requests.some((url) => url.includes('/replay/dot-science'))).toBe(false)
@@ -1057,7 +1057,7 @@ describe('mock development end to end', () => {
         const grid = page.getByTestId('use-case-grid')
         await page.getByRole('link', { name: 'Load more use cases' }).scrollIntoViewIfNeeded()
         await browserExpect(grid.locator('h2')).toHaveCount(10)
-        const card = grid.getByRole('link', { name: 'Extended Gallery Case 4', exact: true })
+        const card = grid.getByRole('link', { name: manifestSample[0].title, exact: true })
         await card.scrollIntoViewIfNeeded()
         // Let the visible covers settle before recording the actual departure position.
         await browserExpect
@@ -1085,7 +1085,7 @@ describe('mock development end to end', () => {
           Number(sessionStorage.getItem('test-gallery-departure-y'))
         )
         expect(originalY).toBeGreaterThan(500)
-        await browserExpect(page.locator('main h1')).toHaveText('Extended Gallery Case 4', {
+        await browserExpect(page.locator('main h1').first()).toHaveText(manifestSample[0].title, {
           timeout: 30000
         })
         await page.reload()
@@ -1096,7 +1096,7 @@ describe('mock development end to end', () => {
           .poll(() => page.evaluate((y) => Math.abs(window.scrollY - y), originalY))
           .toBeLessThan(3)
         await page.goForward()
-        await browserExpect(page.locator('main h1')).toHaveText('Extended Gallery Case 4')
+        await browserExpect(page.locator('main h1').first()).toHaveText(manifestSample[0].title)
         await page.getByRole('link', { name: '← Use Cases', exact: true }).click()
         await browserExpect(page).toHaveURL(listUrl)
         await browserExpect(grid.locator('h2')).toHaveCount(10)
@@ -1136,7 +1136,7 @@ describe('mock development end to end', () => {
         })
         await page.goto(`${web}/open-science/use-cases`)
 
-        const firstCard = page.getByRole('link', { name: manifestSample[0].title, exact: true })
+        const firstCard = page.getByRole('link', { name: manifestSample[14].title, exact: true })
         const placeholder = firstCard.getByTestId('use-case-cover-placeholder')
         await browserExpect(placeholder).toBeVisible()
         await browserExpect(firstCard.getByRole('img')).toHaveCount(0)
@@ -1168,7 +1168,12 @@ describe('mock development end to end', () => {
         page.on('request', (request) => requests.push(request.url()))
         await page.goto(`${web}/open-science/use-cases`)
         const grid = page.getByTestId('use-case-grid')
-        await browserExpect(grid.locator('h2')).toHaveCount(6)
+        await browserExpect(grid.locator('h2')).toHaveText(
+          manifestSample
+            .slice(-6)
+            .reverse()
+            .map((item) => item.title)
+        )
         await browserExpect(page.getByRole('navigation', { name: 'Use case pages' })).toHaveCount(0)
         const geometry = await grid.evaluate((element) => {
           const cards = Array.from(element.children).map((card) => card.getBoundingClientRect())
@@ -1208,7 +1213,9 @@ describe('mock development end to end', () => {
           await loadMore.scrollIntoViewIfNeeded()
           await page.waitForTimeout(300)
         }
-        await browserExpect(grid.locator('h2')).toHaveText(manifestSample.map((item) => item.title))
+        await browserExpect(grid.locator('h2')).toHaveText(
+          [...manifestSample].reverse().map((item) => item.title)
+        )
         await browserExpect(page.getByText('All use cases loaded', { exact: true })).toBeVisible()
         await browserExpect(page.getByRole('status')).toContainText('Showing 15 of 15 use cases')
         expect(
@@ -1233,7 +1240,9 @@ describe('mock development end to end', () => {
         ).toHaveText(manifestSample[6].title, { timeout: 30000 })
         // Back restores the expanded window from this visit's saved view state.
         await page.goBack()
-        await browserExpect(grid.locator('h2')).toHaveText(manifestSample.map((item) => item.title))
+        await browserExpect(grid.locator('h2')).toHaveText(
+          [...manifestSample].reverse().map((item) => item.title)
+        )
         expect(page.url()).toBe(`${web}/open-science/use-cases`)
       } finally {
         await browser.close()
@@ -1247,7 +1256,9 @@ describe('mock development end to end', () => {
       const page = await browser.newPage({ viewport: { width: 1440, height: 700 } })
       const listUrl = `${web}/open-science/use-cases?category=science&page=2`
       await page.goto(listUrl)
-      const card = page.getByTestId('use-case-grid').getByRole('link').first()
+      const card = page
+        .getByTestId('use-case-grid')
+        .getByRole('link', { name: manifestSample[0].title, exact: true })
       const detailHref = await card.getAttribute('href')
       if (!detailHref) throw new Error('Gallery card is missing its detail link')
       const detailUrl = new URL(detailHref, web).href
@@ -1296,20 +1307,18 @@ describe('mock development end to end', () => {
       // The grid filters to the selected catalog (science has 10 entries now):
       // the first batch shows, and no Health & Climate case appears.
       await browserExpect(
-        page.getByTestId('use-case-grid').getByRole('link', { name: 'Extended Gallery Case 1' })
+        page.getByTestId('use-case-grid').getByRole('link', { name: 'Extended Gallery Case 6' })
       ).toBeVisible()
       await browserExpect(
         page.getByTestId('use-case-grid').getByRole('link', { name: /Can GLP-1/ })
       ).toHaveCount(0)
       await page.getByRole('link', { name: /All areas/ }).click()
       await page.waitForURL('**/open-science/use-cases')
-      // Unfiltered again: a Health & Climate card is back in the grid. (The
-      // scroll sentinel may already have auto-loaded extra batches, so don't
-      // pin an exact card count here.)
+      // Unfiltered again: the latest appended case remains first.
       await browserExpect(
         page
           .getByTestId('use-case-grid')
-          .getByRole('link', { name: /Can GLP-1 Drugs Really Help Us Live Longer/ })
+          .getByRole('link', { name: manifestSample[14].title, exact: true })
       ).toBeVisible()
       // The first pill starts where the grid's first card starts.
       const stripX = await strip.evaluate((element) => element.getBoundingClientRect().x)

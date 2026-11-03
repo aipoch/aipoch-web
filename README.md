@@ -144,6 +144,10 @@ bunx msw init public --no-save
 The catalog at `/open-science/usecases/manifest.json` defines each case. Replay
 loads from `<manifest directory>/<case name>/extracted/`.
 
+- **Gallery order:** The gallery displays reverse manifest order, so cases appended
+  to the catalog appear first. It applies category filters before revealing batches
+  of six. The manifest has no publication timestamps, so this is source order,
+  not a date-based sort. Parsing and the shared cached snapshot retain source order.
 - **Publish:** Preserve `session.json` and restore archive objects to their inventory
   `storageKey` paths. Enable CORS for JSON and assets.
 - **Load:** Fetch `session.json` and optional `notebooks/<projectId>/<sessionId>/run.json`.
