@@ -2,6 +2,8 @@
  * https://github.com/aipoch/open-science/tree/97ba68ee315ccf760f7e44462c088856c2598a6b
  * Built-in resource counts use the published v1.0.5 source, verified on 2026-10-29.
  * https://github.com/aipoch/open-science/tree/b664635320b595cc8624a9ddc39e608149b86141
+ * Agent framework count uses the published v1.0.7 release.
+ * https://github.com/aipoch/open-science/releases/tag/v1.0.7
  * Marketplace counts are dated catalog snapshots; do not add them to bundled resources.
  */
 export const openScienceProductFacts = {
@@ -12,5 +14,5 @@ export const openScienceProductFacts = {
   builtInSkills: 24,
   marketplaceSkills: 525,
   providerPresets: 25,
-  agentFrameworks: 4
+  agentFrameworks: 5
 } as const
