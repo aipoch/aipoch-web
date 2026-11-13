@@ -6,11 +6,14 @@ import { BlogSidebarCTA } from '@/components/blog-sidebar'
 import { JsonLd } from '@/components/json-ld'
 import { BlogArticleQuote, MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
+import { AutoplayYoutubeEmbed } from '@/components/youtube/autoplay-youtube-embed'
 import { extractVideosFromContent, getPost } from '@/lib/blog'
 import { blogArticleLastModified } from '@/lib/blog-page-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
+import { remarkYoutubeThumbnails } from '@/lib/remark-youtube-thumbnails'
 import { staticAsset } from '@/lib/staticAsset'
 import { extractToc } from '@/lib/toc'
+import { extractYouTubeVideoIds } from '@/lib/youtube-video'
 
 export const revalidate = 0 // Disable caching so each refresh fetches the latest data.
 
@@ -125,6 +128,11 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
   }
 
   const toc = await extractToc(post.content)
+  const youtubeVideos = extractYouTubeVideoIds(
+    [post.content, ...(post.frontmatter.videos?.map((video) => video.contentUrl ?? '') ?? [])].join(
+      '\n'
+    )
+  )
   const prev = post.previousPost
   const next = post.nextPost
   const visiblePublishedDate = formatVisibleDate(post.frontmatter.date)
@@ -339,9 +347,21 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
               </div>
             </header>
             <div className="blog-article-body px-8 pb-12 [&_.markdown-body>:first-child]:mt-0">
+              {youtubeVideos.length > 0 && (
+                <section className="mb-8 space-y-6" aria-label="Article videos">
+                  {youtubeVideos.map((videoId, index) => (
+                    <AutoplayYoutubeEmbed
+                      key={videoId}
+                      videoId={videoId}
+                      title={`${post.frontmatter.title} — video ${index + 1}`}
+                    />
+                  ))}
+                </section>
+              )}
               <MarkdownRenderer
                 content={post.content}
                 mode="md"
+                remarkPlugins={[[remarkYoutubeThumbnails, { videoIds: youtubeVideos }]]}
                 components={{ blockquote: BlogArticleQuote }}
               />
             </div>

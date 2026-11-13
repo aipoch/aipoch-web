@@ -239,6 +239,9 @@ export const blogs: BlogPostDetail[] = Array.from({ length: 24 }, (_, index) => 
   view_count: 100 - index,
   published_at: fixtureDate,
   content:
+    (index === 1
+      ? '[![Video preview](/open-science/setup-2026-10-29.webp)](https://www.youtube.com/watch?v=ijpmwTPK8pU)\n\n![Workspace screenshot](/open-science/setup-2026-10-29.webp)\n\nWatch again: https://youtu.be/ijpmwTPK8pU\n\n'
+      : '') +
     '# Local research notes\n\nThis sample article is available without the business API.\n\n## Reproducible workflows\n\nKeep sources, analysis, and results together.' +
     [
       'Research planning',
