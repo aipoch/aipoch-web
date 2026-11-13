@@ -40,7 +40,7 @@ mock.module('@/lib/config', () => ({
 mock.module('@/service/blog', () => ({
   fetchBlogSitemap: async () => [
     { url: `${siteDomain}/blog/existing-post`, last_modified: '2026-08-12' },
-    { url: `${siteDomain}/blog/newer-post`, last_modified: '2026-10-21T08:00:00Z' }
+    { url: `${siteDomain}/blog/newer-post`, last_modified: '2026-11-14T08:00:00Z' }
   ]
 }))
 
@@ -159,7 +159,7 @@ describe('sitemap', () => {
       changeFrequency: 'weekly',
       priority: 0.8
     })
-    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-10-29T00:00:00.000Z')
+    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-11-13T00:00:00.000Z')
 
     expect(openScienceDownloadRoute).toMatchObject({
       changeFrequency: 'weekly',
@@ -225,8 +225,8 @@ describe('sitemap', () => {
 
     expect(routeDate(`${siteDomain}/blog`)).toBe('2026-10-20T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/agent-skills/list`)).toBe('2026-10-20T00:00:00.000Z')
-    expect(routeDate(`${siteDomain}/blog/existing-post`)).toBe('2026-10-20T00:00:00.000Z')
-    expect(routeDate(`${siteDomain}/blog/newer-post`)).toBe('2026-10-21T08:00:00.000Z')
+    expect(routeDate(`${siteDomain}/blog/existing-post`)).toBe('2026-11-13T00:00:00.000Z')
+    expect(routeDate(`${siteDomain}/blog/newer-post`)).toBe('2026-11-14T08:00:00.000Z')
     expect(routeDate(`${siteDomain}/docs/getting-started`)).toBe('2026-08-17T08:30:00.000Z')
     for (const route of routes.filter((route) => !route.url.startsWith(`${siteDomain}/docs/`))) {
       expect(new Date(route.lastModified as Date).getTime()).toBeGreaterThanOrEqual(

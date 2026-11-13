@@ -1,5 +1,5 @@
 import { ArrowRight, Star } from 'lucide-react'
-import Image from 'next/image'
+import { AutoplayYoutubeEmbed } from '@/components/youtube/autoplay-youtube-embed'
 import { OpenScienceDownload } from './open-science-download'
 import type { DownloadManifest } from './open-science-download-data'
 import { OpenScienceImage } from './open-science-image'
@@ -7,7 +7,7 @@ import { openScienceAction } from './open-science-section'
 
 export function OpenScienceHero({ releaseManifest }: { releaseManifest: DownloadManifest | null }) {
   return (
-    <section className="relative isolate pt-[calc(var(--nav-h)+40px)] lg:h-[calc(1043px+var(--nav-h))] lg:pt-[calc(var(--nav-h)+64px)]">
+    <section className="relative isolate pt-[calc(var(--nav-h)+40px)] lg:min-h-[calc(1043px+var(--nav-h))] lg:pt-[calc(var(--nav-h)+64px)]">
       <div
         className="pointer-events-none absolute inset-x-0 top-[var(--nav-h)] bottom-0 -z-10 overflow-hidden"
         aria-hidden="true"
@@ -72,19 +72,10 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             <OpenScienceDownload initialManifest={releaseManifest} />
           </div>
         </div>
-        <div
-          data-open-science-reveal="0.24"
-          className="mt-12 pb-8 [mask-image:linear-gradient(black_20%,transparent_98%)] lg:mt-20 lg:pb-0"
-        >
-          <Image
-            src="/open-science/setup-2026-10-29.webp"
-            width={3960}
-            height={2084}
-            quality={100}
-            alt="Open-Science first-time setup — connect a model to your research workspace"
-            sizes="(min-width: 1024px) 990px, calc(100vw - 48px)"
-            preload
-            className="h-auto w-full rounded-lg"
+        <div data-open-science-reveal="0.24" className="mt-12 pb-8 lg:mt-20">
+          <AutoplayYoutubeEmbed
+            videoId="ijpmwTPK8pU"
+            title="AIPOCH Open-Science AI Research Workbench overview"
           />
         </div>
       </div>

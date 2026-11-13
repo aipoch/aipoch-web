@@ -83,6 +83,61 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('renders autoplay videos before blog content and replaces the product hero screenshot', async () => {
+    const articleHtml = await renderedHtml(await fetch(`${web}/blog/what-is-a-skill`))
+    expect(articleHtml).toContain('youtube-nocookie.com/embed/ijpmwTPK8pU')
+    expect(articleHtml).not.toContain('alt="Video preview"')
+    expect(articleHtml).toContain('alt="Workspace screenshot"')
+    expect(articleHtml.indexOf('<iframe')).toBeLessThan(articleHtml.indexOf('class="markdown-body'))
+    const browser = await chromium.launch()
+    try {
+      for (const device of ['desktop', 'mobile']) {
+        const page = await browser.newPage(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 1000 } }
+        )
+        // Verify our embed contract without depending on external YouTube availability.
+        await page.route('https://www.youtube-nocookie.com/**', (route) =>
+          route.fulfill({
+            contentType: 'text/html',
+            body: '<html><body>Video player</body></html>'
+          })
+        )
+        for (const path of ['/blog/what-is-a-skill', '/open-science']) {
+          await page.goto(`${web}${path}`)
+          const player = page.locator('iframe[src*="youtube-nocookie.com/embed/"]')
+          await browserExpect(player).toHaveCount(1)
+          const url = new URL((await player.getAttribute('src')) ?? '')
+          expect(Object.fromEntries(url.searchParams)).toMatchObject({
+            autoplay: '1',
+            mute: '1',
+            loop: '1',
+            playlist: 'ijpmwTPK8pU',
+            playsinline: '1'
+          })
+          if (path.startsWith('/blog/')) {
+            expect(await page.locator('.blog-article-body > :first-child iframe').count()).toBe(1)
+            await browserExpect(
+              page.getByRole('img', { name: 'Video preview', exact: true })
+            ).toHaveCount(0)
+            await browserExpect(
+              page.getByRole('img', { name: 'Workspace screenshot', exact: true })
+            ).toHaveCount(1)
+          } else {
+            expect(await page.locator('img[src*="setup-2026-10-29"]').count()).toBe(0)
+          }
+          expect(
+            await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
+          ).toBe(true)
+        }
+        await page.goto(`${web}/blog/release-notes`)
+        await browserExpect(page.locator('.blog-article-body iframe')).toHaveCount(0)
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 60000)
+
   for (const surface of ['replay', 'detail']) {
     test(`prepares ${surface} browser-held science imports with retry, cancellation and download fallback on desktop and mobile`, async () => {
       const importArtifacts = join(process.cwd(), '.codex/browser-import-2026-10-21')
@@ -919,7 +974,7 @@ describe('mock development end to end', () => {
       ['/agent-skills/list', '2026-10-20'],
       ['/agent-skills/literature-review', '2026-10-20'],
       ['/blog', '2026-10-20'],
-      ['/blog/release-notes', '2026-10-20'],
+      ['/blog/release-notes', '2026-11-13'],
       ['/benchmark/open-science', '2026-10-28'],
       ['/benchmark/medskillaudit', '2026-10-21']
     ]) {

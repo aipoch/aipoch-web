@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import type { BlogPostDetail, BlogPostListItem, BlogPostsListData } from '@/service/blog'
 import { BLOG_PAGE_SIZE, fetchBlogPost, fetchBlogPosts } from '@/service/blog'
+import { extractYouTubeVideoIds } from './youtube-video'
 
 const SLUG_REGEX = /^[a-z0-9-_]+$/i
 
@@ -110,22 +111,11 @@ export function extractVideosFromContent(content: string): Array<{
   }> = []
   const seen = new Set<string>()
 
-  // YouTube: embed, watch, youtu.be
-  const ytPatterns = [
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/g,
-    /youtube\.com\/watch\?[^"'\s]*v=([a-zA-Z0-9_-]{11})/g,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/g
-  ]
-  for (const re of ytPatterns) {
-    for (const m of content.matchAll(re)) {
-      const id = m[1]
-      if (seen.has(id)) continue
-      seen.add(id)
-      videos.push({
-        embedUrl: `https://www.youtube.com/embed/${id}`,
-        thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`
-      })
-    }
+  for (const id of extractYouTubeVideoIds(content)) {
+    videos.push({
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+      thumbnailUrl: `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+    })
   }
 
   // Vimeo

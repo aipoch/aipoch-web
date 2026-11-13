@@ -3,6 +3,7 @@ import { type MDXComponents, MDXRemote } from 'next-mdx-remote-client/rsc'
 import rehypeSlug from 'rehype-slug'
 import remarkFlexibleToc from 'remark-flexible-toc'
 import remarkGfm from 'remark-gfm'
+import type { PluggableList } from 'unified'
 import { MARKDOWN_HEADING_ID_PREFIX } from '@/lib/toc'
 import { BlogArticleQuote, createOrderedCallout } from './callout'
 import { MarkdownErrorBoundary } from './markdown-error-boundary'
@@ -13,6 +14,7 @@ interface MarkdownRendererProps {
   content: string
   mode?: 'md' | 'mdx'
   components?: MDXComponents
+  remarkPlugins?: PluggableList
 }
 
 // Filter out non-component exports (createLucideIcon, default) to avoid type conflicts
@@ -27,7 +29,8 @@ const lucideIcons = Object.fromEntries(
 export function MarkdownRenderer({
   content,
   mode = 'mdx',
-  components: callerComponents
+  components: callerComponents,
+  remarkPlugins = []
 }: MarkdownRendererProps) {
   const components = {
     // Create a separate counter for each Markdown render so color rotation stays within the current document.
@@ -44,7 +47,11 @@ export function MarkdownRenderer({
         options={{
           parseFrontmatter: true,
           mdxOptions: {
-            remarkPlugins: [remarkGfm, [remarkFlexibleToc, { prefix: MARKDOWN_HEADING_ID_PREFIX }]],
+            remarkPlugins: [
+              remarkGfm,
+              ...remarkPlugins,
+              [remarkFlexibleToc, { prefix: MARKDOWN_HEADING_ID_PREFIX }]
+            ],
             rehypePlugins: [[rehypeSlug, { prefix: MARKDOWN_HEADING_ID_PREFIX }]],
             format: mode
           },
