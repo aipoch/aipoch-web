@@ -1,41 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
-const statistics = [
-  [
-    '90.67%',
-    'LitQA2 · official test',
-    '68 of 75 target papers found',
-    'Tied 1st',
-    'with Asta Paper Finder & Asta v0'
-  ],
-  [
-    '100%',
-    'LitQA2 · validation',
-    '10 of 10 target papers found',
-    '+20.0',
-    'over best public val. 80.0'
-  ],
-  [
-    '0.9289',
-    'ScholarQA-CS2 · validation',
-    'cited research answers, 0–1',
-    '+0.0097',
-    'vs best official test 0.9192'
-  ],
-  [
-    '0.4554',
-    'PaperFinding · validation',
-    'paper-set retrieval, 0–1',
-    '+0.069',
-    'over best public val. 0.3862'
-  ],
-  ['79.35', 'ASI-Bench B1', 'full protocol', '+4.57', 'over Codex 74.78'],
-  ['56.11', 'ASI-Bench B2', 'methods only', '+0.02', 'over Codex 56.09'],
-  ['59.67', 'ASI-Bench B3', 'autonomous', '+1.55', 'over Codex 58.12'],
-  ['59.46', 'ASI-Bench B4', 'with distractors', '+4.01', 'over Codex 55.45']
-]
-
 export function BenchmarkHero() {
   return (
     <section className="benchmark-hero">
@@ -53,15 +18,24 @@ export function BenchmarkHero() {
         <div className="byline">
           <b>AIPOCH Research</b>
           <br />
-          AIPOCH · October 2026
+          AIPOCH · Updated November 2026
         </div>
-        <div className="notice">
-          <strong>How to read these results · 26 October 2026</strong>
-          <br />
-          {
-            'Every AIPOCH score on this page comes from our own local evaluation runs; none has been submitted to an official leaderboard yet. The order of rows in each chart follows the listed scores and is not an official placement. On LitQA2 we now report a run on the official test split, so that comparison uses the same questions as the published records. Our PaperFinding and ScholarQA-CS2 runs use validation splits while most published records use test splits, so those gaps are indicative. On ASI-Bench our primary comparison is Codex run locally with the same model on the same tasks.'
-          }
-        </div>
+        <details className="notice">
+          <summary>
+            <strong>How to read these results · 13 November 2026</strong>
+            <span>
+              {
+                ' Every AIPOCH score on this page comes from our own local evaluation runs; none has been submitted to an official leaderboard yet.'
+              }
+            </span>
+            <span className="notice-more">More</span>
+          </summary>
+          <p>
+            {
+              'The order of rows in each chart follows the listed scores and is not an official placement. LitQA2, LitQA2-FullText, CORE-Bench-Hard and Terminal-Bench-Science use the same questions as the published records. Our PaperFinding and ScholarQA-CS2 runs use validation splits while most published records use test splits, so those gaps are indicative, and our DiscoveryBench run uses a validation subset and a different judge, so it is not compared. On ASI-Bench and the paper-scale research tasks our primary comparison is other harnesses run locally with the same model on the same tasks.'
+            }
+          </p>
+        </details>
         <div className="hero-cta">
           <Button asChild className="hero-button">
             <Link href="/open-science/download">Download</Link>
@@ -78,20 +52,6 @@ export function BenchmarkHero() {
           <Button asChild variant="outline" className="hero-button">
             <a href="#method">Evaluation details</a>
           </Button>
-        </div>
-        <div className="stats">
-          {statistics.map(([value, name, subtitle, delta, comparison]) => (
-            <div className="stat" key={name}>
-              <div className="v">{value}</div>
-              <div className="n">
-                {name}
-                <small>{subtitle}</small>
-              </div>
-              <div className="d">
-                {delta} <span>{comparison}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

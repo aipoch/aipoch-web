@@ -8,11 +8,15 @@ const revealTargets = [
   '.byline',
   '.notice',
   '.hero-cta',
-  '.stat',
+  '.col > .kicker',
   '.col > h2',
   '.col > h3',
   '.callout-block',
   '.records',
+  '.headline',
+  '.pipeline',
+  '.findings',
+  '.edge',
   '.col > p',
   '.cell-text > h3',
   '.cell-text > p',
@@ -108,8 +112,10 @@ export function BenchmarkMotion({ children }: { children: ReactNode }) {
     )
     for (const target of targets) {
       const bounds = target.getBoundingClientRect()
+      // Content in an inactive tab waits until its panel is shown and scrolled into view.
+      const inHiddenTab = target.closest('[data-inactive]') !== null
       // Leave initial content and restored scroll positions visible; reveal upcoming blocks.
-      if (bounds.top < window.innerHeight) reveal(target, true)
+      if (!inHiddenTab && bounds.top < window.innerHeight) reveal(target, true)
       else {
         target.dataset.benchmarkReveal = 'pending'
         observer.observe(target)
