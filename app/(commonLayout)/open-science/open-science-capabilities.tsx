@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { openScienceProductFacts } from '@/lib/open-science-product-facts'
 import type { StaticImageFileName } from '@/lib/static-assets'
 import { OpenScienceImage } from './open-science-image'
 import { OpenScienceSectionHeading, openScienceContainer } from './open-science-section'
@@ -70,7 +69,7 @@ export function OpenScienceCapabilities() {
     <section className={`${openScienceContainer} py-16 lg:py-20`}>
       <OpenScienceSectionHeading
         eyebrow="How it works"
-        title="Run, inspect, and share research with .science"
+        title="Run, inspect, and share research with AIPOCH Open-Science"
         supportingContent={
           <>
             <a
@@ -91,9 +90,9 @@ export function OpenScienceCapabilities() {
         }
       >
         AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources,
-        persistent context, and traceable outputs. A .science package can carry selected
-        conversation branches, file versions, Notebook records, and verification evidence for
-        review, handoff, and archiving.
+        persistent context, and traceable outputs. A .science package carries selected research
+        records for review and handoff. A Research Film offers a narrated presentation of completed
+        work; viewers can return to the research record when they need to inspect the evidence.
       </OpenScienceSectionHeading>
       <div className="space-y-16 lg:space-y-24">
         <Capability
@@ -145,7 +144,8 @@ export function OpenScienceCapabilities() {
             items={[
               {
                 title: 'Scientific Connectors',
-                description: `AIPOCH Open-Science includes ${openScienceProductFacts.builtInConnectors} built-in Scientific Connectors covering scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Some sources are off by default and require explicit opt-in. Access depends on source settings, required credentials, workspace permissions, and service availability. Researchers can also add compatible custom connectors.`
+                description:
+                  'AIPOCH Open-Science includes built-in Scientific Connectors for scientific literature, biomedical databases, genomics, chemistry, clinical research, and related resources. Some sources are off by default and require explicit opt-in. Access depends on source settings, required credentials, workspace permissions, and service availability. Researchers can also add compatible custom connectors.'
               },
               {
                 title: 'Specialists',
@@ -178,9 +178,11 @@ export function OpenScienceCapabilities() {
           asset="open-science-traceability-19cb72cd.webp"
         >
           <p className={descriptionClass}>
-            Traceability is a core design principle in Open-Science. Instead of treating reports,
-            tables, figures, and notebooks as isolated chat outputs, the workbench preserves them as
-            versioned research artifacts connected to the available evidence behind their creation.
+            Traceability is a core design principle in Open-Science. The workbench preserves
+            reports, tables, figures, and notebooks as versioned research artifacts connected to the
+            available evidence behind their creation. Researchers can select that record for a
+            .science package, or present a completed conversation as a Research Film. A film
+            explains recorded work; it does not rerun an analysis or certify its conclusions.
           </p>
           <CapabilityList
             items={[

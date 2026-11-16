@@ -41,16 +41,16 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
           </h1>
           <p data-open-science-reveal="0.12" className="text-base leading-[26px] text-[#6b6b66]">
             AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS,
-            Windows, and Linux. It brings scientific agents, Python and R execution, scientific
-            Connectors, and traceable artifacts into one workspace. A{' '}
+            Windows, and Linux. It brings scientific agents, Python and R execution, Scientific
+            Connectors, and traceable artifacts into one workspace. Export selected work as a{' '}
             <a
               href="https://aipoch.com/blog/aipoch-open-science-research-packages"
               className="underline underline-offset-4 transition-colors hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               .science package
             </a>{' '}
-            can carry selected conversation branches, file versions, Notebook records, and
-            verification evidence for review, handoff, and archiving. Explore{' '}
+            so others can inspect the research record. In the desktop app, create a narrated
+            Research Film from a completed conversation to show how the work unfolded. Explore{' '}
             <a
               href="https://aipoch.com/open-science/use-cases"
               className="underline underline-offset-4 transition-colors hover:text-[#111] focus-visible:outline-2 focus-visible:outline-offset-4"

@@ -200,7 +200,7 @@ export const buildOpenSciencePageGraph = ({
         featureList: [
           'Scientific agents',
           'Python and R execution',
-          `${openScienceProductFacts.builtInConnectors} built-in Scientific Connectors`,
+          'Built-in Scientific Connectors',
           'Traceable artifacts',
           'Selected conversation branches, file versions, Notebook records, and verification evidence in .science packages'
         ],

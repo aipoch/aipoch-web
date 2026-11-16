@@ -250,7 +250,7 @@ describe('Open-Science page', () => {
       subjectOf: { '@id': 'https://arxiv.org/abs/2610.17110#article' }
     })
     expect(schemas.find((item) => item['@type'] === 'SoftwareApplication')?.featureList).toContain(
-      '48 built-in Scientific Connectors'
+      'Built-in Scientific Connectors'
     )
     expect(schemas.find((item) => item['@type'] === 'ScholarlyArticle')).toMatchObject({
       '@id': 'https://arxiv.org/abs/2610.17110#article',
@@ -298,7 +298,7 @@ describe('Open-Science page', () => {
     const text = textFromMarkup(html)
     for (const title of [
       'One workspace from research question to traceable artifact',
-      'Run, inspect, and share research with .science',
+      'Run, inspect, and share research with AIPOCH Open-Science',
       'Local-first research with explicit external access',
       'Can Open-Science use the latest AI models?',
       'Get to know Open-Science',
@@ -306,10 +306,10 @@ describe('Open-Science page', () => {
     ])
       expect(text).toContain(title)
     expect(text).toContain(
-      'AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources, persistent context, and traceable outputs. A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving.'
+      'AIPOCH Open-Science connects agent reasoning with executable tools, scientific resources, persistent context, and traceable outputs. A .science package carries selected research records for review and handoff. A Research Film offers a narrated presentation of completed work; viewers can return to the research record when they need to inspect the evidence.'
     )
     expect(text).toContain(
-      'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
+      'Export selected research records as a .science package for inspection and handoff. In the desktop app, present a completed conversation as a Research Film.'
     )
     expect(html).toContain('workflow-share.png')
     expect(html).toContain('workflow-share.svg')
@@ -621,7 +621,7 @@ describe('Open-Science page', () => {
     expect(text).toContain('Codex subscription')
     expect(text).toContain('xAI (Grok) OAuth')
     expect(text).toContain('Apodex')
-    expect(text).toContain('48 built-in Scientific Connectors')
+    expect(text).toContain('built-in Scientific Connectors')
     expect(text).toContain('Some sources are off by default and require explicit opt-in')
     expect(text).toContain('Semantic Scholar')
     expect(text).toContain('headless CLI')

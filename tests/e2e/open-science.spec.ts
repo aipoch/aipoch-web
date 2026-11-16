@@ -151,7 +151,7 @@ test('renders every design section, retains shared navigation and loads all mark
   ).toBeVisible()
   await expect(
     page.getByRole('heading', {
-      name: 'Run, inspect, and share research with .science'
+      name: 'Run, inspect, and share research with AIPOCH Open-Science'
     })
   ).toBeVisible()
   await expect(
@@ -218,7 +218,7 @@ test('shows the five-step workflow artwork and portable Share package across scr
     'Share'
   ])
   await expect(workflow.locator('li').last()).toContainText(
-    'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
+    'Export selected research records as a .science package for inspection and handoff. In the desktop app, present a completed conversation as a Research Film.'
   )
   for (const image of await workflow.locator('img').all()) {
     await image.scrollIntoViewIfNeeded()

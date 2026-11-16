@@ -32,7 +32,7 @@ export const openScienceFaqItems = [
   {
     question: 'What does a .science package contain in AIPOCH Open-Science?',
     answer:
-      'A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving. Desktop, local Web sessions, and the headless CLI support export and import. Imported history is read-only and does not execute code or restore credentials. Included files depend on your export selection. Side Chat conversations, private reading bookmarks, and their notes are excluded. Received verification records describe the sender’s checks, not a rerun on the receiving computer. Review the export preview before sharing. See the .science package guide for content options and export steps.',
+      'A .science package can carry selected conversation branches, file versions, Notebook records, and verification evidence for review, handoff, and archiving. Desktop, local Web sessions, and the headless CLI support export and import. Imported history is read-only and does not execute code or restore credentials. Included files depend on the export selection. Side Chat conversations, private reading bookmarks, and their notes are excluded. Received verification records describe the sender’s checks, not a rerun on the receiving computer. Review the export preview before sharing. See the .science package guide for content options and export steps.',
     answerLinks: [
       {
         label: '.science package guide',
@@ -41,15 +41,13 @@ export const openScienceFaqItems = [
     ]
   },
   {
-    question:
-      'Where can I learn about the design and use of .science packages in AIPOCH Open-Science?',
+    question: 'Can AIPOCH Open-Science turn a research session into a video?',
     answer:
-      'The AIPOCH Open-Science preprint describes the .science package design, controlled tests, and limitations. For a practical overview of what packages contain and how they support research review, handoff, and continued work, read our guide to .science packages.',
+      'Yes. In the desktop app, choose Generate research film on a completed conversation branch. Your configured model prepares the presentation from the recorded session, and an installed local speech engine generates English narration. Review the film before sharing it. You can download its HTML player or export an MP4. A Research Film presents existing work; it does not rerun the analysis or validate its conclusions. See the Research Film guide for preparation, review, and export steps.',
     answerLinks: [
-      { label: 'AIPOCH Open-Science preprint', href: 'https://arxiv.org/abs/2610.17110' },
       {
-        label: 'guide to .science packages',
-        href: 'https://aipoch.com/blog/aipoch-open-science-research-packages'
+        label: 'Research Film guide',
+        href: 'https://aipoch.com/docs/guides/research-films/'
       }
     ]
   }
