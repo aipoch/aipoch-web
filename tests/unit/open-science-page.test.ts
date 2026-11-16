@@ -34,7 +34,7 @@ mock.module('../../public/figma/open-science/workflow-share.png', () => ({
 
 const expectedSeoTitle = 'AIPOCH Open-Science AI Research Workbench'
 const expectedSeoDescription =
-  'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux, with scientific agents, code execution, and .science packages.'
+  'AIPOCH Open-Science brings agents, research tools, and traceable outputs into one workspace. Share selected evidence with a .science package and present completed work as a Research Film.'
 
 const textFromMarkup = (markup: string) =>
   markup
