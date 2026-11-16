@@ -30,7 +30,7 @@ const steps = [
     title: 'Share',
     icon: 'workflow-share.svg',
     description:
-      'Export selected research records as a .science package for review, handoff, or continuation on another project or computer.'
+      'Export selected research records as a .science package for inspection and handoff. In the desktop app, present a completed conversation as a Research Film.'
   }
 ]
 

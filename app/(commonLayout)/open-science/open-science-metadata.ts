@@ -7,7 +7,7 @@ import { staticImage } from '@/lib/staticAsset'
 export const openScienceSeo = {
   title: 'AIPOCH Open-Science AI Research Workbench',
   description:
-    'AIPOCH Open-Science is an open-source, local-first AI research workbench for macOS, Windows, and Linux, with scientific agents, code execution, and .science packages.'
+    'AIPOCH Open-Science brings agents, research tools, and traceable outputs into one workspace. Share selected evidence with a .science package and present completed work as a Research Film.'
 } as const
 
 const openSciencePageUrl = `${SITE_DOMAIN}/open-science`

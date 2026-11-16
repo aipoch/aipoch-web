@@ -27,8 +27,9 @@ export function OpenScienceCommunity() {
           data-open-science-reveal="0.12"
           className="mx-auto mt-[30px] max-w-[620px] text-base leading-[26px] text-[#6b6b66]"
         >
-          Bring scientific AI agents, executable analysis and traceable research artifacts into one
-          local-first workspace.
+          Bring scientific AI agents, executable analysis, and traceable research artifacts into one
+          local-first workspace. Share selected work as a .science package, and present a completed
+          conversation as a Research Film.
         </p>
         <div
           data-open-science-reveal="0.18"
