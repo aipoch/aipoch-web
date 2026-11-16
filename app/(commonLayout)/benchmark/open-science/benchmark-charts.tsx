@@ -1,20 +1,34 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
+  type AgentGroup,
+  type BenchmarkRecord,
   b1,
   b2,
   b3,
   b4,
-  litqa,
-  pf,
-  sqa,
+  coreBench,
+  discovery,
+  discoveryDistribution,
   filterRecords,
+  litqa,
+  litqaFull,
   matchDistractorRecords,
-  type AgentGroup,
-  type BenchmarkRecord,
-  type SourceFilter
+  pf,
+  replayClass,
+  replayLabel,
+  type SourceFilter,
+  type SuiteAgentId,
+  sqa,
+  suiteAgents,
+  suiteHeadToHead,
+  suiteMeans,
+  suiteResults,
+  suiteTasks,
+  tbScience,
+  tbScienceAttempts
 } from './benchmark-results'
 
 const colors: Record<AgentGroup, string> = {
@@ -26,6 +40,7 @@ const colors: Record<AgentGroup, string> = {
   asta: 'var(--bench-asta)',
   robo: 'var(--bench-robo)',
   prod: 'var(--bench-robo)',
+  evo: 'var(--bench-evo)',
   other: 'var(--bench-other)'
 }
 const names: Record<AgentGroup, string> = {
@@ -37,6 +52,7 @@ const names: Record<AgentGroup, string> = {
   asta: 'Asta',
   robo: 'RoboPhD',
   prod: 'research assistants',
+  evo: 'EvoScientist',
   other: 'other agents'
 }
 const levels = [
@@ -56,7 +72,19 @@ const levels = [
   }
 ]
 
+const newSourceLabels: Record<string, [ours: string, theirs: string]> = {
+  lqf: ['Local run on official test split, 75 questions', 'Official test, 75 questions'],
+  core: ['Local run on official test split, 37 tasks', 'Official test, 37 tasks'],
+  disc: [
+    'Local validation subset, 25 tasks · deepseek-v4-flash judge',
+    'Official test · gpt-4-1106-preview judge'
+  ],
+  tbs: ['Local run, 145 of 210 attempts passed', 'Official leaderboard · 13 Nov 2026 snapshot']
+}
+
 function sourceLabel(record: BenchmarkRecord) {
+  const labels = newSourceLabels[record.id.split('-')[0]]
+  if (labels) return labels[record.group === 'aipoch' ? 0 : 1]
   if (record.source === 'local') return 'Local run'
   if (record.source === 'public') return 'Public leaderboard'
   if (record.id.startsWith('sqa-'))
@@ -174,37 +202,93 @@ function Ticks({ max = 100, ticks = [0, 25, 50, 75, 100] }: { max?: number; tick
   )
 }
 
-export function BarChart({ kind }: { kind: 'litqa' | 'pf' | 'sqa' | 'b1' | 'b2' | 'b3' | 'b4' }) {
+type SingleSplitKind = 'lqf' | 'core' | 'disc' | 'tbs'
+const singleSplit: Record<
+  SingleSplitKind,
+  { records: BenchmarkRecord[]; title: string; subtitle: string; max: number }
+> = {
+  lqf: {
+    records: litqaFull,
+    title: 'LitQA2-FullText',
+    subtitle: 'multiple-choice accuracy, % of 75 official test questions answered correctly',
+    max: 100
+  },
+  core: {
+    records: coreBench,
+    title: 'CORE-Bench-Hard',
+    subtitle: 'accuracy, % of 37 official test tasks fully reproduced',
+    max: 100
+  },
+  disc: {
+    records: discovery,
+    title: 'DiscoveryBench',
+    subtitle: 'hypothesis-match score, 0 to 1 · local validation subset vs official test',
+    max: 1
+  },
+  tbs: {
+    records: tbScience,
+    title: 'Terminal-Bench-Science 0.1',
+    subtitle: 'pass rate, % of attempts whose deliverables pass the task verifier',
+    max: 100
+  }
+}
+
+/**
+ * Leaderboard bar chart. Long fields collapse to the top `limit` rows (Open-Science rows are
+ * always kept) so side-by-side charts stay a similar height; "Show all" expands in place.
+ */
+export function BarChart({
+  kind,
+  limit = 10
+}: {
+  kind: 'litqa' | 'pf' | 'sqa' | 'b1' | 'b2' | 'b3' | 'b4' | SingleSplitKind
+  limit?: number
+}) {
   const [filter, setFilter] = useState<SourceFilter>('all')
+  const [expanded, setExpanded] = useState(false)
   const level = levels.find((level) => level.id.toLowerCase() === kind)
-  const records =
-    kind === 'litqa' ? litqa : kind === 'pf' ? pf : kind === 'sqa' ? sqa : (level?.rows ?? [])
-  const title = level
-    ? `ASI-Bench ${level.id}`
+  const single = kind in singleSplit ? singleSplit[kind as SingleSplitKind] : undefined
+  const records = single
+    ? single.records
     : kind === 'litqa'
-      ? 'LitQA2-FullText-Search'
-      : kind === 'sqa'
-        ? 'ScholarQA-CS2'
-        : 'PaperFinding'
-  const subtitle = level
-    ? `${level.description} · score out of 100`
-    : kind === 'litqa'
-      ? 'recall@30, % of questions whose target paper is returned in the top 30'
-      : kind === 'sqa'
-        ? 'cited research answers · composite quality score, 0 to 1'
-        : 'combined precision and coverage score, 0 to 1'
-  const filters: [SourceFilter, string][] = level
-    ? [
-        ['all', 'All'],
-        ['local', 'Local runs'],
-        ['public', 'Public leaderboard']
-      ]
-    : [
-        ['all', `All ${records.length}`],
-        ['test', 'Official test'],
-        ['val', 'Validation']
-      ]
-  const max = kind === 'pf' ? 0.5 : kind === 'sqa' ? 1 : 100
+      ? litqa
+      : kind === 'pf'
+        ? pf
+        : kind === 'sqa'
+          ? sqa
+          : (level?.rows ?? [])
+  const title = single
+    ? single.title
+    : level
+      ? `ASI-Bench ${level.id}`
+      : kind === 'litqa'
+        ? 'LitQA2-FullText-Search'
+        : kind === 'sqa'
+          ? 'ScholarQA-CS2'
+          : 'PaperFinding'
+  const subtitle = single
+    ? single.subtitle
+    : level
+      ? `${level.description} · score out of 100`
+      : kind === 'litqa'
+        ? 'recall@30, % of questions whose target paper is returned in the top 30'
+        : kind === 'sqa'
+          ? 'cited research answers · composite quality score, 0 to 1'
+          : 'combined precision and coverage score, 0 to 1'
+  const filters: [SourceFilter, string][] = single
+    ? []
+    : level
+      ? [
+          ['all', 'All'],
+          ['local', 'Local runs'],
+          ['public', 'Public leaderboard']
+        ]
+      : [
+          ['all', `All ${records.length}`],
+          ['test', 'Official test'],
+          ['val', 'Validation']
+        ]
+  const max = single ? single.max : kind === 'pf' ? 0.5 : kind === 'sqa' ? 1 : 100
   const groups = [...new Set(records.map((record) => record.group))]
   return (
     <TooltipProvider>
@@ -233,15 +317,15 @@ export function BarChart({ kind }: { kind: 'litqa' | 'pf' | 'sqa' | 'b1' | 'b2' 
             ticks={
               kind === 'pf'
                 ? [0, 0.1, 0.2, 0.3, 0.4, 0.5]
-                : kind === 'sqa'
+                : kind === 'sqa' || kind === 'disc'
                   ? [0, 0.25, 0.5, 0.75, 1]
                   : undefined
             }
           />
           <span />
         </div>
-        <div className="rows">
-          {filterRecords(records, filter).map((record) => (
+        <div className="rows" id={`rows-${kind}`}>
+          {visibleRows(filterRecords(records, filter), limit, expanded).map((record) => (
             <Detail
               key={record.id}
               record={record}
@@ -252,7 +336,7 @@ export function BarChart({ kind }: { kind: 'litqa' | 'pf' | 'sqa' | 'b1' | 'b2' 
                 <em>
                   {kind === 'litqa'
                     ? record.model.split('/').at(-1)
-                    : kind === 'pf'
+                    : kind === 'pf' || kind === 'lqf'
                       ? record.model.split(' / ')[0] + (record.model.includes(' / ') ? ' +' : '')
                       : record.model}
                 </em>
@@ -276,8 +360,49 @@ export function BarChart({ kind }: { kind: 'litqa' | 'pf' | 'sqa' | 'b1' | 'b2' 
             </Detail>
           ))}
         </div>
+        <ExpandToggle
+          total={filterRecords(records, filter).length}
+          limit={limit}
+          expanded={expanded}
+          onToggle={() => setExpanded((value) => !value)}
+          controls={`rows-${kind}`}
+        />
       </section>
     </TooltipProvider>
+  )
+}
+
+/** Collapsing is skipped when it would hide only one or two rows. */
+function visibleRows(rows: BenchmarkRecord[], limit: number, expanded: boolean) {
+  if (expanded || rows.length <= limit + 2) return rows
+  return rows.filter((row, index) => index < limit || row.group === 'aipoch')
+}
+
+function ExpandToggle({
+  total,
+  limit,
+  expanded,
+  onToggle,
+  controls
+}: {
+  total: number
+  limit: number
+  expanded: boolean
+  onToggle: () => void
+  controls: string
+}) {
+  if (total <= limit + 2) return null
+  return (
+    <button
+      type="button"
+      className={`expand-toggle${expanded ? ' open' : ''}`}
+      aria-expanded={expanded}
+      aria-controls={controls}
+      onClick={onToggle}
+    >
+      {expanded ? `Show top ${limit}` : `Show all ${total} records`}
+      <span aria-hidden="true">{expanded ? '↑' : '↓'}</span>
+    </button>
   )
 }
 
@@ -425,7 +550,8 @@ function SwarmRow({
   subtitle,
   max,
   ticks,
-  reference
+  reference,
+  showSplit = false
 }: {
   records: BenchmarkRecord[]
   label: string
@@ -433,6 +559,7 @@ function SwarmRow({
   max: number
   ticks?: number[]
   reference?: number
+  showSplit?: boolean
 }) {
   const plot = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(740)
@@ -502,9 +629,7 @@ function SwarmRow({
           .map((record) => (
             <span className="swarm-score" key={record.id}>
               {record.score.toFixed(max <= 1 ? 4 : 2)}
-              {label === 'LitQA2' && (
-                <small>{record.source === 'test' ? 'test' : 'validation'}</small>
-              )}
+              {showSplit && <small>{record.source === 'test' ? 'test' : 'validation'}</small>}
             </span>
           ))}
         <small>{records.length} records</small>
@@ -539,7 +664,7 @@ export function SwarmChart({ kind }: { kind: 'asta' | 'asi' }) {
             round
             groups={
               kind === 'asta'
-                ? ['aipoch', 'asta', 'react', 'smol', 'robo', 'prod', 'other']
+                ? ['aipoch', 'asta', 'react', 'smol', 'evo', 'robo', 'prod', 'other']
                 : ['aipoch', 'codex', 'claude', 'other']
             }
           >
@@ -553,8 +678,16 @@ export function SwarmChart({ kind }: { kind: 'asta' | 'asi' }) {
           <>
             <SwarmRow
               records={litqa}
-              label="LitQA2"
+              label="LitQA2 search"
               subtitle="recall@30, %"
+              max={100}
+              ticks={[0, 25, 50, 75, 100]}
+              showSplit
+            />
+            <SwarmRow
+              records={litqaFull}
+              label="LitQA2 QA"
+              subtitle="accuracy, %"
               max={100}
               ticks={[0, 25, 50, 75, 100]}
             />
@@ -569,6 +702,20 @@ export function SwarmChart({ kind }: { kind: 'asta' | 'asi' }) {
               records={sqa}
               label="ScholarQA-CS2"
               subtitle="score, 0–1"
+              max={1}
+              ticks={[0, 0.25, 0.5, 0.75, 1]}
+            />
+            <SwarmRow
+              records={coreBench}
+              label="CORE-Bench-Hard"
+              subtitle="accuracy, %"
+              max={100}
+              ticks={[0, 25, 50, 75, 100]}
+            />
+            <SwarmRow
+              records={discovery}
+              label="DiscoveryBench"
+              subtitle="score, 0–1 · not comparable"
               max={1}
               ticks={[0, 0.25, 0.5, 0.75, 1]}
             />
@@ -736,6 +883,396 @@ export function ScholarComparison({ zoom = false }: { zoom?: boolean }) {
             <span className="val">{record.score.toFixed(4)}</span>
           </Detail>
         ))}
+      </section>
+    </TooltipProvider>
+  )
+}
+
+/** Generic tap/hover/focus detail for charts whose marks are not single leaderboard records. */
+function Tip({
+  label,
+  content,
+  children,
+  className,
+  style
+}: {
+  label: string
+  content: ReactNode
+  children?: ReactNode
+  className?: string
+  style?: CSSProperties
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={className}
+          style={style}
+          aria-label={label}
+          onClick={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setOpen(false)
+          }}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        sideOffset={10}
+        collisionPadding={8}
+        className="benchmark-tooltip max-w-[min(320px,calc(100vw-16px))] rounded-none bg-[#111] p-3 text-xs text-[#d8d5cc]"
+      >
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** One square per attempt; counts only, cells are not mapped to individual tasks. */
+export function AttemptWaffle() {
+  const { tasks, attempts, passed } = tbScienceAttempts
+  const codex = tbScience.find((record) => record.system === 'Codex')
+  return (
+    <section id="ch-tbs-attempts" className="chart waffle-chart" aria-label="TB-Science attempts">
+      <ChartHeading
+        title="Every attempt, counted"
+        subtitle={`${attempts} local attempts over the ${tasks} tasks · one square per attempt`}
+      >
+        <div className="legend">
+          <span>
+            <i style={{ background: colors.aipoch }} />
+            passed · {passed}
+          </span>
+          <span>
+            <i className="legend-open" />
+            not passed · {attempts - passed}
+          </span>
+        </div>
+      </ChartHeading>
+      <div className="waffle" role="img" aria-label={`${passed} of ${attempts} attempts passed`}>
+        {Array.from({ length: attempts }, (_, index) => (
+          <i key={index} className={index < passed ? 'on' : undefined} />
+        ))}
+      </div>
+      <div className="waffle-foot">
+        <div>
+          <div className="big">
+            {((passed / attempts) * 100).toFixed(2)}%<small>{`${passed} / ${attempts}`}</small>
+          </div>
+          <span>AIPOCH Open-Science · GPT-6 Astra · max</span>
+        </div>
+        {codex && (
+          <div>
+            <div className="big muted">{codex.score.toFixed(2)}%</div>
+            <span>Codex · GPT-6 Astra · official #1</span>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** Discrete per-task strip for the DiscoveryBench subset: full, partial and zero scores. */
+export function DiscoveryDistribution() {
+  const { tasks, full, partial, zero, mean } = discoveryDistribution
+  const parts = [
+    { key: 'full', n: full, label: 'full score (1.0)' },
+    { key: 'partial', n: partial, label: 'partial credit' },
+    { key: 'zero', n: zero, label: 'zero' }
+  ]
+  return (
+    <section className="chart" aria-label="DiscoveryBench score distribution">
+      <ChartHeading
+        title="25 tasks, scored one by one"
+        subtitle={`local validation subset · mean ${mean.toFixed(4)}`}
+      />
+      <div
+        className="strip"
+        role="img"
+        aria-label={`${full} full, ${partial} partial, ${zero} zero`}
+      >
+        {parts.flatMap((part) =>
+          Array.from({ length: part.n }, (_, index) => (
+            <i key={`${part.key}-${index}`} className={part.key} />
+          ))
+        )}
+      </div>
+      <div className="strip-key">
+        {parts.map((part) => (
+          <span key={part.key}>
+            <i className={part.key} />
+            <b>{part.n}</b> {part.label}
+          </span>
+        ))}
+        <span className="strip-total">{tasks} tasks</span>
+      </div>
+    </section>
+  )
+}
+
+const suiteColors: Record<SuiteAgentId, string> = {
+  aipoch: colors.aipoch,
+  codex: colors.codex,
+  evo: colors.evo,
+  claude: colors.claude
+}
+
+export function SuiteGroupChart() {
+  const rows = suiteAgents
+    .map((agent) => ({ agent, means: suiteMeans(agent.id) }))
+    .sort((a, b) => b.means.overall - a.means.overall)
+  return (
+    <TooltipProvider>
+      <section id="ch-suite-groups" className="chart" aria-label="Research tasks by group">
+        <ChartHeading
+          title="Ten research tasks, two domains"
+          subtitle="mean score out of 100 · five tasks per group, equally weighted"
+        >
+          <div className="legend">
+            <span>
+              <i className="legend-solid" />
+              Bioinformatics (B)
+            </span>
+            <span>
+              <i className="legend-light" />
+              Clinical (C)
+            </span>
+          </div>
+        </ChartHeading>
+        <div className="axis suite-axis">
+          <span />
+          <Ticks />
+          <span>Overall</span>
+        </div>
+        {rows.map(({ agent, means }) => (
+          <Tip
+            key={agent.id}
+            label={`${agent.name}: bioinformatics ${means.bioinformatics.toFixed(1)}, clinical ${means.clinical.toFixed(1)}, overall ${means.overall.toFixed(1)}`}
+            className={`suite-row ${agent.id === 'aipoch' ? 'me' : ''}`}
+            content={
+              <>
+                <strong className="text-white">{agent.name}</strong>
+                <div className="my-1 font-mono text-[11px] text-[#b5b3ac]">{agent.model}</div>
+                <div>{agent.harness}</div>
+                <div>
+                  Bioinformatics:{' '}
+                  <b className="font-mono text-[#afd670]">{means.bioinformatics.toFixed(1)}</b>
+                </div>
+                <div>
+                  Clinical: <b className="font-mono text-[#afd670]">{means.clinical.toFixed(1)}</b>
+                </div>
+              </>
+            }
+          >
+            <span className="lab">
+              <span className="agent-name">{agent.name}</span>
+              <em>{agent.model.split(' as displayed')[0].split(' · ')[0]}</em>
+            </span>
+            <span className="pair-bars">
+              {(['bioinformatics', 'clinical'] as const).map((group) => (
+                <span className="track" key={group}>
+                  <span
+                    className={`bar ${group}`}
+                    style={{ width: `${means[group]}%`, background: suiteColors[agent.id] }}
+                  />
+                  <span className="bar-num" style={{ left: `calc(${means[group]}% - 34px)` }}>
+                    {means[group].toFixed(1)}
+                  </span>
+                </span>
+              ))}
+            </span>
+            <span className="val">{means.overall.toFixed(1)}</span>
+          </Tip>
+        ))}
+      </section>
+    </TooltipProvider>
+  )
+}
+
+/** Agents × tasks. Cell shade tracks the score; corner marks flag replay differences or failures. */
+export function SuiteHeatmap() {
+  const best = suiteTasks.map((_, task) =>
+    Math.max(...suiteAgents.map((agent) => suiteResults[agent.id][task][0]))
+  )
+  const ordered = [...suiteAgents].sort(
+    (a, b) => suiteMeans(b.id).overall - suiteMeans(a.id).overall
+  )
+  return (
+    <TooltipProvider>
+      <section id="ch-suite-heatmap" className="chart" aria-label="Research tasks: every score">
+        <ChartHeading
+          title="Every score, task by task"
+          subtitle="score out of 100 · darker is higher · outlined cell is the best score on that task"
+        >
+          <div className="legend">
+            <span>
+              <i className="legend-ramp" />0 → 100
+            </span>
+            <span>
+              <i className="legend-flag diff" />
+              replay ran with differences
+            </span>
+            <span>
+              <i className="legend-flag fail" />
+              replay failed or produced no outputs
+            </span>
+          </div>
+        </ChartHeading>
+        <div className="heat-scroll">
+          <div
+            className="heat"
+            style={{
+              gridTemplateColumns: `minmax(120px, 1.6fr) repeat(10, minmax(40px, 1fr)) minmax(52px, 1fr)`
+            }}
+          >
+            <span className="heat-group" />
+            <span className="heat-group" style={{ gridColumn: 'span 5' }}>
+              Bioinformatics
+            </span>
+            <span className="heat-group" style={{ gridColumn: 'span 5' }}>
+              Clinical
+            </span>
+            <span className="heat-group" />
+            <span className="heat-head" />
+            {suiteTasks.map((task) => (
+              <span className="heat-head" key={task.id} title={task.title}>
+                {task.id}
+              </span>
+            ))}
+            <span className="heat-head">Mean</span>
+            {ordered.map((agent) => (
+              <HeatRow key={agent.id} agent={agent} best={best} />
+            ))}
+          </div>
+        </div>
+      </section>
+    </TooltipProvider>
+  )
+}
+
+function HeatRow({ agent, best }: { agent: (typeof suiteAgents)[number]; best: number[] }) {
+  const mean = suiteMeans(agent.id).overall
+  return (
+    <>
+      <span className={`heat-agent ${agent.id === 'aipoch' ? 'me' : ''}`}>
+        {agent.name}
+        <small>{agent.model.split(' as displayed')[0].split(' · ')[0]}</small>
+      </span>
+      {suiteResults[agent.id].map(([score, replay], index) => {
+        const task = suiteTasks[index]
+        const mix = Math.round(score * 0.9)
+        return (
+          <Tip
+            key={task.id}
+            label={`${agent.name}, ${task.id}: ${score}. Replay: ${replayLabel(replay)}`}
+            className={`heat-cell flag-${replayClass(replay)}${score === best[index] ? ' best' : ''}`}
+            style={{
+              background: `color-mix(in oklab, var(--bench-green-ink) ${mix}%, #fff)`,
+              color: mix > 55 ? '#fff' : 'var(--bench-text)'
+            }}
+            content={
+              <>
+                <strong className="text-white">
+                  {task.id} · {task.title}
+                </strong>
+                <div className="my-1 text-[11px] text-[#b5b3ac]">{agent.name}</div>
+                <div>
+                  Score: <b className="font-mono text-[#afd670]">{score}</b>
+                  {score === best[index] ? ' · best on this task' : ''}
+                </div>
+                <div>Replay: {replayLabel(replay)}</div>
+                <div className="font-mono text-[11px] text-[#b5b3ac]">doi:{task.doi}</div>
+              </>
+            }
+          >
+            {score}
+          </Tip>
+        )
+      })}
+      <span className={`heat-mean ${agent.id === 'aipoch' ? 'me' : ''}`}>{mean.toFixed(1)}</span>
+    </>
+  )
+}
+
+const outcomeText = { win: 'Open-Science higher', tie: 'tied', loss: 'rival higher' } as const
+
+/** Task-by-task win / tie / loss of Open-Science against each rival on the same ten tasks. */
+export function SuiteHeadToHead() {
+  const rivals = suiteAgents.filter((agent) => agent.id !== 'aipoch')
+  return (
+    <TooltipProvider>
+      <section id="ch-suite-h2h" className="chart h2h-chart" aria-label="Head-to-head by task">
+        <ChartHeading
+          title="Head to head, task by task"
+          subtitle="Open-Science against each agent on the same ten tasks"
+        >
+          <div className="legend">
+            <span>
+              <i style={{ background: colors.aipoch }} />
+              Open-Science higher
+            </span>
+            <span>
+              <i style={{ background: 'var(--bench-other)' }} />
+              tied
+            </span>
+            <span>
+              <i className="legend-open" />
+              rival higher
+            </span>
+          </div>
+        </ChartHeading>
+        <div className="h2h-head">
+          <span />
+          <span>Bioinformatics</span>
+          <span>Clinical</span>
+          <span>W–T–L</span>
+        </div>
+        {rivals.map((rival) => {
+          const result = suiteHeadToHead(rival.id as Exclude<SuiteAgentId, 'aipoch'>)
+          return (
+            <div className="h2h-row" key={rival.id}>
+              <span className="lab">
+                <span className="agent-name">vs {rival.name}</span>
+                <em>{rival.model.split(' as displayed')[0].split(' · ')[0]}</em>
+              </span>
+              {[0, 5].map((start) => (
+                <span className="h2h-cells" key={start}>
+                  {result.outcomes.slice(start, start + 5).map((outcome, offset) => {
+                    const index = start + offset
+                    const task = suiteTasks[index]
+                    const ours = suiteResults.aipoch[index][0]
+                    const theirs = suiteResults[rival.id][index][0]
+                    return (
+                      <Tip
+                        key={task.id}
+                        label={`${task.id}: Open-Science ${ours}, ${rival.name} ${theirs}, ${outcomeText[outcome]}`}
+                        className={`h2h-cell ${outcome}`}
+                        content={
+                          <>
+                            <strong className="text-white">
+                              {task.id} · {task.title}
+                            </strong>
+                            <div className="mt-1">
+                              Open-Science <b className="font-mono text-[#afd670]">{ours}</b> ·{' '}
+                              {rival.name} <b className="font-mono">{theirs}</b>
+                            </div>
+                          </>
+                        }
+                      >
+                        {task.id}
+                      </Tip>
+                    )
+                  })}
+                </span>
+              ))}
+              <span className="h2h-score">
+                <b>{result.wins}</b>–{result.ties}–{result.losses}
+              </span>
+            </div>
+          )
+        })}
       </section>
     </TooltipProvider>
   )

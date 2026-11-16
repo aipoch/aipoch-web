@@ -233,7 +233,7 @@ describe('sitemap', () => {
         Date.parse('2026-10-20')
       )
     }
-    expect(routeDate(`${siteDomain}/benchmark/open-science`)).toBe('2026-10-29T00:00:00.000Z')
+    expect(routeDate(`${siteDomain}/benchmark/open-science`)).toBe('2026-11-16T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/benchmark/medskillaudit`)).toBe('2026-10-21T00:00:00.000Z')
     for (const excluded of [
       '/medskillaudit',

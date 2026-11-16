@@ -1,4 +1,4 @@
-// Evaluation snapshots supplied with the article, compiled 19 and 26 October 2026.
+// Evaluation snapshots supplied with the article, compiled 19 October to 13 November 2026.
 export type AgentGroup =
   | 'aipoch'
   | 'codex'
@@ -9,6 +9,7 @@ export type AgentGroup =
   | 'robo'
   | 'other'
   | 'prod'
+  | 'evo'
 export type RecordSource = 'val' | 'test' | 'local' | 'public'
 export type BenchmarkRecord = {
   id: string
@@ -20,6 +21,8 @@ export type BenchmarkRecord = {
   cost?: number
   log?: string
   date?: string
+  /** Official rank as published, when it cannot be derived from the listed scores. */
+  rank?: number
 }
 
 export const litqa: BenchmarkRecord[] = [
@@ -1773,4 +1776,417 @@ export function matchDistractorRecords() {
       ? [{ ...record, previousScore: previous.score, delta: record.score - previous.score }]
       : []
   })
+}
+
+type Row = [system: string, model: string, score: number, group: AgentGroup, rank?: number]
+/** Compact builder for leaderboard snapshots whose records share one split and source. */
+function snapshot(prefix: string, source: RecordSource, rows: Row[]): BenchmarkRecord[] {
+  return rows.map(([system, model, score, group, rank], index) => ({
+    id: `${prefix}-${index + 2}`,
+    system,
+    model,
+    score,
+    source,
+    group,
+    ...(rank === undefined ? {} : { rank })
+  }))
+}
+
+// AstaBench LitQA2-FullText (multiple-choice QA), official test split, 75 questions.
+// Local run compiled 2 November 2026; official snapshot of 28 October 2026.
+export const litqaFull: BenchmarkRecord[] = [
+  {
+    id: 'lqf-1',
+    system: 'AIPOCH Open-Science',
+    model: 'deepseek-flash · Max',
+    score: 93.3333,
+    source: 'test',
+    group: 'aipoch'
+  },
+  ...snapshot('lqf', 'test', [
+    ['ReAct', 'claude-opus-4-6', 90.6667, 'react'],
+    ['ReAct', 'claude-sonnet-4-6', 89.3333, 'react'],
+    ['ReAct', 'gpt-5.4-2026-03-05', 89.3333, 'react'],
+    ['ReAct', 'gpt-5.5-2026-04-23', 89.3333, 'react'],
+    ['ReAct', 'claude-opus-4-7', 84, 'react'],
+    ['ReAct', 'gemini-3.1-pro-preview', 82.6667, 'react'],
+    ['ReAct', 'GPT-5 (2025-08)', 82.6667, 'react'],
+    ['ReAct', 'o3 (2025-04)', 80, 'react'],
+    ['ReAct', 'GPT-4.1 (2025-04)', 77.3333, 'react'],
+    ['ReAct', 'GPT-5 Mini (2025-08)', 74.6667, 'react'],
+    [
+      'FutureHouse Falcon',
+      'GPT-4.1 Mini (unpinned) / Gemini 2.5 Flash (2024-05) / o3 Mini (unpinned)',
+      74.6667,
+      'prod'
+    ],
+    [
+      'Perplexity Sonar Deep Research',
+      'Gemini 2.5 Flash (2024-05) / Sonar Deep Research (unpinned)',
+      73.3333,
+      'prod'
+    ],
+    ['Smolagents Coder', 'GPT-5 (2025-08)', 73.3333, 'smol'],
+    [
+      'FutureHouse Crow',
+      'GPT-4.1 Mini (unpinned) / o3 Mini (unpinned) / Gemini 2.5 Flash (2024-05)',
+      72,
+      'prod'
+    ],
+    [
+      'Asta v0',
+      'Claude Sonnet 4 (2025-05) / Gemini 2.0 Flash (unpinned) / o3 (2025-04) / o3 / GPT-4.1 (2025-04) / gpt-4o-2024-08-06 / GPT-4o (unpinned)',
+      70.6667,
+      'asta'
+    ],
+    ['ReAct', 'Claude Sonnet 4 (2025-05)', 68, 'react'],
+    ['Smolagents Coder', 'GPT-4.1 (2025-04)', 65.3333, 'smol'],
+    ['Smolagents Coder', 'GPT-5 Mini (2025-08)', 50.6667, 'smol'],
+    ['Smolagents Coder', 'Claude Sonnet 4 (2025-05)', 50.6667, 'smol'],
+    ['Smolagents Coder', 'Llama 4 Scout 17B (unpinned)', 42.6667, 'smol'],
+    ['ReAct', 'Llama 4 Scout 17B (unpinned)', 41.3333, 'react'],
+    ['Smolagents Coder', 'Gemini 2.5 Flash (2024-05)', 41.3333, 'smol'],
+    ['ReAct', 'Gemini 2.5 Flash (2024-05)', 36, 'react'],
+    ['ReAct', 'Claude 3.5 Haiku (2024-10)', 32, 'react'],
+    ['Smolagents Coder', 'Claude 3.5 Haiku (2024-10)', 25.3333, 'smol'],
+    ['ReAct', 'GPT-4o (2024-08)', 22.6667, 'react'],
+    ['Smolagents Coder', 'GPT-4o (2024-08)', 14.6667, 'smol'],
+    ['You.com Research API', 'not disclosed', 8, 'prod']
+  ])
+]
+
+// AstaBench CORE-Bench-Hard, official test split, 37 tasks. Compiled 6 November 2026.
+export const coreBench: BenchmarkRecord[] = [
+  {
+    id: 'core-1',
+    system: 'AIPOCH Open-Science',
+    model: 'DeepSeek Flash (deepseek-flash) · max',
+    score: 97.2973,
+    source: 'test',
+    group: 'aipoch'
+  },
+  ...snapshot('core', 'test', [
+    ['ReAct', 'gpt-5.4-2026-03-05', 94.59, 'react'],
+    ['ReAct', 'gpt-5.5-2026-04-23', 91.89, 'react'],
+    ['ReAct', 'gemini-3.1-pro-preview', 89.19, 'react'],
+    ['ReAct', 'claude-opus-4-6', 89.19, 'react'],
+    ['ReAct', 'claude-opus-4-7', 86.49, 'react'],
+    ['ReAct', 'claude-sonnet-4-6', 72.97, 'react'],
+    ['EvoScientist-Code', 'GPT-5 (2025-08)', 66.67, 'evo'],
+    ['ReAct', 'o3 (2025-04)', 56.76, 'react'],
+    ['Asta v0', 'Claude Sonnet 4 (2025-05) (+ 6)', 48.65, 'asta'],
+    ['ReAct', 'GPT-5 (2025-08)', 45.95, 'react'],
+    ['ReAct', 'GPT-5 Mini (2025-08)', 45.95, 'react'],
+    ['ReAct', 'Claude Sonnet 4 (2025-05)', 40.54, 'react'],
+    ['Smolagents Coder', 'Claude Sonnet 4 (2025-05)', 32.43, 'smol'],
+    ['Smolagents Coder', 'GPT-4.1 (2025-04)', 21.62, 'smol'],
+    ['ReAct', 'GPT-4.1 (2025-04)', 18.92, 'react'],
+    ['Smolagents Coder', 'GPT-5 (2025-08)', 13.51, 'smol'],
+    ['Smolagents Coder', 'Gemini 2.5 Flash (2024-05)', 13.51, 'smol'],
+    ['ReAct', 'GPT-4o (2024-08)', 5.41, 'react'],
+    ['Smolagents Coder', 'GPT-5 Mini (2025-08)', 5.41, 'smol'],
+    ['Smolagents Coder', 'GPT-4o (2024-08)', 5.41, 'smol'],
+    ['ReAct', 'Gemini 2.5 Flash (2024-05)', 2.7, 'react'],
+    ['ReAct', 'Claude 3.5 Haiku (2024-10)', 0, 'react'],
+    ['ReAct', 'Llama 4 Scout 17B (unpinned)', 0, 'react'],
+    ['Smolagents Coder', 'Claude 3.5 Haiku (2024-10)', 0, 'smol'],
+    ['Smolagents Coder', 'Llama 4 Scout 17B (unpinned)', 0, 'smol']
+  ])
+]
+
+// AstaBench DiscoveryBench. Local: 25 validation tasks, deepseek-v4-flash judge (9 November
+// 2026). Official: full test split, gpt-4-1106-preview judge. Official rank 3 is absent from the
+// compiled snapshot, so ranks are kept as published rather than derived.
+export const discovery: BenchmarkRecord[] = [
+  {
+    id: 'disc-1',
+    system: 'AIPOCH Open-Science',
+    model: 'deepseek-v4-flash',
+    score: 0.7467,
+    source: 'val',
+    group: 'aipoch'
+  },
+  ...snapshot('disc', 'test', [
+    ['ReAct', 'openai/gpt-5.5-2026-04-23', 0.3893, 'react', 1],
+    ['ReAct', 'openai/gpt-5.4-2026-03-05', 0.3776, 'react', 2],
+    ['ReAct', 'google/gemini-3.1-pro-preview', 0.3707, 'react', 4],
+    ['EvoScientist Coder', 'openrouter/moonshotai/kimi-k2.5', 0.3433, 'evo', 5],
+    ['ReAct', 'openai/o3-2025-04-16', 0.3367, 'react', 6],
+    ['Asta v0', 'multiple models (official field: mockllm/model)', 0.3317, 'asta', 7],
+    ['ReAct', 'anthropic/claude-opus-4-7', 0.3281, 'react', 8],
+    ['ReAct', 'anthropic/claude-opus-4-6', 0.3158, 'react', 9],
+    ['Asta DataVoyager', 'openai/o3', 0.3113, 'asta', 10],
+    ['ReAct', 'openai/gpt-4.1-2025-04-14', 0.3054, 'react', 11],
+    ['ReAct', 'openai/gpt-5-2025-08-07', 0.3048, 'react', 12],
+    ['ReAct', 'anthropic/claude-sonnet-4-6', 0.2996, 'react', 13],
+    ['Asta DataVoyager', 'multiple models (official field: mockllm/model)', 0.2988, 'asta', 14],
+    ['Asta DataVoyager', 'openai/gpt-5', 0.2956, 'asta', 15],
+    ['Smolagents Coder', 'anthropic/claude-sonnet-4-20250514', 0.288, 'smol', 16],
+    ['Smolagents Coder', 'openai/gpt-4.1-2025-04-14', 0.284, 'smol', 17],
+    ['Smolagents Coder', 'openai/gpt-5-mini-2025-08-07', 0.2768, 'smol', 18],
+    ['Asta DataVoyager', 'openai/gpt-5', 0.2704, 'asta', 19],
+    ['ReAct', 'openai/gpt-5-mini-2025-08-07', 0.2692, 'react', 20],
+    ['Smolagents Coder', 'openai/gpt-5-2025-08-07', 0.2673, 'smol', 21],
+    ['Asta DataVoyager', 'anthropic/claude-sonnet-4', 0.2572, 'asta', 22],
+    ['Smolagents Coder', 'google/gemini-2.5-flash-preview-05-20', 0.2473, 'smol', 23],
+    ['ReAct', 'anthropic/claude-3-5-haiku-20241022', 0.2432, 'react', 24],
+    ['ReAct', 'anthropic/claude-sonnet-4-20250514', 0.2322, 'react', 25],
+    ['Smolagents Coder', 'together/meta-llama/Llama-4-Scout-17B-16E-Instruct', 0.2016, 'smol', 26],
+    ['Smolagents Coder', 'openai/gpt-4o-2024-08-06', 0.1782, 'smol', 27],
+    ['Smolagents Coder', 'anthropic/claude-3-5-haiku-20241022', 0.1651, 'smol', 28],
+    ['ReAct', 'openai/gpt-4o-2024-08-06', 0.1323, 'react', 29],
+    ['ReAct', 'together/meta-llama/Llama-4-Scout-17B-16E-Instruct', 0.0586, 'react', 30],
+    ['ReAct', 'google/gemini-2.5-flash-preview-05-20', 0.0193, 'react', 31]
+  ])
+]
+/** Per-task score distribution of the local DiscoveryBench run; partial = 25 − 18 − 5. */
+export const discoveryDistribution = { tasks: 25, full: 18, partial: 2, zero: 5, mean: 0.7467 }
+
+// Terminal-Bench-Science 0.1, 70 tasks. Local: 145 of 210 attempts passed (13 November 2026).
+// Official v0-1-eval leaderboard snapshot of 13 November 2026, 10:55 Beijing time.
+export const tbScienceAttempts = { tasks: 70, attempts: 210, passed: 145 }
+export const tbScience: BenchmarkRecord[] = [
+  {
+    id: 'tbs-1',
+    system: 'AIPOCH Open-Science',
+    model: 'GPT-6 Astra · max',
+    score: 69.0476,
+    source: 'local',
+    group: 'aipoch'
+  },
+  ...snapshot('tbs', 'public', [
+    ['Codex', 'GPT-6 Astra', 68.1, 'codex'],
+    ['Claude Code', 'Opus 5.5', 63.33, 'claude'],
+    ['Claude Code', 'Fable 5.1', 40, 'claude'],
+    ['Claude Code', 'Opus 5', 30, 'claude'],
+    ['Codex', 'GPT-5.6 Sol', 22.38, 'codex'],
+    ['Claude Code', 'Fable 5', 21.43, 'claude'],
+    ['Codex', 'DeepSeek V4.1 Flash', 15.71, 'codex'],
+    ['Grok Build', 'Grok 4.7', 14.29, 'other'],
+    ['mini-SWE-agent', 'Gemini 3.8 Flash', 12.38, 'other'],
+    ['Claude Code', 'Opus 4.8', 10.48, 'claude'],
+    ['Codex', 'GPT-5.6 Terra', 8.57, 'codex'],
+    ['Claude Code', 'GLM 5.3', 8.1, 'claude'],
+    ['Claude Code', 'Kimi K3', 7.14, 'claude'],
+    ['Grok Build', 'Grok 4.6', 7.14, 'other'],
+    ['mini-SWE-agent', 'Gemini 3.7 Flash', 5.71, 'other'],
+    ['Codex', 'DeepSeek V4 Pro', 3.81, 'codex'],
+    ['Codex', 'GPT-5.6 Luna', 3.33, 'codex']
+  ])
+]
+
+// Paper-scale research tasks: four agents, the same ten tasks, one sealed run each.
+export type SuiteAgentId = 'aipoch' | 'codex' | 'evo' | 'claude'
+export type ReplayClass = 'ok' | 'diff' | 'fail'
+export const suiteAgents: {
+  id: SuiteAgentId
+  name: string
+  harness: string
+  model: string
+}[] = [
+  {
+    id: 'aipoch',
+    name: 'AIPOCH Open-Science',
+    harness: 'Open-Science 1.0.3 (B19: 0.37.1)',
+    model: 'GPT-6.1 Sol · high'
+  },
+  { id: 'codex', name: 'Codex', harness: 'Codex CLI 0.158.0', model: 'GPT-6.1 Sol · high' },
+  { id: 'evo', name: 'EvoScientist', harness: 'EvoScientist v0.4.2', model: 'GPT-6.1 Sol · high' },
+  {
+    id: 'claude',
+    name: 'Claude Science',
+    harness: 'Claude Science',
+    model: 'Opus 5.5 as displayed (alias claude-opus-4-8) · high, thinking on'
+  }
+]
+export const suiteTasks: {
+  id: string
+  domain: 'bioinformatics' | 'clinical'
+  title: string
+  version: string
+  doi: string
+}[] = [
+  {
+    id: 'B12',
+    domain: 'bioinformatics',
+    title: 'Drug-specific and time-dependent chromatin responses in cardiomyocytes',
+    version: '6.0.0',
+    doi: '10.1371/journal.pgen.1011900'
+  },
+  {
+    id: 'B13',
+    domain: 'bioinformatics',
+    title: 'Ovarian culture programs and clinical chemotherapy refractoriness',
+    version: '10.0.0',
+    doi: '10.1016/j.mcpro.2025.100965'
+  },
+  {
+    id: 'B14',
+    domain: 'bioinformatics',
+    title: 'Cell states and mosaic GNAS biology in fibrous dysplasia',
+    version: '7.0.0',
+    doi: '10.1016/j.ajhg.2025.07.018'
+  },
+  {
+    id: 'B19',
+    domain: 'bioinformatics',
+    title: 'Malignant-cell states and immune responses in tubo-ovarian cancer',
+    version: '6.0.0',
+    doi: '10.1038/s41590-024-01943-5'
+  },
+  {
+    id: 'B21',
+    domain: 'bioinformatics',
+    title: 'Immune-state and clonal evidence for durable response after CAR-T',
+    version: '4.0.0',
+    doi: '10.1038/s41467-025-59904-x'
+  },
+  {
+    id: 'C04',
+    domain: 'clinical',
+    title: 'Methylcobalamin during adjuvant capecitabine',
+    version: '4.0.1',
+    doi: '10.1136/bmj-2025-084290'
+  },
+  {
+    id: 'C12',
+    domain: 'clinical',
+    title: 'Individualized recommendations for hospitalized patients with acute kidney injury',
+    version: '4.0.0',
+    doi: '10.1001/jama.2024.22718'
+  },
+  {
+    id: 'C33',
+    domain: 'clinical',
+    title: 'Automated insulin delivery in older adults with type 1 diabetes',
+    version: '1.0.0',
+    doi: '10.1056/EVIDoa2400200'
+  },
+  {
+    id: 'C34',
+    domain: 'clinical',
+    title: 'Brain and systemic physiology during circulatory arrest',
+    version: '2.0.0',
+    doi: '10.1038/s41591-025-03889-z'
+  },
+  {
+    id: 'C35',
+    domain: 'clinical',
+    title: 'Cardiovascular risk equations and preventive-treatment policy',
+    version: '1.0.0',
+    doi: '10.1001/jama.2024.12537'
+  }
+]
+/** Scores out of 100 and the independent replay outcome, in suiteTasks order. */
+export const suiteResults: Record<SuiteAgentId, [score: number, replay: string][]> = {
+  aipoch: [
+    [96, 'executed'],
+    [87, 'executed_with_comparison_differences'],
+    [93, 'executed'],
+    [82, 'executed'],
+    [85, 'executed_with_comparison_differences'],
+    [100, 'executed'],
+    [92, 'executed'],
+    [91, 'consistency_passed'],
+    [90, 'consistency_passed'],
+    [83, 'consistency_passed']
+  ],
+  codex: [
+    [92, 'passed'],
+    [88, 'passed_with_auxiliary_file_missing'],
+    [90, 'passed'],
+    [81, 'passed_verified_reuse'],
+    [85, 'passed'],
+    [98, 'passed'],
+    [89, 'passed'],
+    [90, 'passed_timing_difference_only'],
+    [83, 'passed_with_auxiliary_files_missing'],
+    [87, 'passed']
+  ],
+  evo: [
+    [97, 'reproduced'],
+    [90, 'reproduced'],
+    [93, 'reproduced'],
+    [83, 'reproduced'],
+    [85, 'reproduced'],
+    [96, 'reproduced'],
+    [89, 'reproduced'],
+    [89, 'reproduced'],
+    [76, 'reproduced'],
+    [80, 'reproduced_with_equivalent_serialization']
+  ],
+  claude: [
+    [40, 'failed'],
+    [30, 'failed'],
+    [35, 'failed'],
+    [17, 'failed'],
+    [36, 'outputs_regenerated'],
+    [58, 'outputs_regenerated'],
+    [60, 'outputs_partially_regenerated'],
+    [48, 'failed'],
+    [30, 'skipped_missing_steps'],
+    [33, 'no_outputs_observed']
+  ]
+}
+const replayDiffs = new Set([
+  'executed_with_comparison_differences',
+  'passed_with_auxiliary_file_missing',
+  'passed_with_auxiliary_files_missing',
+  'outputs_partially_regenerated'
+])
+const replayFailures = new Set(['failed', 'skipped_missing_steps', 'no_outputs_observed'])
+export function replayClass(status: string): ReplayClass {
+  return replayFailures.has(status) ? 'fail' : replayDiffs.has(status) ? 'diff' : 'ok'
+}
+export function replayLabel(status: string) {
+  const text = status.replaceAll('_', ' ')
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+/** Equal-weight means per task group, matching the supplied summary (one decimal). */
+export function suiteMeans(agent: SuiteAgentId) {
+  const scores = suiteResults[agent].map(([score]) => score)
+  const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length
+  return {
+    bioinformatics: mean(scores.slice(0, 5)),
+    clinical: mean(scores.slice(5)),
+    overall: mean(scores)
+  }
+}
+
+export type MatchOutcome = 'win' | 'tie' | 'loss'
+/** Open-Science against one rival on each task, in suiteTasks order. */
+export function suiteHeadToHead(rival: Exclude<SuiteAgentId, 'aipoch'>) {
+  const outcomes: MatchOutcome[] = suiteResults.aipoch.map(([ours], index) => {
+    const theirs = suiteResults[rival][index][0]
+    return ours > theirs ? 'win' : ours === theirs ? 'tie' : 'loss'
+  })
+  const count = (outcome: MatchOutcome) => outcomes.filter((item) => item === outcome).length
+  return { outcomes, wins: count('win'), ties: count('tie'), losses: count('loss') }
+}
+/** Headline facts for Open-Science on the research tasks, derived from the score matrix. */
+export function suiteHighlights() {
+  const agents = Object.keys(suiteResults) as SuiteAgentId[]
+  const best = suiteTasks.map((_, task) =>
+    Math.max(...agents.map((agent) => suiteResults[agent][task][0]))
+  )
+  const ours = suiteResults.aipoch.map(([score]) => score)
+  const floors = Object.fromEntries(
+    agents.map((agent) => [agent, Math.min(...suiteResults[agent].map(([score]) => score))])
+  ) as Record<SuiteAgentId, number>
+  const perfect = agents.flatMap((agent) =>
+    suiteResults[agent].flatMap(([score], task) =>
+      score === 100 ? [{ agent, task: suiteTasks[task].id }] : []
+    )
+  )
+  return {
+    bestOrShared: ours.filter((score, task) => score === best[task]).length,
+    clinicalOutright: suiteTasks.filter(
+      (task, index) =>
+        task.domain === 'clinical' &&
+        agents.every((agent) => agent === 'aipoch' || suiteResults[agent][index][0] < ours[index])
+    ).length,
+    floors,
+    perfect,
+    replaysPassed: suiteResults.aipoch.filter(([, replay]) => replayClass(replay) !== 'fail').length
+  }
 }

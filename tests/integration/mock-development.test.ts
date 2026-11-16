@@ -975,7 +975,7 @@ describe('mock development end to end', () => {
       ['/agent-skills/literature-review', '2026-10-20'],
       ['/blog', '2026-10-20'],
       ['/blog/release-notes', '2026-11-13'],
-      ['/benchmark/open-science', '2026-10-28'],
+      ['/benchmark/open-science', '2026-11-16'],
       ['/benchmark/medskillaudit', '2026-10-21']
     ]) {
       expect(sitemap).toContain(
