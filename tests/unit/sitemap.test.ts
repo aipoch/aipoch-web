@@ -95,10 +95,11 @@ describe('sitemap', () => {
     expect(routes.some((route) => route.url.includes('/replay/dot-science'))).toBe(false)
     // Track gallery and overview media changes independently from replay pages.
     for (const [path, date] of [
-      ['/open-science/use-cases', '2026-11-03'],
-      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-28'],
-      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-28'],
-      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-28']
+      ['/open-science/use-cases', '2026-11-18'],
+      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-11-17'],
+      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-11-17'],
+      ['/open-science/use-cases/first-flight-vs-evening-flight-which-is-more-reliable', '2026-11-17'],
+      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-11-17']
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
         new Date(date)
@@ -173,7 +174,7 @@ describe('sitemap', () => {
       changeFrequency: 'monthly',
       priority: 0.8
     })
-    expect((medFlowRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
+    expect((medFlowRoute?.lastModified as Date).toISOString()).toBe('2026-11-18T00:00:00.000Z')
 
     expect(agentSkillsRoute).toMatchObject({
       changeFrequency: 'weekly',

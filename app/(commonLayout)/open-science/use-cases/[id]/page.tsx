@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { JsonLd } from '@/components/json-ld'
 import { MarkdownRenderer } from '@/components/markdown'
 import { SITE_DOMAIN } from '@/lib/config'
 import { createPageMetadata } from '@/lib/page-metadata'
@@ -13,6 +14,7 @@ import { ShareRow } from '../_components/share-row'
 import { UseCaseActions } from '../_components/use-case-actions'
 import { UseCaseBackLink } from '../_components/use-case-navigation'
 import { UseCaseVideoPlayer } from '../_components/use-case-video'
+import { buildUseCaseStructuredData } from './structured-data'
 
 // Markdown styles come from app/globals.css → session-transcript.css; do not
 // re-import that file here — Turbopack panics compiling it as a page CSS entry.
@@ -145,6 +147,7 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
   return (
     // One continuous surface (#f7f7f5) for header, article, related, and CTA.
     <ScienceImportProvider key={useCase.slug} packageInfo={useCase.package}>
+      <JsonLd data={buildUseCaseStructuredData(useCase)} />
       <main id="top" className={`-mt-[var(--nav-h)] flex-1 ${surfaceClass} text-[#10110f]`}>
         <section className="pt-[var(--nav-h)]">
           <div className={`${shellClass} pb-12 pt-14 lg:pt-16`}>
