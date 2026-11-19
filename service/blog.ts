@@ -135,10 +135,11 @@ export async function fetchBlogPostsClient(params: {
 /** Use React Query Infinite Query to fetch blog posts with caching and scroll restoration. */
 export function useInfiniteBlogPosts(
   page_size: number = BLOG_PAGE_SIZE,
-  initialData?: { pages: BlogPostsListData[]; pageParams: number[] }
+  initialData?: { pages: BlogPostsListData[]; pageParams: number[] },
+  initialPage = 1
 ) {
   return useInfiniteQuery({
-    queryKey: blogKeys.list(),
+    queryKey: [...blogKeys.list(), page_size, initialPage],
     queryFn: async ({ pageParam = 1 }) => {
       const result = await fetchBlogPostsClient({ page: pageParam, page_size })
       if (result.data === null) {
