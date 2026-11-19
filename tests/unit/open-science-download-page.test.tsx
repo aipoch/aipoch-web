@@ -125,6 +125,10 @@ describe('Open-Science download page', () => {
     manifestShouldFail = true
     const html = renderToStaticMarkup(await OpenScienceDownloadPage())
 
+    expect(html).toContain('Clone https://github.com/aipoch/open-science')
+    expect(html).toContain('at the latest stable release tag')
+    expect(html).toContain('build an installer for my Operating System, then install and open the desktop app')
+    expect(html).not.toContain('npm run dev')
     expect(html).toContain('Installers are temporarily unavailable.')
     expect(html).toContain('View latest release')
     expect(html).toContain('Know before you install.')

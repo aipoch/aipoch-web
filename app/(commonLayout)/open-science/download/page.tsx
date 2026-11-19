@@ -22,6 +22,7 @@ import {
   buildOpenScienceSoftwareApplicationSchema,
   toSchemaDate
 } from '../open-science-structured-data'
+import { AgentInstallPrompt } from './agent-install-prompt'
 import { DownloadCards } from './download-cards'
 
 const downloadPageKeys = [
@@ -67,6 +68,7 @@ const sectionPaddingClass =
 const pageTitle = 'Download AIPOCH Open-Science for macOS, Windows and Linux'
 const pageDescription =
   'Download AIPOCH Open-Science for macOS, Windows x64, and Linux x64 or ARM64. Choose a desktop installer and check installation guidance.'
+const agentPrompt = `Clone ${OPEN_SCIENCE_GITHUB_URL} at the latest stable release tag, follow docs/development-quick-reference.md to build an installer for my Operating System, then install and open the desktop app.`
 const pageUrl = `${SITE_DOMAIN}/open-science/download`
 const downloadPageId = `${pageUrl}#webpage`
 const downloadBreadcrumbId = `${pageUrl}#breadcrumb`
@@ -210,33 +212,32 @@ export default async function OpenScienceDownloadPage() {
             backgroundImage: `linear-gradient(rgba(251, 251, 250, 0.38), rgba(251, 251, 250, 0.78)), url("${heroBackgroundImage.src}")`
           }}
         />
-        <div className="relative z-10 mx-auto flex max-w-[1260px] flex-col items-center px-5 py-20 text-center sm:px-10 lg:py-[104px]">
+        <div className="relative z-10 mx-auto flex w-full max-w-[1260px] flex-col items-center px-5 py-10 text-center sm:px-10 lg:py-4">
           <p className={kickerClass}>OPEN-SCIENCE / DOWNLOAD</p>
           {/* Keep the download page's single H1 semantics from the reference design. */}
           <h1
-            className={`${headingClass} mt-[26px] max-w-[1160px] text-[clamp(44px,5.4vw,78px)] leading-[1.02]`}
+            className={`${headingClass} mt-[26px] max-w-[1160px] text-[clamp(32px,8.5vw,44px)] leading-[1.02] sm:text-[clamp(44px,5.4vw,78px)]`}
           >
             <span className="block">Download Open-Science</span>
             <span className="block">for macOS, Windows and Linux</span>
           </h1>
-          <p className="mt-[34px] max-w-[700px] text-[clamp(16px,1.3vw,20px)] leading-[1.55] text-[#73746e]">
-            Get the open-source, local-first AI research workbench. Choose your platform below and
-            follow the installation guidance for your first launch.
-          </p>
-          {manifest ? (
-            <div
-              role="status"
-              className="mt-9 flex w-fit flex-wrap items-center justify-center gap-x-[18px] gap-y-3 border border-[#dfdfda] bg-white/80 px-[17px] py-[13px] font-mono text-[11px]"
-              aria-label="Latest stable release"
-            >
-              <span
-                className="size-2 rounded-full bg-[#39a35b] shadow-[0_0_0_4px_rgba(57,163,91,0.12)]"
-                aria-hidden="true"
-              />
-              <strong className="tracking-[0.05em]">Stable {version}</strong>
-              {releaseDate ? <span className="text-[#777872]">Released {releaseDate}</span> : null}
-            </div>
-          ) : null}
+          <AgentInstallPrompt prompt={agentPrompt} />
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
+            {manifest ? (
+              <p
+                aria-label="Latest stable release"
+                role="status"
+                className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[11px]"
+              >
+                <span className="size-2 rounded-full bg-[#39a35b]" aria-hidden="true" />
+                <strong>Stable {version}</strong>
+                {releaseDate ? <span className="text-[#656660]">Released {releaseDate}</span> : null}
+              </p>
+            ) : null}
+            <a href="#downloads" className="font-semibold underline underline-offset-4">
+              Choose an installer <span aria-hidden="true">↓</span>
+            </a>
+          </div>
         </div>
       </section>
 

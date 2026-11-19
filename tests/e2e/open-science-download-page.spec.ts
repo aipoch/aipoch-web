@@ -13,6 +13,40 @@ test('renders the Open-Science download page inside the shared site shell', asyn
   await expect(page.locator('footer')).toBeVisible()
 })
 
+test('copies the visible source install prompt from the first screen', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/open-science/download')
+  await page.getByRole('button', { name: 'Reject non-essential', exact: true }).click()
+  const hero = page.locator('main#top > section').first()
+  const prompt = hero.getByText(/^Clone https:\/\/github\.com\/aipoch\/open-science/)
+  const button = hero.getByRole('button', { name: 'Copy prompt' })
+
+  await expect(button).toBeInViewport({ ratio: 1 })
+  const expected = await prompt.innerText()
+  await button.click()
+  await expect(hero.getByRole('button', { name: 'Copied' })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(expected)
+  await hero.getByRole('link', { name: 'Choose an installer' }).click()
+  await expect(page).toHaveURL(/#downloads$/)
+})
+
+test('reveals the name and color of each coding agent in the prompt footer', async ({ page }) => {
+  await page.goto('/open-science/download')
+  await page.getByRole('button', { name: 'Reject non-essential', exact: true }).click()
+  const agents = page.getByRole('list', { name: 'Coding agents for this prompt' })
+  await expect(agents.getByRole('button')).toHaveCount(22)
+  await expect(page.getByText('22 coding agents', { exact: true })).toBeVisible()
+  const claude = agents.getByRole('button', { name: 'Claude Code', exact: true })
+  const mark = claude.locator('span')
+  await expect(mark).toHaveCSS('filter', 'grayscale(1)')
+  await claude.click()
+  await expect(mark).toHaveCSS('filter', 'grayscale(0)')
+  await expect(page.getByText('Claude Code', { exact: true })).toBeVisible()
+  await page.mouse.move(0, 0)
+  await page.keyboard.press('Tab')
+  await expect(page.getByText('OpenCode', { exact: true })).toBeVisible()
+})
+
 test('matches the supplied hero height while keeping content below the navbar', async ({
   page
 }, testInfo) => {
