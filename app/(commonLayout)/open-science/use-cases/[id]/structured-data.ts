@@ -19,7 +19,9 @@ export const buildUseCaseStructuredData = (useCase: UseCaseDetail): Record<strin
         url,
         name: useCase.title,
         ...(useCase.description ? { description: useCase.description } : {}),
-        ...(imageUrl && /^https?:\/\//.test(imageUrl) ? { primaryImageOfPage: imageUrl } : {}),
+        ...(imageUrl && /^https?:\/\//.test(imageUrl)
+          ? { primaryImageOfPage: { '@type': 'ImageObject', contentUrl: imageUrl } }
+          : {}),
         inLanguage: 'en',
         isPartOf: { '@id': AIPOCH_WEBSITE_ID },
         breadcrumb: { '@id': `${url}#breadcrumb` }

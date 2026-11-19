@@ -23,7 +23,10 @@ describe('Open-Science use-case structured data', () => {
       url: 'https://aipoch.com/open-science/use-cases/example-case',
       name: useCase.title,
       description: useCase.description,
-      primaryImageOfPage: 'https://aipoch.com/images/example-case.png'
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        contentUrl: 'https://aipoch.com/images/example-case.png'
+      }
     })
     expect(graph[0]).not.toHaveProperty('datePublished')
     expect(graph[1]).toMatchObject({
@@ -44,5 +47,17 @@ describe('Open-Science use-case structured data', () => {
     const page = (schema['@graph'] as Record<string, unknown>[])[0]
     expect(page).not.toHaveProperty('description')
     expect(page).not.toHaveProperty('primaryImageOfPage')
+  })
+
+  test('preserves an absolute cover URL and omits unsupported image values', () => {
+    for (const coverImage of ['https://example.com/cover.png', 'data:image/png;base64,AA', '']) {
+      const schema = buildUseCaseStructuredData({ slug: 'sample', title: 'Sample', coverImage })
+      const page = (schema['@graph'] as Record<string, unknown>[])[0]
+      if (coverImage.startsWith('https://')) {
+        expect(page.primaryImageOfPage).toEqual({ '@type': 'ImageObject', contentUrl: coverImage })
+      } else {
+        expect(page).not.toHaveProperty('primaryImageOfPage')
+      }
+    }
   })
 })
