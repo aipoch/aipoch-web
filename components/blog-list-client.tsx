@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useMemo, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { BlogCard } from '@/components/blog-card'
@@ -20,19 +21,20 @@ import { type BlogPostsListData, useInfiniteBlogPosts } from '@/service/blog'
 const blogHeroBackground = staticImage('blog-hero-background-ef51ee4b.webp')
 
 interface BlogListClientProps {
-  /** First-page data prefetched on the server in useInfiniteQuery format. */
+  initialPage?: number
+  /** Cumulative pages prefetched on the server in useInfiniteQuery format. */
   initialData?: { pages: BlogPostsListData[]; pageParams: number[] }
 }
 
-export function BlogListClient({ initialData }: BlogListClientProps) {
+export function BlogListClient({ initialData, initialPage = 1 }: BlogListClientProps) {
   const [visibleCount, setVisibleCount, viewReady] = useNavigationViewState(
-    'blog-visible-count',
-    BLOG_LIST_INITIAL_VISIBLE
+    `blog-visible-count:${initialPage}`,
+    BLOG_LIST_INITIAL_VISIBLE * initialPage
   )
   const listHeadingRef = useRef<HTMLHeadingElement>(null)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch } =
-    useInfiniteBlogPosts(BLOG_LIST_INITIAL_VISIBLE + 1, initialData)
+    useInfiniteBlogPosts(BLOG_LIST_INITIAL_VISIBLE + 1, initialData, initialPage)
 
   const posts: BlogPost[] = useMemo(
     () => data?.pages.flatMap((p) => p.items.map(mapListItemToBlogPost)) ?? [],
@@ -164,17 +166,34 @@ export function BlogListClient({ initialData }: BlogListClientProps) {
 
         {showLoadControl && !isError && (
           <div className="mt-10 flex justify-center">
-            <button
-              type="button"
-              onClick={handleLoadControl}
-              disabled={isFetchingNextPage}
-              className={cn(
-                'inline-flex h-11 w-[148px] cursor-pointer items-center justify-center gap-2 bg-[#171717] px-4 py-3 text-sm font-semibold leading-5 text-white hover:opacity-80 disabled:pointer-events-none'
-              )}
-            >
-              <span>{canCollapse ? 'Show less' : 'Show more'}</span>
-              {canCollapse ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </button>
+            {canCollapse ? (
+              <button
+                type="button"
+                onClick={handleLoadControl}
+                disabled={isFetchingNextPage}
+                className={cn(
+                  'inline-flex h-11 w-[148px] cursor-pointer items-center justify-center gap-2 bg-[#171717] px-4 py-3 text-sm font-semibold leading-5 text-white hover:opacity-80 disabled:pointer-events-none'
+                )}
+              >
+                <span>Show less</span>
+                <ChevronUp className="size-4" />
+              </button>
+            ) : (
+              <Link
+                href={`/blog?page=${Math.floor(visibleCount / BLOG_LIST_INITIAL_VISIBLE) + 1}`}
+                prefetch={false}
+                aria-disabled={isFetchingNextPage || undefined}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  event.preventDefault()
+                  if (!isFetchingNextPage) void handleLoadControl()
+                }}
+                className="inline-flex h-11 w-[148px] cursor-pointer items-center justify-center gap-2 bg-[#171717] px-4 py-3 text-sm font-semibold leading-5 text-white hover:opacity-80 aria-disabled:pointer-events-none"
+              >
+                <span>Show more</span>
+                <ChevronDown className="size-4" />
+              </Link>
+            )}
           </div>
         )}
 

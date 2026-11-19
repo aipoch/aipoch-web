@@ -83,6 +83,87 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('server-renders crawlable blog pagination and normalized canonicals', async () => {
+    for (const [path, count, canonicalPage, nextPage] of [
+      ['/blog', 10, 1, 2],
+      ['/blog?page=2', 19, 2, 3],
+      ['/blog?page=3', 24, 3, undefined],
+      ['/blog?page=999', 24, 3, undefined],
+      ['/blog?page=invalid', 10, 1, 2]
+    ] as const) {
+      const response = await fetch(`${web}${path}`)
+      expect(response.status).toBe(200)
+      const html = await renderedHtml(response)
+      expect([...html.matchAll(/<a[^>]*href="\/blog\/[^"?]+"/g)]).toHaveLength(count)
+      const canonical = `https://aipoch.com/blog${canonicalPage > 1 ? `?page=${canonicalPage}` : ''}`
+      expect(html).toContain(`<link rel="canonical" href="${canonical}"`)
+      if (nextPage) expect(html).toMatch(new RegExp(`<a[^>]*href="/blog\\?page=${nextPage}"`))
+      else expect(html).not.toContain('Show more')
+    }
+    const gallery = await renderedHtml(await fetch(`${web}/open-science/use-cases?page=2`))
+    expect(gallery).toContain(
+      '<link rel="canonical" href="https://aipoch.com/open-science/use-cases?page=2"'
+    )
+  }, 60000)
+
+  test('serves crawlable blog pages and gallery canonicals with progressive loading intact', async () => {
+    const browser = await chromium.launch()
+    try {
+      const noScript = await browser.newContext({ javaScriptEnabled: false })
+      const crawler = await noScript.newPage()
+      await crawler.goto(`${web}/blog`)
+      const cards = crawler.locator('main a[href^="/blog/"]')
+      await browserExpect(cards).toHaveCount(10)
+      await browserExpect(crawler.getByRole('link', { name: 'Show more' })).toHaveAttribute(
+        'href',
+        '/blog?page=2'
+      )
+      await crawler.getByRole('link', { name: 'Show more' }).click()
+      await browserExpect(cards).toHaveCount(19)
+      await browserExpect(crawler.locator('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        'https://aipoch.com/blog?page=2'
+      )
+      await crawler.getByRole('link', { name: 'Show more' }).click()
+      await browserExpect(cards).toHaveCount(24)
+      await browserExpect(crawler.getByRole('link', { name: 'Show more' })).toHaveCount(0)
+      await crawler.goto(`${web}/open-science/use-cases?page=2`)
+      await browserExpect(crawler.locator('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        'https://aipoch.com/open-science/use-cases?page=2'
+      )
+      await noScript.close()
+
+      for (const device of ['desktop', 'mobile']) {
+        const context = await browser.newContext(
+          device === 'mobile' ? devices['Pixel 5'] : { viewport: { width: 1440, height: 900 } }
+        )
+        const page = await context.newPage()
+        await page.goto(`${web}/blog`)
+        const reject = page.getByRole('button', { name: 'Reject Non-Essential' })
+        if (await reject.isVisible()) await reject.click()
+        const articles = page.locator('main a[href^="/blog/"]')
+        await page.getByRole('link', { name: 'Show more' }).click()
+        await browserExpect(articles).toHaveCount(19)
+        await browserExpect(page).toHaveURL(`${web}/blog`)
+        await page.getByRole('link', { name: 'Show more' }).click()
+        await browserExpect(articles).toHaveCount(24)
+        await page.getByRole('button', { name: 'Show less' }).click()
+        await browserExpect(articles).toHaveCount(10)
+        await page.goto(`${web}/blog?page=2`)
+        await browserExpect(articles).toHaveCount(19)
+        await page.reload()
+        await browserExpect(articles).toHaveCount(19)
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true
+        )
+        await context.close()
+      }
+    } finally {
+      await browser.close()
+    }
+  }, 120000)
+
   test('renders autoplay videos before blog content and replaces the product hero screenshot', async () => {
     const articleHtml = await renderedHtml(await fetch(`${web}/blog/what-is-a-skill`))
     expect(articleHtml).toContain('youtube-nocookie.com/embed/ijpmwTPK8pU')
@@ -973,7 +1054,7 @@ describe('mock development end to end', () => {
       ['', '2026-10-27'],
       ['/agent-skills/list', '2026-10-20'],
       ['/agent-skills/literature-review', '2026-10-20'],
-      ['/blog', '2026-10-20'],
+      ['/blog', '2026-11-19'],
       ['/blog/release-notes', '2026-11-13'],
       ['/benchmark/open-science', '2026-11-16'],
       ['/benchmark/medskillaudit', '2026-10-21']
@@ -1771,7 +1852,7 @@ describe('mock development end to end', () => {
         if (await reject.isVisible()) await reject.click()
         const cards = page.locator('main a[href^="/blog/"]')
         await browserExpect(cards).toHaveCount(10)
-        await page.getByRole('button', { name: 'Show more' }).click()
+        await page.getByRole('link', { name: 'Show more' }).click()
         await browserExpect(cards).toHaveCount(19)
         await cards.nth(14).scrollIntoViewIfNeeded()
         const y = await page.evaluate(() => window.scrollY)
