@@ -7,7 +7,7 @@ import {
 } from '@/lib/science-package/sdk'
 
 const MAX_BYTES = 2 * 1024 ** 3
-type PackageSource = { url: string; filename: string }
+type PackageSource = { url: string; filename: string; sizeBytes?: number; sha256?: string }
 type DownloadProgress = { loaded: number; total?: number }
 export type ImportState = {
   phase:
@@ -245,9 +245,12 @@ export function createScienceImport(
       // Only the operation that prepared this Blob may automatically launch it.
       if (await session.prepare()) await session.open()
     },
-    async prepare(): Promise<boolean> {
+    preparedFile() {
+      return blob
+    },
+    async prepare(downloadOnly = false): Promise<boolean> {
       if (busy || disposed || received || blob) return false
-      if (deps.mobile()) {
+      if (!downloadOnly && deps.mobile()) {
         emit({
           phase: 'unsupported',
           action: 'prepare',
@@ -255,7 +258,7 @@ export function createScienceImport(
         })
         return false
       }
-      if (!deps.supported()) {
+      if (!downloadOnly && !deps.supported()) {
         emit({
           phase: 'unsupported',
           action: 'prepare',
@@ -275,10 +278,9 @@ export function createScienceImport(
       controller = new AbortController()
       const operation = controller
       let stage: 'downloading' | 'preparing' = 'downloading'
-      const timeout = setTimeout(
-        () => operation.abort(new DOMException('Download timed out', 'TimeoutError')),
-        120_000
-      )
+      const expire = () => operation.abort(new DOMException('Download timed out', 'TimeoutError'))
+      let timeout = setTimeout(expire, 120_000)
+      let lastProgress = -Infinity
       const signal = operation.signal
       try {
         await waitForBrowserMock()
@@ -289,24 +291,50 @@ export function createScienceImport(
           {
             signal,
             onProgress: (progress) => {
-              if (!signal.aborted)
-                emit({
-                  phase: 'downloading',
-                  message: 'Downloading .science package…',
-                  ...progress
-                })
+              if (signal.aborted) return
+              if (downloadOnly) {
+                const now = performance.now()
+                if (now - lastProgress < 150 && progress.loaded !== progress.total) return
+                lastProgress = now
+                // Large labs can take several minutes on a healthy connection.
+                clearTimeout(timeout)
+                timeout = setTimeout(expire, 120_000)
+              }
+              emit({
+                phase: 'downloading',
+                message: 'Downloading .science package…',
+                ...progress
+              })
             }
           }
         )
         signal.throwIfAborted()
         if (disposed) return false
+        if (source.sizeBytes !== undefined && downloaded.size !== source.sizeBytes)
+          throw new DownloadError(
+            'The package size does not match the catalog. Try downloading again.'
+          )
+        if (source.sha256 && globalThis.crypto?.subtle) {
+          const digest = await crypto.subtle.digest('SHA-256', await downloaded.arrayBuffer())
+          const hex = Array.from(new Uint8Array(digest), (b) =>
+            b.toString(16).padStart(2, '0')
+          ).join('')
+          if (hex !== source.sha256.toLowerCase())
+            throw new DownloadError(
+              'The package checksum does not match the catalog. Try downloading again.'
+            )
+        }
+        signal.throwIfAborted()
+        if (disposed) return false
         blob = downloaded
         // Parameter/SDK failures retain the downloaded bytes and never trigger another download.
         stage = 'preparing'
-        freshTransfer()
+        if (!downloadOnly) freshTransfer()
         emit({
           phase: 'ready',
-          message: 'Package ready. Open Open-Science to continue.',
+          message: downloadOnly
+            ? 'Package ready. Choose where to open it.'
+            : 'Package ready. Open Open-Science to continue.',
           action: 'open'
         })
         return true
@@ -340,6 +368,13 @@ export function createScienceImport(
     },
     async open(requestLaunch = true) {
       if (busy || disposed || received || !blob) return
+      if (deps.mobile() || !deps.supported()) {
+        emit({
+          phase: 'unsupported',
+          message: 'Save the package and open it in Open-Science on a desktop computer.'
+        })
+        return
+      }
       busy = true
       controller = new AbortController()
       const signal = controller.signal

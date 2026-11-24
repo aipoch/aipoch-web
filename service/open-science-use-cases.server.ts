@@ -2,7 +2,7 @@ import 'server-only'
 import { after } from 'next/server'
 import { cache } from 'react'
 import { API_URL, STATIC_ASSETS_ORIGIN } from '@/lib/config'
-import { createUseCaseManifestCache } from '@/lib/use-case-manifest'
+import { createUseCaseManifestCache, parseGuidedLab } from '@/lib/use-case-manifest'
 import type { UseCaseDetail, UseCaseIndexEntry } from '@/lib/use-case-types'
 
 // Manifest-relative resources share the configured public static asset origin.
@@ -45,6 +45,16 @@ export const fetchUseCaseList = async (): Promise<UseCaseIndexEntry[] | null> =>
   }
 }
 
+export const fetchGuidedLab = cache(async (url: string) => {
+  try {
+    const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) })
+    if (response.ok) return parseGuidedLab(await response.json(), url)
+  } catch {
+    // The catalog and other cases remain available if one publisher resource is missing.
+  }
+  return undefined
+})
+
 export const fetchUseCaseDetail = async (slug: string): Promise<UseCaseDetail | null> => {
   try {
     const entries = await readManifest()
@@ -55,6 +65,10 @@ export const fetchUseCaseDetail = async (slug: string): Promise<UseCaseDetail | 
       title: entry.title,
       coverImage: entry.preview?.image,
       video: entry.video,
+      ...(entry.labManifestUrl && {
+        labManifestUrl: entry.labManifestUrl,
+        lab: await fetchGuidedLab(entry.labManifestUrl)
+      }),
       package: entry.package,
       introductionUrl: entry.introductionUrl
     }

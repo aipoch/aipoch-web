@@ -34,10 +34,12 @@ export const UseCaseNavigation = ({ children }: { children: ReactNode }) => {
 /** Preserve normal links for direct visits, new tabs, and browsers without JavaScript. */
 export const UseCaseBackLink = ({
   href,
+  newTab,
   className,
   children
 }: {
   href: string
+  newTab?: boolean
   className?: string
   children: ReactNode
 }) => {
@@ -46,9 +48,12 @@ export const UseCaseBackLink = ({
   return (
     <Link
       href={href}
+      target={newTab ? '_blank' : undefined}
+      rel={newTab ? 'noopener' : undefined}
       className={className}
       onClick={(event) => {
         if (
+          newTab ||
           backPath !== href ||
           event.button !== 0 ||
           event.metaKey ||

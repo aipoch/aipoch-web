@@ -9,7 +9,10 @@ import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 import { USE_CASE_BATCH_SIZE } from './use-case-gallery-data'
 import { UseCaseVideoPlayer } from './use-case-video'
 
-type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview' | 'video'>
+type GalleryEntry = Pick<
+  UseCaseIndexEntry,
+  'slug' | 'title' | 'preview' | 'video' | 'labManifestUrl'
+>
 type ImageSize = { width: number; height: number }
 type GalleryView = { count: number; images: Record<string, ImageSize> }
 
@@ -74,6 +77,9 @@ const GalleryCard = ({
       onFocus={() => setActive(true)}
       onBlur={() => setActive(false)}
       href={`/open-science/use-cases/${useCase.slug}`}
+      prefetch={useCase.labManifestUrl ? false : undefined}
+      target={useCase.labManifestUrl ? '_blank' : undefined}
+      rel={useCase.labManifestUrl ? 'noopener' : undefined}
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
       <div

@@ -9,6 +9,7 @@ const entries: UseCaseIndexEntry[] = Array.from({ length: 15 }, (_, index) => ({
 }))
 let result: UseCaseIndexEntry[] | null = entries
 mock.module('@/service/open-science-use-cases.server', () => ({
+  fetchGuidedLab: async () => ({ screenshotUrl: '/original-opening.png' }),
   fetchUseCaseList: async () => result
 }))
 const { default: UseCasesPage } = await import(
@@ -126,4 +127,17 @@ test('passes optional video metadata into gallery cards without eagerly loading 
   expect(html.match(/data-testid="video-play-indicator"/g)).toHaveLength(1)
   expect(html).toContain('/case-1.png')
   expect(html).not.toContain('<iframe')
+})
+
+test('uses the published screenshot in the carousel and the list cover in the gallery', async () => {
+  result = [{ ...entries[0], labManifestUrl: '/lab.json' }, entries[1]]
+  const html = await render()
+  const [carousel, gallery] = html.split('aria-label="Use case gallery"')
+  expect(carousel).toContain('/original-opening.png')
+  expect(carousel).not.toContain('/case-1.png')
+  expect(gallery).toContain('/case-1.png')
+  expect(gallery).not.toContain('/original-opening.png')
+  const links = [...gallery.matchAll(/<a [^>]*>/g)].map(([tag]) => tag)
+  expect(links.find((tag) => tag.includes('/research-1"'))).toContain('target="_blank"')
+  expect(links.find((tag) => tag.includes('/research-2"'))).not.toContain('target="_blank"')
 })

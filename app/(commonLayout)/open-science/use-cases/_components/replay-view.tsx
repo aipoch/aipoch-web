@@ -16,13 +16,22 @@ import {
 import { SessionTranscript } from './session-transcript'
 import { UseCaseBackLink } from './use-case-navigation'
 
-const TopBar = ({ slug, packageUrl }: { slug: string; packageUrl?: string }) => (
+const TopBar = ({
+  slug,
+  packageUrl,
+  isLab
+}: {
+  slug: string
+  packageUrl?: string
+  isLab?: boolean
+}) => (
   <section
     aria-label="Replay import actions"
     className="sticky top-[var(--nav-h)] z-10 border-b border-[#dfdfda] bg-[#fafaf8]/90 backdrop-blur-sm"
   >
     <div className="mx-auto flex min-h-[47px] w-full max-w-4xl flex-wrap items-center gap-3 px-4 py-2.5 max-sm:justify-end max-sm:gap-2 max-sm:pl-36 max-[375px]:pl-24 md:px-6">
       <UseCaseBackLink
+        newTab={isLab}
         href={`/open-science/use-cases/${slug}`}
         className="shrink-0 text-[13px] font-medium text-[#575853] transition-colors hover:text-[#10110f] max-sm:absolute max-sm:left-4 max-sm:top-1/2 max-[375px]:max-w-20 max-sm:-translate-y-1/2 md:absolute md:top-1/2 md:-translate-y-1/2"
       >
@@ -99,15 +108,17 @@ const ReplayProgress = ({ progress }: { progress: PackageProgress | { stage: 'me
 const ReplayFrame = ({
   slug,
   packageInfo,
+  isLab,
   children
 }: {
   slug: string
   packageInfo?: UseCasePackage
+  isLab?: boolean
   children: React.ReactNode
 }) => (
   <ScienceImportProvider key={slug} packageInfo={packageInfo}>
     <main id="top" className="-mt-[var(--nav-h)] flex-1 bg-[#fafaf8] pt-[var(--nav-h)]">
-      <TopBar slug={slug} packageUrl={packageInfo?.url} />
+      <TopBar slug={slug} isLab={isLab} packageUrl={packageInfo?.url} />
       {children}
     </main>
   </ScienceImportProvider>
@@ -122,10 +133,12 @@ export const ReplayLoading = ({ slug }: { slug: string }) => (
 export const ReplayView = ({
   slug,
   packageInfo,
+  isLab,
   error
 }: {
   slug: string
   packageInfo: UseCasePackage | null
+  isLab?: boolean
   error?: string
 }) => {
   const router = useRouter()
@@ -153,7 +166,7 @@ export const ReplayView = ({
       : undefined
     : (error ?? 'Research package not found.')
   return (
-    <ReplayFrame slug={slug} packageInfo={packageInfo ?? undefined}>
+    <ReplayFrame slug={slug} isLab={isLab} packageInfo={packageInfo ?? undefined}>
       {'data' in state && state.data && !refreshing ? (
         <SessionTranscript
           session={state.data}

@@ -83,6 +83,112 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('opens a manifest lab and shares one downloaded file between save and desktop import', async () => {
+    const controls = `${api}/__mock/use-case-manifest`
+    const update = (body: object) => fetch(controls, { method: 'PUT', body: JSON.stringify(body) })
+    const browser = await chromium.launch()
+    try {
+      await update({ mode: 'labs', replayChunkDelayMs: 45 })
+      const page = await browser.newPage({ reducedMotion: 'reduce' })
+      const gallery = `${web}/open-science/use-cases`
+      await browserExpect
+        .poll(async () => (await renderedHtml(await fetch(gallery))).includes('Guided 3D labs'))
+        .toBe(true)
+      await page.goto(gallery)
+      const region = page.getByRole('region', { name: 'Guided 3D labs' })
+      const consent = page.getByRole('button', { name: 'Reject non-essential' })
+      if (await consent.isVisible()) await consent.click()
+      await browserExpect(region.locator('a[data-slot]:not([inert])')).toHaveCount(5)
+      await browserExpect(
+        region.getByRole('heading', { name: '3D Labs', exact: true })
+      ).toHaveCount(0)
+      const side = region.locator('[data-slot="2"]')
+      const destination = await side.getAttribute('href')
+      if (!destination) throw Error('Missing lab destination')
+      await side.focus()
+      await side.press('Enter')
+      const active = region.locator('[data-slot="0"]')
+      await browserExpect(active).toHaveAttribute('href', destination)
+      const listCard = page
+        .getByRole('region', { name: 'Use case gallery' })
+        .locator(`a[href="${destination}"]`)
+      await browserExpect(listCard).toHaveAttribute('target', '_blank')
+      await browserExpect(active.locator('img')).toHaveAttribute('src', /lab-opening\.svg$/)
+      expect(await listCard.locator('img').getAttribute('src')).not.toBe(
+        await active.locator('img').getAttribute('src')
+      )
+      await browserExpect(region.getByText('Explore', { exact: true })).toHaveCount(1)
+      const opened = page.waitForEvent('popup')
+      await active.getByText('Explore', { exact: true }).click()
+      const labPage = await opened
+      await browserExpect(labPage).toHaveURL(web + destination)
+      await browserExpect(page).toHaveURL(gallery)
+      const stats = async () => (await (await fetch(controls)).json()).packageRequests
+      const initial = await stats()
+      const promptRequests: string[] = []
+      labPage.on('request', (request) => {
+        if (new URL(request.url()).pathname.endsWith('/prompt.txt'))
+          promptRequests.push(request.url())
+      })
+      await labPage
+        .frameLocator('main iframe')
+        .getByRole('button', { name: 'Open project' })
+        .click()
+      const dialog = labPage.getByRole('dialog', { name: /./ })
+      await browserExpect(dialog).toBeVisible()
+      await browserExpect(dialog.getByText('Research prompt', { exact: true })).toHaveCount(0)
+      await browserExpect(dialog.getByRole('button', { name: 'Copy research prompt' })).toHaveCount(
+        0
+      )
+      await labPage
+        .context()
+        .grantPermissions(['clipboard-read', 'clipboard-write'], { origin: web })
+      const clipboard = () => labPage.evaluate(() => navigator.clipboard.readText())
+      const disclosure = dialog.getByRole('button', { name: 'Open with an agent' })
+      const instructions = dialog.getByRole('textbox', { name: 'Agent import prompt' })
+      await browserExpect(disclosure).toHaveAttribute('aria-expanded', 'true')
+      await browserExpect(instructions).toBeVisible()
+      const importText = await instructions.inputValue()
+      expect(importText).toContain('.science')
+      expect(importText).not.toMatch(/research prompt|prompt\.txt/i)
+      await dialog.getByRole('button', { name: 'Copy import instructions' }).click()
+      await browserExpect.poll(clipboard).toBe(importText)
+      await disclosure.click()
+      await browserExpect(disclosure).toHaveAttribute('aria-expanded', 'false')
+      await dialog.getByRole('button', { name: 'Close project' }).click()
+      await labPage.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(instructions).toBeVisible()
+      await browserExpect(instructions).not.toBeEditable()
+      await browserExpect(instructions).toHaveCSS('resize', 'none')
+      expect(await stats()).toBe(initial)
+      await dialog.getByRole('button', { name: 'Download .science' }).click()
+      await browserExpect(dialog.getByRole('progressbar')).toBeVisible()
+      const saved = labPage.waitForEvent('download')
+      await dialog.getByRole('button', { name: 'Save to device' }).click()
+      expect((await saved).suggestedFilename()).toEndWith('.science')
+      await dialog.getByRole('button', { name: 'Import into Open-Science' }).click()
+      // The mock adapter deliberately has no desktop receiver. Exercise the SDK launch,
+      // cancel the wait and verify the prepared bytes remain available for another action.
+      await browserExpect(dialog.getByRole('status')).toContainText('Waiting for Open-Science')
+      await dialog.getByRole('button', { name: 'Cancel' }).click()
+      await browserExpect(
+        dialog.getByRole('button', { name: 'Import into Open-Science' })
+      ).toBeEnabled()
+      expect(await stats()).toBe(initial + 1)
+      expect(promptRequests).toHaveLength(0)
+    } finally {
+      await browser.close()
+      await update({ mode: 'normal', replayChunkDelayMs: 0 })
+      await browserExpect
+        .poll(async () =>
+          (await renderedHtml(await fetch(`${web}/open-science/use-cases`))).includes(
+            'Guided 3D labs'
+          )
+        )
+        .toBe(false)
+    }
+  }, 90000)
+
   test('renders autoplay videos before blog content and replaces the product hero screenshot', async () => {
     const articleHtml = await renderedHtml(await fetch(`${web}/blog/what-is-a-skill`))
     expect(articleHtml).toContain('youtube-nocookie.com/embed/ijpmwTPK8pU')

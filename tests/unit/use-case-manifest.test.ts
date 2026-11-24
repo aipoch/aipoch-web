@@ -555,3 +555,36 @@ test('maps video metadata independently for any case without affecting cases wit
   expect(entries[2].video).toBeUndefined()
   expect(entries.every((entry) => Boolean(entry.preview?.image))).toBe(true)
 })
+
+test('discovers 3D Labs by catalog and resolves their published resource filenames', async () => {
+  const { parseGuidedLab, parseUseCaseManifest } = await import('../../lib/use-case-manifest')
+  const entries = (await import('../../mocks/fixtures/guided-labs')).guidedLabFixtures
+  const base = 'https://example.test/public/manifest.json'
+  const [entry] = parseUseCaseManifest(entries, base)
+  expect(entry.labManifestUrl).toBe(`https://example.test/public/${entry.slug}/lab.json`)
+  const res = { bytes: 1, sha256: 'a'.repeat(64) }
+  const descriptor = {
+    entry: { ...res, file_name: 'Start here.html' },
+    prompt: { ...res, file_name: 'brief.txt' }
+  }
+  if (!entry.labManifestUrl) throw new Error('Missing lab descriptor URL')
+  expect(parseGuidedLab(descriptor, entry.labManifestUrl)).toEqual({
+    entryUrl: `https://example.test/public/${entry.slug}/Start%20here.html`
+  })
+  expect(
+    parseGuidedLab(
+      {
+        ...descriptor,
+        screenshot: { ...res, file_name: 'Lab opening.png' }
+      },
+      entry.labManifestUrl
+    ).screenshotUrl
+  ).toBe(`https://example.test/public/${entry.slug}/Lab%20opening.png`)
+  expect(() =>
+    parseGuidedLab({ ...descriptor, entry: { ...res, file_name: '../outside.html' } }, base)
+  ).toThrow()
+  expect(parseGuidedLab({ entry: descriptor.entry }, base).entryUrl).toBe(
+    'https://example.test/public/Start%20here.html'
+  )
+  expect(() => parseGuidedLab({}, base)).toThrow()
+})

@@ -1,0 +1,113 @@
+.carousel {
+  container-type: inline-size;
+  color: #171815;
+}
+.stage {
+  position: relative;
+  height: clamp(104px, 25cqw, 325px);
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+.stage::after {
+  content: "";
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  pointer-events: none;
+  backdrop-filter: blur(3px);
+  mask-image: linear-gradient(to right, black, transparent 10%, transparent 90%, black);
+}
+.card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40%;
+  aspect-ratio: 16 / 9;
+  border-radius: clamp(4px, 0.8cqw, 12px);
+  overflow: hidden;
+  background: #1d2224;
+  box-shadow: 0 5px 14px #302e272a;
+  transition:
+    transform 0.6s cubic-bezier(0.22, 0.72, 0.25, 1),
+    opacity 0.48s ease;
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px #ffffff35;
+  background: #0003;
+  transition: background 0.45s;
+}
+.card[data-slot="0"]::after,
+.card:hover::after {
+  background: transparent;
+}
+.caption {
+  width: min(88%, 36ch);
+  margin: clamp(6px, 0.65cqw, 10px) auto 0;
+  min-height: 2.4em;
+  font-size: clamp(18px, 2.3cqw, 33px);
+  font-weight: 550;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+.caption a {
+  display: block;
+}
+.caption a > span:first-child {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.explore {
+  position: absolute;
+  z-index: 1;
+  bottom: clamp(6px, 1.1cqw, 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  border: 1px solid #ffffffad;
+  border-radius: 999px;
+  padding: 0.45em 0.95em;
+  background: #fffffff0;
+  color: #171815;
+  box-shadow: 0 2px 10px #0003;
+  font-size: clamp(11px, 1.12cqw, 16px);
+  line-height: 1.2;
+  font-weight: 600;
+}
+.explore svg {
+  width: 1em;
+  height: 1em;
+}
+.card:focus-visible,
+.caption a:focus-visible {
+  outline: 2px solid #30312e;
+  outline-offset: 3px;
+}
+@container (max-width: 520px) {
+  .card {
+    width: 42%;
+  }
+  .stage {
+    height: 34cqw;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card::after {
+    transition: none;
+  }
+}

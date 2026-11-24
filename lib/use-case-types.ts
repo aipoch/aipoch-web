@@ -240,7 +240,13 @@ export interface UseCaseVideo {
   title?: string
 }
 
+export interface GuidedLab {
+  screenshotUrl?: string
+  entryUrl: string
+}
+
 export interface UseCaseIndexEntry {
+  labManifestUrl?: string
   video?: UseCaseVideo
   slug: string
   title: string
@@ -277,6 +283,8 @@ export interface UseCaseReportRef {
 
 /** Detail metadata derived from the shared manifest snapshot. */
 export interface UseCaseDetail {
+  labManifestUrl?: string
+  lab?: GuidedLab
   video?: UseCaseVideo
   slug: string
   title: string

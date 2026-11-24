@@ -121,6 +121,9 @@ export const parseUseCaseManifest = (
             ...(catalogKey ? { catalogKey } : {})
           }),
       preview: { image: resourceUrl(cover) },
+      ...(catalogKey === '3-d-lab' && {
+        labManifestUrl: new URL(`${item.name}/lab.json`, base).href
+      }),
       ...(video ? { video } : {}),
       package: {
         extractedBaseUrl: new URL(`${item.name}/extracted/`, base).href,
@@ -139,6 +142,18 @@ export const parseUseCaseManifest = (
           })
     }
   })
+}
+
+/** Resolve the published lab entry and its optional carousel screenshot. */
+export const parseGuidedLab = (value: unknown, manifestUrl: string) => {
+  const item = record(value, 'lab')
+  const urlFor = (key: 'entry' | 'screenshot') =>
+    new URL(encodeURIComponent(resource(item[key], `lab.${key}`).file_name), httpUrl(manifestUrl))
+      .href
+  return {
+    entryUrl: urlFor('entry'),
+    ...(item.screenshot !== undefined && { screenshotUrl: urlFor('screenshot') })
+  }
 }
 
 // Manifest entries and resource contents stay out of cache diagnostics.

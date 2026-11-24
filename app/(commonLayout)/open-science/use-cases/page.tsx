@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SITE_DOMAIN } from '@/lib/config'
 import { createPageMetadata } from '@/lib/page-metadata'
-import { fetchUseCaseList } from '@/service/open-science-use-cases.server'
+import { fetchGuidedLab, fetchUseCaseList } from '@/service/open-science-use-cases.server'
+import { LabCarousel } from './_components/lab-carousel'
 import { UseCaseCategories } from './_components/use-case-categories'
 import { UseCaseGallery } from './_components/use-case-gallery'
 import { USE_CASE_BATCH_SIZE } from './_components/use-case-gallery-data'
@@ -40,6 +41,22 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
   // or revealing batches, without mutating the shared cached snapshot.
   // The manifest has no publication dates; this is reverse source order.
   const useCases = manifest ? [...manifest].reverse() : null
+  const featured = (useCases ?? [])
+    .flatMap((item) =>
+      item.labManifestUrl ? [{ ...item, labManifestUrl: item.labManifestUrl }] : []
+    )
+    .slice(0, 5)
+  const labs = (
+    await Promise.all(
+      featured.map(async (item) => {
+        const lab = await fetchGuidedLab(item.labManifestUrl)
+        if (!lab) return []
+        // Older descriptors use the catalog cover for both placements.
+        const image = lab.screenshotUrl ?? item.preview?.image
+        return image ? [{ slug: item.slug, title: item.title, image }] : []
+      })
+    )
+  ).flat()
   const loadFailed = useCases === null
 
   // Categories derive from the manifest catalog/catalog_name fields; counts
@@ -95,6 +112,12 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
         </div>
       </section>
 
+      {labs.length > 0 && (
+        <div className="mx-auto -mt-6 w-full max-w-[1440px] px-3 pb-16 sm:px-10 lg:-mt-10 lg:px-20 lg:pb-24">
+          <LabCarousel labs={labs} />
+        </div>
+      )}
+
       <div className="mx-auto -mt-6 w-full max-w-[1440px] px-5 pb-8 sm:px-10 lg:-mt-10 lg:px-20">
         <UseCaseCategories
           total={useCases?.length ?? 0}
@@ -125,10 +148,11 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
             key={activeCategory ?? 'all'}
             category={activeCategory}
             initialCount={initialCount}
-            items={visibleUseCases.map(({ slug, title, preview, video }) => ({
+            items={visibleUseCases.map(({ slug, title, preview, video, labManifestUrl }) => ({
               slug,
               title,
               preview,
+              labManifestUrl,
               video
             }))}
           />
