@@ -7,7 +7,7 @@ import { createPageMetadata } from '@/lib/page-metadata'
 import { fetchUseCaseList } from '@/service/open-science-use-cases.server'
 import { UseCaseCategories } from './_components/use-case-categories'
 import { UseCaseGallery } from './_components/use-case-gallery'
-import { USE_CASE_BATCH_SIZE } from './_components/use-case-gallery-data'
+import { getUseCaseGalleryPage, USE_CASE_BATCH_SIZE } from './_components/use-case-gallery-data'
 
 const headingClass = 'font-[Georgia,serif] font-normal tracking-normal'
 /** Shared surface for the gallery grid and bottom CTA. */
@@ -28,22 +28,29 @@ const gallerySchema = {
   isPartOf: { '@id': AIPOCH_WEBSITE_ID }
 }
 
-export const metadata: Metadata = createPageMetadata({
-  title: pageTitle,
-  description: pageDescription,
-  canonical: `${SITE_DOMAIN}/open-science/use-cases`,
-  image: {
-    url: `${SITE_DOMAIN}/images/open-science/use-case-gallery-social.png`,
-    width: 1280,
-    height: 672,
-    alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
-  }
-})
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams
+  // Preserve the existing canonical policy for category-filtered URLs.
+  const current = params.category
+    ? 1
+    : getUseCaseGalleryPage(params.page, (await fetchUseCaseList())?.length ?? 0)
+  return createPageMetadata({
+    title: pageTitle,
+    description: pageDescription,
+    canonical: `${SITE_DOMAIN}/open-science/use-cases${current > 1 ? `?page=${current}` : ''}`,
+    image: {
+      url: `${SITE_DOMAIN}/images/open-science/use-case-gallery-social.png`,
+      width: 1280,
+      height: 672,
+      alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
+    }
+  })
+}
 
 export const dynamic = 'force-dynamic'
 
 type PageProps = {
-  searchParams: Promise<{ page?: string; category?: string }>
+  searchParams: Promise<{ page?: string | string[]; category?: string }>
 }
 
 export default async function OpenScienceUseCasesPage({ searchParams }: PageProps) {
@@ -81,11 +88,7 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
       ? useCases.filter((entry) => entry.catalogKey === activeCategory)
       : useCases
 
-  const pageCount = visibleUseCases
-    ? Math.max(1, Math.ceil(visibleUseCases.length / USE_CASE_BATCH_SIZE))
-    : 1
-  const requested = Number.parseInt(params.page ?? '1', 10)
-  const current = Number.isFinite(requested) ? Math.min(Math.max(1, requested), pageCount) : 1
+  const current = getUseCaseGalleryPage(params.page, visibleUseCases?.length ?? 0)
   // Retain old page links by revealing all batches through the requested page.
   const initialCount = current * USE_CASE_BATCH_SIZE
 

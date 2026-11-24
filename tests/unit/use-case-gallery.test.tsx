@@ -11,7 +11,7 @@ let result: UseCaseIndexEntry[] | null = entries
 mock.module('@/service/open-science-use-cases.server', () => ({
   fetchUseCaseList: async () => result
 }))
-const { default: UseCasesPage } = await import(
+const { default: UseCasesPage, generateMetadata } = await import(
   '../../app/(commonLayout)/open-science/use-cases/page'
 )
 const render = async (page?: string, category?: string) =>
@@ -140,4 +140,33 @@ test('passes optional video metadata into gallery cards without eagerly loading 
   expect(html.match(/data-testid="video-play-indicator"/g)).toHaveLength(1)
   expect(html).toContain('/case-1.png')
   expect(html).not.toContain('<iframe')
+})
+
+test('canonicalizes unfiltered batches to their normalized page and preserves category policy', async () => {
+  result = entries
+  for (const [page, suffix] of [
+    [undefined, ''],
+    ['1', ''],
+    ['2', '?page=2'],
+    ['3', '?page=3'],
+    ['999', '?page=3'],
+    ['0', ''],
+    ['-2', ''],
+    ['invalid', ''],
+    ['2junk', ''],
+    ['1.5', '']
+  ]) {
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({ page }) })
+    expect(metadata.alternates?.canonical).toBe(
+      `https://aipoch.com/open-science/use-cases${suffix}`
+    )
+    expect(String(metadata.openGraph?.url)).toBe(String(metadata.alternates?.canonical))
+  }
+  const filtered = await generateMetadata({
+    searchParams: Promise.resolve({ page: '2', category: 'science' })
+  })
+  expect(filtered.alternates?.canonical).toBe('https://aipoch.com/open-science/use-cases')
+  result = []
+  const empty = await generateMetadata({ searchParams: Promise.resolve({ page: '2' }) })
+  expect(empty.alternates?.canonical).toBe('https://aipoch.com/open-science/use-cases')
 })
