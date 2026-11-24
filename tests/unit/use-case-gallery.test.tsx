@@ -17,6 +17,20 @@ const { default: UseCasesPage } = await import(
 const render = async (page?: string, category?: string) =>
   renderToStaticMarkup(await UseCasesPage({ searchParams: Promise.resolve({ page, category }) }))
 
+test('server-renders gallery structured data from visible page content', async () => {
+  result = entries
+  const html = await render()
+  const json = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1]
+  expect(json).toBeDefined()
+  expect(JSON.parse(json ?? '{}')).toMatchObject({
+    '@type': 'CollectionPage',
+    url: 'https://aipoch.com/open-science/use-cases',
+    name: 'Use Case Gallery',
+    description:
+      'Explore selected .science research packages and see how research questions become inspectable outputs through connected workflows of data, code, evidence, and conversation.'
+  })
+})
+
 test('server-renders appended cases first without mutating the source snapshot', async () => {
   result = entries
   const html = await render()
