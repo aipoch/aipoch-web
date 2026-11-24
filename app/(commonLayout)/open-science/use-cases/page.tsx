@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { JsonLd } from '@/components/json-ld'
+import { AIPOCH_WEBSITE_ID } from '@/lib/aipoch-organization'
 import { SITE_DOMAIN } from '@/lib/config'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { fetchUseCaseList } from '@/service/open-science-use-cases.server'
@@ -14,6 +16,17 @@ const surfaceClass = 'bg-[#f7f7f5]'
 const pageTitle = 'Open-Science Use Cases | AIPOCH'
 const pageDescription =
   'Explore selected .science research packages and see how research questions become inspectable outputs through connected workflows of data, code, evidence, and conversation.'
+const galleryUrl = `${SITE_DOMAIN}/open-science/use-cases`
+const gallerySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': `${galleryUrl}#webpage`,
+  url: galleryUrl,
+  name: 'Use Case Gallery',
+  description: pageDescription,
+  inLanguage: 'en',
+  isPartOf: { '@id': AIPOCH_WEBSITE_ID }
+}
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams
@@ -81,6 +94,7 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
 
   return (
     <main id="top" className={`-mt-[var(--nav-h)] flex-1 ${surfaceClass} text-[#10110f]`}>
+      <JsonLd data={gallerySchema} />
       <section className="pt-[var(--nav-h)]">
         <div className="mx-auto flex max-w-[1000px] flex-col items-center px-5 py-16 text-center sm:px-10 lg:py-[88px]">
           <h1 className={`${headingClass} text-[clamp(40px,5vw,56px)] leading-[1.08]`}>

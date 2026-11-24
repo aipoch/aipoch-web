@@ -20,7 +20,7 @@ const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-10-21'
 const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-11-19'
 // Track overview and replay template changes separately from the gallery.
-const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-10-28'
+const OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED = '2026-11-19'
 // Replay adds safe compaction rows, idle downloads, complete blocks and independent reviews.
 const OPEN_SCIENCE_USE_CASE_REPLAY_LAST_MODIFIED = '2026-11-02'
 const AGENT_SKILLS_LIST_LAST_MODIFIED = '2026-09-23'
