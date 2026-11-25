@@ -77,7 +77,7 @@ export function UseCaseVideoPlayer({
   if (failed) return preview ? <VideoPlayIndicator /> : null
   return (
     <>
-      {preview && !playing && <VideoPlayIndicator loading />}
+      {preview && !playing && <VideoPlayIndicator loading ringWidth={3} />}
       <div
         data-testid="use-case-video"
         data-playing={playing}

@@ -220,8 +220,8 @@ export default async function OpenScienceDownloadPage() {
             <span className="block">Download Open-Science</span>
             <span className="block">for macOS, Windows and Linux</span>
           </h1>
-          <AgentInstallPrompt />
-          <p className="mt-[34px] max-w-[700px] text-[clamp(16px,1.3vw,20px)] leading-[1.55] text-[#73746e]">
+          <AgentInstallPrompt className="mt-10" />
+          <p className="mt-11 max-w-[700px] text-[clamp(16px,1.3vw,20px)] leading-[1.55] text-[#73746e]">
             Get the open-source, local-first AI research workbench. Choose your platform below and
             follow the installation guidance for your first launch.
           </p>

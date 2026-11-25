@@ -60,6 +60,7 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             </a>{' '}
             to see these workflows in practice.
           </p>
+          <AgentInstallPrompt />
           <div data-open-science-reveal="0.18" className="flex flex-wrap items-center gap-3">
             <a
               href="https://github.com/aipoch/open-science"
@@ -72,7 +73,6 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             </a>
             <OpenScienceDownload initialManifest={releaseManifest} />
           </div>
-          <AgentInstallPrompt />
         </div>
         <div data-open-science-reveal="0.24" className="mt-12 pb-8 lg:mt-20">
           <AutoplayYoutubeEmbed

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { OPEN_SCIENCE_INSTALL_PROMPT } from '@/lib/open-science-install-prompt'
 import { PromptAgents } from './prompt-agents'
 
-export function AgentInstallPrompt() {
+export function AgentInstallPrompt({ className = '' }: { className?: string }) {
   const [status, setStatus] = useState<'idle' | 'copied' | 'error'>('idle')
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function AgentInstallPrompt() {
   }
 
   return (
-    <div className="mt-7 w-full max-w-[992px]">
+    <div className={`w-full max-w-[992px] ${className}`}>
       <div className="flex flex-col items-start gap-4 border border-[#cecec8] bg-[#fbfbfa] p-4 text-left shadow-sm sm:flex-row sm:items-center sm:gap-7 sm:px-7 sm:py-4 lg:px-6">
         <p className="min-w-0 select-all font-mono text-sm leading-relaxed text-[#32342f] [overflow-wrap:anywhere] sm:text-base lg:text-[17px]">
           {OPEN_SCIENCE_INSTALL_PROMPT}

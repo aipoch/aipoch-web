@@ -115,15 +115,15 @@ export const HomeDownload = () => {
   return (
     <div
       data-testid="home-platform-downloads"
-      className="mt-6 grid max-w-[807px] grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-3"
+      className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4"
     >
       <a
         href={resolveHomepageDownloadHref(manifest, 'win-x64')}
         aria-label="Download Windows"
-        className="flex h-[80px] flex-row items-center justify-center gap-2 border border-black/10 bg-white px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890]"
+        className="flex min-h-[42px] flex-row items-center justify-center gap-2 border border-black/10 bg-white px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890]"
       >
-        <span className="flex size-10 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
-          {platformLogo('windows', 'size-6')}
+        <span className="flex size-7 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
+          {platformLogo('windows', 'size-4')}
         </span>
         <span className="min-w-0 flex-1">
           <b className="block text-sm font-semibold text-[#111]">Windows</b>
@@ -170,10 +170,10 @@ export const HomeDownload = () => {
                 clearCloseTimer()
                 setOpenMenu(menu.id)
               }}
-              className={`flex h-[80px] w-full flex-row items-center justify-center gap-2 border border-black/10 px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890] ${open ? 'bg-[#f4f4f1] shadow-[0_12px_28px_rgba(17,17,17,.10)]' : 'bg-white'}`}
+              className={`flex min-h-[42px] w-full flex-row items-center justify-center gap-2 border border-black/10 px-3 text-left transition-[background-color,border-color,box-shadow] duration-200 hover:bg-[#f4f4f1] hover:border-[#9a9890] ${open ? 'bg-[#f4f4f1] shadow-[0_12px_28px_rgba(17,17,17,.10)]' : 'bg-white'}`}
             >
-              <span className="flex size-10 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
-                {platformLogo(menu.icon, 'size-6')}
+              <span className="flex size-7 shrink-0 items-center justify-center border border-black/10 bg-[#f7f7f5] text-[#111]">
+                {platformLogo(menu.icon, 'size-4')}
               </span>
               <span className="min-w-0 flex-1">
                 <b className="block text-sm font-semibold text-[#111]">{menu.label}</b>

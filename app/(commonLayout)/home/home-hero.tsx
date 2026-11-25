@@ -55,9 +55,9 @@ export const HomeHero = () => (
           artifacts. Share selected research records as a .science package for review, handoff, or
           archiving.
         </p>
+        <AgentInstallPrompt className="mt-7" />
         <HomeDownload />
-        <AgentInstallPrompt />
-        <div className="mt-12 flex flex-wrap items-center gap-6">
+        <div className="mt-4 flex flex-wrap items-center gap-6">
           <HomeGithubLink />
           <a
             href="https://github.com/aipoch/open-science?tab=Apache-2.0-1-ov-file"

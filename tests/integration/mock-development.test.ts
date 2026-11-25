@@ -1145,9 +1145,9 @@ describe('mock development end to end', () => {
       await browserExpect(nonVideoCard.getByTestId('video-play-indicator')).toHaveCount(0)
       await browserExpect(page.locator('iframe[data-video-id]')).toHaveCount(0)
       await card.hover()
-      await browserExpect(
-        card.locator('[data-testid="video-play-indicator"] [data-loading="true"]')
-      ).toBeVisible()
+      const loadingRing = card.getByTestId('video-play-indicator').locator('[data-loading="true"]')
+      await browserExpect(loadingRing).toBeVisible()
+      await browserExpect(loadingRing).toHaveCSS('border-top-width', '3px')
       await browserExpect(card.locator('iframe[data-muted="true"]')).toHaveCount(1)
       await browserExpect(card.getByTestId('use-case-video')).toHaveAttribute(
         'data-playing',
