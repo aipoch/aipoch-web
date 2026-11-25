@@ -1,18 +1,18 @@
 'use client'
 
-import { VideoPlayIndicator } from '@/components/youtube/video-play-indicator'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { VideoPlayIndicator } from '@/components/youtube/video-play-indicator'
 import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
 import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 
 import { USE_CASE_BATCH_SIZE } from './use-case-gallery-data'
 import { UseCaseVideoPlayer } from './use-case-video'
 
-type GalleryEntry = Pick<
-  UseCaseIndexEntry,
-  'slug' | 'title' | 'preview' | 'video' | 'labManifestUrl'
->
+type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview' | 'video'> & {
+  href: string
+  opensInNewTab: boolean
+}
 type ImageSize = { width: number; height: number }
 type GalleryView = { count: number; images: Record<string, ImageSize> }
 
@@ -76,10 +76,10 @@ const GalleryCard = ({
       onMouseLeave={() => setActive(false)}
       onFocus={() => setActive(true)}
       onBlur={() => setActive(false)}
-      href={`/open-science/use-cases/${useCase.slug}`}
-      prefetch={useCase.labManifestUrl ? false : undefined}
-      target={useCase.labManifestUrl ? '_blank' : undefined}
-      rel={useCase.labManifestUrl ? 'noopener' : undefined}
+      href={useCase.href}
+      prefetch={useCase.opensInNewTab ? false : undefined}
+      target={useCase.opensInNewTab ? '_blank' : undefined}
+      rel={useCase.opensInNewTab ? 'noopener' : undefined}
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
       <div

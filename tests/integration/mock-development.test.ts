@@ -109,9 +109,15 @@ describe('mock development end to end', () => {
       await side.press('Enter')
       const active = region.locator('[data-slot="0"]')
       await browserExpect(active).toHaveAttribute('href', destination)
+      const activeTitle = await region.getByRole('heading').getByRole('link').getAttribute('title')
+      if (!activeTitle) throw new Error('Missing active project title')
       const listCard = page
         .getByRole('region', { name: 'Use case gallery' })
-        .locator(`a[href="${destination}"]`)
+        .getByRole('link', { name: activeTitle, exact: true })
+      await browserExpect(listCard).toHaveAttribute(
+        'href',
+        /\/experience\/[a-f0-9]{40}\/index\.html$/
+      )
       await browserExpect(listCard).toHaveAttribute('target', '_blank')
       await browserExpect(active.locator('img')).toHaveAttribute('src', /lab-opening\.svg$/)
       expect(await listCard.locator('img').getAttribute('src')).not.toBe(
@@ -223,8 +229,15 @@ describe('mock development end to end', () => {
       await browserExpect(page.getByRole('button', { name: 'Download .science' })).toBeVisible()
 
       if (!url) throw new Error('Missing published lab URL')
-      const standalone = await browser.newPage()
-      await standalone.goto(url)
+      await page.goto(`${gallery}?category=3-d-lab`)
+      const gridCard = page.getByTestId('use-case-grid').locator(`a[href="${url}"]`)
+      await browserExpect(gridCard).toHaveAttribute('target', '_blank')
+      const opened = page.waitForEvent('popup')
+      await gridCard.click()
+      const standalone = await opened
+      await browserExpect(standalone).toHaveURL(url)
+      await browserExpect(page).toHaveURL(`${gallery}?category=3-d-lab`)
+      await standalone.waitForLoadState('load')
       await standalone.getByRole('button', { name: 'Open project' }).click()
       const dialog = standalone.getByRole('dialog')
       await browserExpect(dialog.getByLabel('Agent import prompt')).toHaveValue(
