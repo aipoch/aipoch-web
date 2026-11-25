@@ -105,9 +105,9 @@ describe('sitemap', () => {
       ['/open-science/use-cases/how-far-has-ai-drug-discovery-really-gotten', '2026-11-23'],
       ['/open-science/use-cases/99-pure-does-molecular-handedness-matter', '2026-11-23'],
       ['/open-science/use-cases/99-pure-does-molecular-handedness-matter/replay', '2026-11-02'],
-      ['/open-science/use-cases', '2026-11-23'],
-      ['/open-science/use-cases/interactive-lab', '2026-11-23'],
-      ['/open-science/use-cases/interactive-lab/replay', '2026-11-23'],
+      ['/open-science/use-cases', '2026-11-25'],
+      ['/open-science/use-cases/interactive-lab', '2026-11-25'],
+      ['/open-science/use-cases/interactive-lab/replay', '2026-11-25'],
       ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-11-19'],
       ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-11-19'],
       [

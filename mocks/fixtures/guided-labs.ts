@@ -9,14 +9,14 @@ addEventListener('message', event => {
   if (event.source === parent && event.data?.type === 'open-science:lab-ping')
     parent.postMessage({type:'open-science:lab-ready'}, '*');
 });
-</script></html>`
+</script><script src="./project-dialog.js"></script></html>`
 
 export const labScreenshot =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 810"><rect width="1440" height="810" fill="#424240"/></svg>'
 
 export const labDescriptor = {
   entry: {
-    file_name: 'lab-entry.html',
+    file_name: 'index.html',
     bytes: new TextEncoder().encode(labDocument).length,
     sha256: digest(new TextEncoder().encode(labDocument))
   },
@@ -30,6 +30,7 @@ export const labDescriptor = {
 
 export const guidedLabFixtures: UseCaseManifestItem[] = samples.slice(0, 5).map((item) => ({
   ...item,
+  experience: { path: `3D Lab/${item.name}/experience`, revision: 'a'.repeat(40) },
   catalog: '3D Lab',
   catalog_name: '3-d-lab'
 }))

@@ -1,0 +1,171 @@
+.dialog {
+  position: fixed;
+  margin: auto;
+  width: min(520px, calc(100% - 28px));
+  max-height: 85dvh;
+  overflow: auto;
+  border-radius: 14px;
+  padding: 0;
+  color: #202423;
+  background: #fbfaf7;
+  box-shadow: 0 15px 80px #0006;
+}
+.dialog::backdrop {
+  background: #0c1116a8;
+}
+.dialog header {
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid #deded9;
+  gap: 12px;
+}
+.dialog header p {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.dialog h2 {
+  font:
+    30px / 1.15 Georgia,
+    serif;
+  margin-top: 6px;
+}
+.dialog header button {
+  padding: 5px;
+}
+.body {
+  padding: 20px 24px;
+  font-size: 14px;
+}
+.body h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.body textarea {
+  display: block;
+  width: 100%;
+  height: 7rem;
+  resize: none;
+  overflow: auto;
+  border: 1px solid #ddded8;
+  border-radius: 6px;
+  background: #f3f3ef;
+  color: #30332f;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.body textarea[hidden] {
+  display: none;
+}
+.body textarea:focus-visible {
+  outline: 2px solid #616b62;
+  outline-offset: 1px;
+}
+.body hr {
+  margin: 16px 0;
+  border-color: #deded9;
+}
+.filename {
+  overflow-wrap: anywhere;
+  color: #59625d;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+.actions button {
+  background: #24332e;
+  border: 1px solid #24332e;
+  color: white;
+  border-radius: 6px;
+  padding: 8px 14px;
+}
+.actions button + button {
+  background: white;
+  color: #24332e;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.progress progress {
+  flex: 1;
+  accent-color: #316953;
+}
+
+.promptRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.promptRow h3 {
+  margin: 0;
+}
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.disclosure[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+/* The published experience mounts this same dialog in its own shadow root. */
+.dialog {
+  box-sizing: border-box;
+  inset: 0;
+  border: 0;
+  color-scheme: light;
+  font:
+    14px / 1.5 system-ui,
+    sans-serif;
+  text-align: left;
+  letter-spacing: normal;
+}
+.dialog *,
+.dialog *::before,
+.dialog *::after {
+  box-sizing: border-box;
+}
+.dialog :where(p, h2, h3) {
+  margin: 0;
+}
+.dialog button,
+.dialog textarea {
+  font: inherit;
+}
+.dialog button {
+  cursor: pointer;
+}
+.dialog header button,
+.promptRow button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 5px;
+  color: inherit;
+  background: transparent;
+}
+.promptRow button {
+  padding: 5px 6px;
+}
+.promptRow button svg {
+  width: 15px;
+  height: 15px;
+}
+.dialog header button:hover,
+.promptRow button:hover {
+  background: #eaece7;
+}

@@ -1,16 +1,10 @@
 'use client'
 
-import { ArrowLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import {
-  createScienceImport,
-  INITIAL_IMPORT_STATE,
-  type ImportState,
-  scienceImportFilename
-} from '@/lib/science-package/browser-import'
 import type { GuidedLab, UseCasePackage } from '@/lib/use-case-types'
-import { CopyButton } from './copy-button'
+import { GuidedLabProjectDialog } from './guided-lab-project'
 import styles from './guided-lab.module.css'
 
 export function GuidedLabView({
@@ -23,35 +17,11 @@ export function GuidedLabView({
   packageInfo: UseCasePackage
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
-  const dialog = useRef<HTMLDialogElement>(null)
   const [listening, setListening] = useState(false)
   const [opened, setOpened] = useState(false)
-  const [agentExpanded, setAgentExpanded] = useState(true)
-  const agentField = useRef<HTMLTextAreaElement>(null)
   const [frameReady, setFrameReady] = useState(false)
   const [frameSlow, setFrameSlow] = useState(false)
   const [frameAttempt, setFrameAttempt] = useState(0)
-  const [state, setState] = useState<ImportState>(INITIAL_IMPORT_STATE)
-  const session = useRef<ReturnType<typeof createScienceImport> | null>(null)
-  const downloadUrl = packageInfo.importUrl ?? packageInfo.url
-
-  useEffect(() => {
-    const current = createScienceImport(
-      {
-        url: downloadUrl,
-        filename: packageInfo.filename,
-        sizeBytes: packageInfo.sizeBytes,
-        sha256: packageInfo.sha256
-      },
-      setState
-    )
-    session.current = current
-    return () => {
-      current.dispose()
-      session.current = null
-    }
-  }, [downloadUrl, packageInfo.filename, packageInfo.sizeBytes, packageInfo.sha256])
-
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (
@@ -75,7 +45,7 @@ export function GuidedLabView({
   }, [frameReady, opened, lab.entryUrl])
   // Retry the readiness check until the published document responds.
   useEffect(() => {
-    if (!listening || frameReady) return
+    if (!listening || frameReady || lab.standalone) return
     const ping = () =>
       frame.current?.contentWindow?.postMessage(
         { type: 'open-science:lab-ping' },
@@ -88,30 +58,8 @@ export function GuidedLabView({
       window.clearInterval(timer)
       window.clearTimeout(slow)
     }
-  }, [frameReady, lab.entryUrl, listening])
+  }, [frameReady, lab.entryUrl, lab.standalone, listening])
 
-  useEffect(() => {
-    if (opened) dialog.current?.showModal()
-  }, [opened])
-  const agentPrompt = `Open "${title}" in AIPOCH Open-Science. Download ${packageInfo.filename} from ${downloadUrl}, then import it and open the research conversation. If Open-Science is missing, install it from https://aipoch.com/open-science/download.`
-  const file = session.current?.preparedFile()
-  const busy = ['downloading', 'opening', 'sending', 'canceling'].includes(state.phase)
-  const total = state.total ?? packageInfo.sizeBytes
-  const percent =
-    total && state.loaded !== undefined
-      ? Math.min(100, Math.floor((state.loaded / total) * 100))
-      : undefined
-  const save = () => {
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = scienceImportFilename(packageInfo.filename)
-    document.body.append(link)
-    link.click()
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 60000)
-  }
   return (
     <main className={styles.lab}>
       <div className={styles.bar}>
@@ -123,7 +71,16 @@ export function GuidedLabView({
           Project
         </button>
       </div>
-      {listening && (
+      {lab.standalone && (
+        <a className={styles.launch} href={lab.entryUrl} target="_blank" rel="noopener">
+          {lab.screenshotUrl && (
+            // biome-ignore lint/performance/noImgElement: This is the versioned publisher screenshot.
+            <img src={lab.screenshotUrl} alt="" />
+          )}
+          <span>Open 3D lab in a new tab ↗</span>
+        </a>
+      )}
+      {listening && !lab.standalone && (
         <iframe
           key={frameAttempt}
           ref={frame}
@@ -135,7 +92,10 @@ export function GuidedLabView({
       )}
       {frameSlow && !frameReady && (
         <div role="status" className={styles.notice}>
-          The lab is taking longer to open.{' '}
+          <a href={lab.entryUrl} target="_blank" rel="noopener">
+            Open lab in a new tab
+          </a>{' '}
+          or{' '}
           <button
             type="button"
             onClick={() => {
@@ -146,110 +106,11 @@ export function GuidedLabView({
           </button>
         </div>
       )}
-      <dialog
-        ref={dialog}
-        className={styles.dialog}
-        aria-labelledby="lab-project-title"
-        onClose={() => {
-          setOpened(false)
-          setAgentExpanded(true)
-        }}
-      >
-        <header>
-          <div>
-            <p>Open-Science project</p>
-            <h2 id="lab-project-title">{title}</h2>
-          </div>
-          <button type="button" aria-label="Close project" onClick={() => dialog.current?.close()}>
-            <X size={20} />
-          </button>
-        </header>
-        <div className={styles.body}>
-          <div className={styles.promptRow}>
-            <h3>
-              <button
-                type="button"
-                className={styles.disclosure}
-                aria-expanded={agentExpanded}
-                aria-controls="lab-agent-prompt"
-                onClick={() => setAgentExpanded(!agentExpanded)}
-              >
-                <ChevronRight size={15} aria-hidden="true" />
-                Open with an agent
-              </button>
-            </h3>
-            <CopyButton
-              text={agentPrompt}
-              label="Copy import instructions"
-              onCopyError={() => {
-                setAgentExpanded(true)
-                requestAnimationFrame(() => agentField.current?.select())
-              }}
-            />
-          </div>
-          <textarea
-            id="lab-agent-prompt"
-            ref={agentField}
-            aria-label="Agent import prompt"
-            value={agentPrompt}
-            readOnly
-            hidden={!agentExpanded}
-          />
-          <hr />
-          <h3>Research package</h3>
-          <p className={styles.filename}>
-            {packageInfo.filename} · {(packageInfo.sizeBytes / 1e6).toFixed(1)} MB
-          </p>
-          {state.phase === 'downloading' || state.phase === 'sending' ? (
-            <div className={styles.progress}>
-              <progress
-                aria-label={state.phase === 'downloading' ? 'Download progress' : 'Import progress'}
-                value={percent}
-                max={100}
-              />
-              <span>{percent === undefined ? '…' : `${percent}%`}</span>
-            </div>
-          ) : null}
-          <div className={styles.actions}>
-            {!file && !busy && (
-              <button type="button" onClick={() => void session.current?.prepare(true)}>
-                Download .science
-              </button>
-            )}
-            {file && (
-              <button type="button" onClick={save}>
-                Save to device
-              </button>
-            )}
-            {file && !busy && state.phase !== 'unsupported' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (state.action === 'resume') void session.current?.resume()
-                  else if (state.phase === 'received') session.current?.openApp()
-                  else void session.current?.open()
-                }}
-              >
-                {state.action === 'resume'
-                  ? 'Reconnect to Open-Science'
-                  : state.phase === 'received'
-                    ? 'Open Open-Science'
-                    : 'Import into Open-Science'}
-              </button>
-            )}
-            {busy && (
-              <button
-                type="button"
-                disabled={state.phase === 'canceling'}
-                onClick={() => session.current?.cancel()}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-          <p role="status">{state.launchError || state.message}</p>
-        </div>
-      </dialog>
+      <GuidedLabProjectDialog
+        project={{ title, package: packageInfo }}
+        opened={opened}
+        onClose={() => setOpened(false)}
+      />
     </main>
   )
 }

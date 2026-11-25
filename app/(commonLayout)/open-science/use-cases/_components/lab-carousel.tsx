@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import styles from './lab-carousel.module.css'
 
-type Card = { slug: string; title: string; image: string }
+type Card = { slug: string; title: string; image: string; directUrl?: string }
 
 export function LabCarousel({ labs }: { labs: Card[] }) {
   const [position, setPosition] = useState(0)
@@ -65,7 +65,7 @@ export function LabCarousel({ labs }: { labs: Card[] }) {
           return (
             <a
               key={position + offset}
-              href={`/open-science/use-cases/${lab.slug}`}
+              href={lab.directUrl ?? `/open-science/use-cases/${lab.slug}`}
               target="_blank"
               rel="noopener"
               className={styles.card}

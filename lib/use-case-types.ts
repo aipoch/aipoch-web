@@ -241,6 +241,7 @@ export interface UseCaseVideo {
 }
 
 export interface GuidedLab {
+  standalone?: boolean
   screenshotUrl?: string
   entryUrl: string
 }
@@ -334,6 +335,7 @@ export interface UseCaseManifestResource {
 }
 
 export interface UseCaseManifestItem {
+  experience?: { path: string; revision: string }
   video?: { type: string; file_path: string; file_name?: string }
   title: string
   name: string

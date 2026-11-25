@@ -18,8 +18,9 @@ import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
 const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-10-21'
-const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-11-23'
-const GUIDED_LAB_LAST_MODIFIED = '2026-11-23'
+const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-11-25'
+const GUIDED_LAB_LAST_MODIFIED = '2026-11-25'
+const RELATED_LAB_CARDS_LAST_MODIFIED = '2026-11-23'
 // The published project titles changed the related research shown on these overviews.
 const OVERVIEWS_WITH_LAB_RECOMMENDATION_UPDATES = new Set([
   '99-pure-does-molecular-handedness-matter',
@@ -201,9 +202,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     (useCase) => [
       withReliableLastModified({
         url: `${SITE_DOMAIN}/open-science/use-cases/${useCase.slug}`,
-        lastModified:
-          useCase.labManifestUrl || OVERVIEWS_WITH_LAB_RECOMMENDATION_UPDATES.has(useCase.slug)
-            ? GUIDED_LAB_LAST_MODIFIED
+        lastModified: useCase.labManifestUrl
+          ? GUIDED_LAB_LAST_MODIFIED
+          : OVERVIEWS_WITH_LAB_RECOMMENDATION_UPDATES.has(useCase.slug)
+            ? RELATED_LAB_CARDS_LAST_MODIFIED
             : OPEN_SCIENCE_USE_CASE_DETAIL_LAST_MODIFIED,
         changeFrequency: 'monthly',
         priority: 0.7

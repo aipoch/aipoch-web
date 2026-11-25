@@ -70,10 +70,18 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
     await Promise.all(
       featured.map(async (item) => {
         const lab = await fetchGuidedLab(item.labManifestUrl)
-        if (!lab) return []
         // Older descriptors use the catalog cover for both placements.
         const image = lab.screenshotUrl ?? item.preview?.image
-        return image ? [{ slug: item.slug, title: item.title, image }] : []
+        return image
+          ? [
+              {
+                slug: item.slug,
+                title: item.title,
+                image,
+                directUrl: lab.standalone ? lab.entryUrl : undefined
+              }
+            ]
+          : []
       })
     )
   ).flat()

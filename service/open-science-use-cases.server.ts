@@ -3,7 +3,7 @@ import { after } from 'next/server'
 import { cache } from 'react'
 import { API_URL, STATIC_ASSETS_ORIGIN } from '@/lib/config'
 import { createUseCaseManifestCache, parseGuidedLab } from '@/lib/use-case-manifest'
-import type { UseCaseDetail, UseCaseIndexEntry } from '@/lib/use-case-types'
+import type { GuidedLab, UseCaseDetail, UseCaseIndexEntry } from '@/lib/use-case-types'
 
 // Manifest-relative resources share the configured public static asset origin.
 const USE_CASE_MANIFEST_URL = `${STATIC_ASSETS_ORIGIN.replace(/\/+$/, '')}/open-science/usecases/manifest.json`
@@ -45,14 +45,26 @@ export const fetchUseCaseList = async (): Promise<UseCaseIndexEntry[] | null> =>
   }
 }
 
-export const fetchGuidedLab = cache(async (url: string) => {
-  try {
-    const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) })
-    if (response.ok) return parseGuidedLab(await response.json(), url)
-  } catch {
-    // The catalog and other cases remain available if one publisher resource is missing.
+export const fetchGuidedLab = cache(async (descriptorUrl: string): Promise<GuidedLab> => {
+  // The publisher always serves index.html. The descriptor adds an optional opening screenshot.
+  const entryUrl = new URL('index.html', descriptorUrl).href
+  const options = { cache: 'no-store' as const, signal: AbortSignal.timeout(15000) }
+  const [descriptor, entry] = await Promise.allSettled([
+    fetch(descriptorUrl, options).then(async (res) =>
+      res.ok ? parseGuidedLab(await res.json(), descriptorUrl) : undefined
+    ),
+    fetch(entryUrl, { ...options, method: 'HEAD' })
+  ])
+  const entryHeaders = entry.status === 'fulfilled' ? entry.value.headers : undefined
+  // Lab HTML is hosted on a separate origin. An explicit CSP frame-ancestors overrides XFO.
+  const standalone =
+    !/(?:^|;)\s*frame-ancestors\s/i.test(entryHeaders?.get('content-security-policy') ?? '') &&
+    /^(?:SAMEORIGIN|DENY)$/i.test(entryHeaders?.get('x-frame-options')?.trim() ?? '')
+  return {
+    entryUrl,
+    screenshotUrl: descriptor.status === 'fulfilled' ? descriptor.value?.screenshotUrl : undefined,
+    standalone
   }
-  return undefined
 })
 
 export const fetchUseCaseDetail = async (slug: string): Promise<UseCaseDetail | null> => {

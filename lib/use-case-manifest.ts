@@ -110,6 +110,11 @@ export const parseUseCaseManifest = (
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
+    const experience = item.experience
+    const revision =
+      experience && typeof experience === 'object' && 'revision' in experience
+        ? experience.revision
+        : undefined
     const video = parseUseCaseVideo(item.video)
     return {
       slug: item.name,
@@ -121,9 +126,10 @@ export const parseUseCaseManifest = (
             ...(catalogKey ? { catalogKey } : {})
           }),
       preview: { image: resourceUrl(cover) },
-      ...(catalogKey === '3-d-lab' && {
-        labManifestUrl: new URL(`${item.name}/lab.json`, base).href
-      }),
+      ...(typeof revision === 'string' &&
+        /^[0-9a-f]{40}$/.test(revision) && {
+          labManifestUrl: new URL(`${item.name}/experience/${revision}/lab.json`, base).href
+        }),
       ...(video ? { video } : {}),
       package: {
         extractedBaseUrl: new URL(`${item.name}/extracted/`, base).href,

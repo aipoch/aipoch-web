@@ -556,12 +556,20 @@ test('maps video metadata independently for any case without affecting cases wit
   expect(entries.every((entry) => Boolean(entry.preview?.image))).toBe(true)
 })
 
-test('discovers 3D Labs by catalog and resolves their published resource filenames', async () => {
+test('discovers versioned experiences across catalogs and resolves their published resource filenames', async () => {
   const { parseGuidedLab, parseUseCaseManifest } = await import('../../lib/use-case-manifest')
   const entries = (await import('../../mocks/fixtures/guided-labs')).guidedLabFixtures
   const base = 'https://example.test/public/manifest.json'
   const [entry] = parseUseCaseManifest(entries, base)
-  expect(entry.labManifestUrl).toBe(`https://example.test/public/${entry.slug}/lab.json`)
+  const prefix = `https://example.test/public/${entry.slug}/experience/${entries[0].experience?.revision}`
+  expect(entry.labManifestUrl).toBe(`${prefix}/lab.json`)
+  const ordinary = { ...entries[0], catalog: 'Other', catalog_name: 'other' }
+  expect(parseUseCaseManifest([ordinary], base)[0].labManifestUrl).toBe(entry.labManifestUrl)
+  for (const experience of [undefined, { revision: '../escape' }, { revision: 1 }]) {
+    expect(
+      parseUseCaseManifest([{ ...entries[0], experience }], base)[0].labManifestUrl
+    ).toBeUndefined()
+  }
   const res = { bytes: 1, sha256: 'a'.repeat(64) }
   const descriptor = {
     entry: { ...res, file_name: 'Start here.html' },
@@ -569,7 +577,7 @@ test('discovers 3D Labs by catalog and resolves their published resource filenam
   }
   if (!entry.labManifestUrl) throw new Error('Missing lab descriptor URL')
   expect(parseGuidedLab(descriptor, entry.labManifestUrl)).toEqual({
-    entryUrl: `https://example.test/public/${entry.slug}/Start%20here.html`
+    entryUrl: `${prefix}/Start%20here.html`
   })
   expect(
     parseGuidedLab(
@@ -579,7 +587,7 @@ test('discovers 3D Labs by catalog and resolves their published resource filenam
       },
       entry.labManifestUrl
     ).screenshotUrl
-  ).toBe(`https://example.test/public/${entry.slug}/Lab%20opening.png`)
+  ).toBe(`${prefix}/Lab%20opening.png`)
   expect(() =>
     parseGuidedLab({ ...descriptor, entry: { ...res, file_name: '../outside.html' } }, base)
   ).toThrow()

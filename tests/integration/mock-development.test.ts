@@ -189,6 +189,66 @@ describe('mock development end to end', () => {
     }
   }, 90000)
 
+  test('opens a versioned standalone lab directly and keeps its project on the case page', async () => {
+    const controls = `${api}/__mock/use-case-manifest`
+    const update = (mode: string) =>
+      fetch(controls, { method: 'PUT', body: JSON.stringify({ mode }) })
+    const browser = await chromium.launch()
+    try {
+      await update('standalone-labs')
+      const gallery = `${web}/open-science/use-cases`
+      await browserExpect
+        .poll(async () => (await renderedHtml(await fetch(gallery))).includes('Guided 3D labs'))
+        .toBe(true)
+      const page = await browser.newPage({ reducedMotion: 'reduce' })
+      await page.goto(gallery)
+      const region = page.getByRole('region', { name: 'Guided 3D labs' })
+      const explore = region.locator('[data-slot="0"]')
+      const url = await explore.getAttribute('href')
+      expect(url).toMatch(/\/experience\/[a-f0-9]{40}\/index\.html$/)
+      await page.goto(
+        new URL(
+          (await region.getByRole('heading').getByRole('link').getAttribute('href')) ?? '',
+          web
+        ).href
+      )
+      await browserExpect(page.locator('main iframe')).toHaveCount(0)
+      await browserExpect(
+        page.getByRole('link', { name: 'Open 3D lab in a new tab' })
+      ).toHaveAttribute('href', url ?? '')
+      await page.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(page.getByRole('button', { name: 'Download .science' })).toBeVisible()
+
+      if (!url) throw new Error('Missing published lab URL')
+      const standalone = await browser.newPage()
+      await standalone.goto(url)
+      await standalone.getByRole('button', { name: 'Open project' }).click()
+      const dialog = standalone.getByRole('dialog')
+      await browserExpect(dialog.getByLabel('Agent import prompt')).toHaveValue(
+        new RegExp(new URL(url).origin)
+      )
+      await dialog.getByRole('button', { name: 'Download .science' }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
+      await browserExpect(
+        dialog.getByRole('button', { name: 'Import into Open-Science' })
+      ).toBeVisible()
+      await standalone.keyboard.press('Escape')
+      await browserExpect(dialog).toHaveCount(0)
+      await standalone.getByRole('button', { name: 'Open project' }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
+    } finally {
+      await browser.close()
+      await update('normal')
+      await browserExpect
+        .poll(async () =>
+          (await renderedHtml(await fetch(`${web}/open-science/use-cases`))).includes(
+            'Guided 3D labs'
+          )
+        )
+        .toBe(false)
+    }
+  }, 90000)
+
   test('server-renders crawlable blog pagination and normalized canonicals', async () => {
     for (const [path, count, canonicalPage, nextPage] of [
       ['/blog', 10, 1, 2],
