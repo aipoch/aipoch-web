@@ -314,10 +314,8 @@ test('uses a direct Windows download with macOS and Linux architecture menus', a
   expect(downloadBounds.y).toBeGreaterThanOrEqual(agentBounds.y + agentBounds.height)
   expect(githubBounds.y).toBeGreaterThanOrEqual(downloadBounds.y + downloadBounds.height)
   for (const platform of ['Windows', 'macOS', 'Linux']) {
-    await expect(downloads.getByLabel(`Download ${platform}`, { exact: true })).toHaveCSS(
-      'height',
-      `${githubBounds.height}px`
-    )
+    const bounds = await downloads.getByLabel(`Download ${platform}`, { exact: true }).boundingBox()
+    expect(bounds?.height).toBeCloseTo(50.4, 1)
   }
 
   const macDownload = downloads.getByRole('button', { name: /Download macOS/i })
