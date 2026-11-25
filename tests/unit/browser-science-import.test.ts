@@ -595,3 +595,48 @@ test('desktop cancellation discards the transfer and waits for explicit retry wi
   expect(s.send).toHaveBeenCalledTimes(2)
   expect(s.states.at(-1)?.phase).toBe('received')
 })
+
+test('lab downloads support mobile saving and defer desktop handoff to a separate action', async () => {
+  const s = setup()
+  s.mobile.mockReturnValue(true)
+  expect(await s.session.prepare(true)).toBe(true)
+  expect(s.session.preparedFile()).toBe(s.blob)
+  expect(s.prepare).not.toHaveBeenCalled()
+  await s.session.open()
+  expect(s.states.at(-1)?.phase).toBe('unsupported')
+  expect(s.session.preparedFile()).toBe(s.blob)
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.launch).not.toHaveBeenCalled()
+  s.session.dispose()
+  expect(s.session.preparedFile()).toBeUndefined()
+})
+
+test('a lab download must match the declared package before save or import becomes available', async () => {
+  for (const metadata of [{ sizeBytes: 2 }, { sha256: '0'.repeat(64) }]) {
+    const states: ImportState[] = []
+    const session = createScienceImport({ ...info, ...metadata }, (state) => states.push(state), {
+      download: async () => new Blob(['science'])
+    })
+    expect(await session.prepare(true)).toBe(false)
+    expect(states.at(-1)?.phase).toBe('error')
+    expect(session.preparedFile()).toBeUndefined()
+    session.dispose()
+  }
+})
+
+test('the explicit lab import sends the exact file offered for saving, once', async () => {
+  const s = setup()
+  await s.session.prepare(true)
+  expect(s.prepare).not.toHaveBeenCalled()
+  const saved = s.session.preparedFile()
+  if (!saved) throw new Error('Expected a prepared lab package')
+  const sending = s.session.open()
+  expect(s.prepare.mock.calls[0]?.[0]).toBe(saved)
+  expect(s.events).toEqual(['launch', 'send'])
+  s.receipt.resolve({ received: true })
+  await sending
+  expect(s.states.at(-1)?.phase).toBe('received')
+  expect(s.download).toHaveBeenCalledTimes(1)
+  expect(s.session.preparedFile()).toBe(saved)
+  s.session.dispose()
+})

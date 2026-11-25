@@ -83,6 +83,175 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
+  test('opens a manifest lab and restores its verified package after refresh', async () => {
+    const controls = `${api}/__mock/use-case-manifest`
+    const update = (body: object) => fetch(controls, { method: 'PUT', body: JSON.stringify(body) })
+    const browser = await chromium.launch()
+    try {
+      await update({ mode: 'labs', replayChunkDelayMs: 45 })
+      const page = await browser.newPage({ reducedMotion: 'reduce' })
+      const gallery = `${web}/open-science/use-cases`
+      await browserExpect
+        .poll(async () => (await renderedHtml(await fetch(gallery))).includes('Guided 3D labs'))
+        .toBe(true)
+      await page.goto(gallery)
+      const region = page.getByRole('region', { name: 'Guided 3D labs' })
+      const consent = page.getByRole('button', { name: 'Reject non-essential' })
+      if (await consent.isVisible()) await consent.click()
+      await browserExpect(region.locator('a[data-slot]:not([inert])')).toHaveCount(5)
+      await browserExpect(
+        region.getByRole('heading', { name: '3D Labs', exact: true })
+      ).toHaveCount(0)
+      const side = region.locator('[data-slot="2"]')
+      const destination = await side.getAttribute('href')
+      if (!destination) throw Error('Missing lab destination')
+      await side.focus()
+      await side.press('Enter')
+      const active = region.locator('[data-slot="0"]')
+      await browserExpect(active).toHaveAttribute('href', destination)
+      const listCard = page
+        .getByRole('region', { name: 'Use case gallery' })
+        .locator(`a[href="${destination}"]`)
+      await browserExpect(listCard).toHaveAttribute('target', '_blank')
+      await browserExpect(active.locator('img')).toHaveAttribute('src', /lab-opening\.svg$/)
+      expect(await listCard.locator('img').getAttribute('src')).not.toBe(
+        await active.locator('img').getAttribute('src')
+      )
+      await browserExpect(region.getByText('Explore', { exact: true })).toHaveCount(1)
+      const opened = page.waitForEvent('popup')
+      await active.getByText('Explore', { exact: true }).click()
+      const labPage = await opened
+      await browserExpect(labPage).toHaveURL(web + destination)
+      await browserExpect(page).toHaveURL(gallery)
+      const stats = async () => (await (await fetch(controls)).json()).packageRequests
+      const initial = await stats()
+      const promptRequests: string[] = []
+      labPage.on('request', (request) => {
+        if (new URL(request.url()).pathname.endsWith('/prompt.txt'))
+          promptRequests.push(request.url())
+      })
+      await labPage
+        .frameLocator('main iframe')
+        .getByRole('button', { name: 'Open project' })
+        .click()
+      const dialog = labPage.getByRole('dialog', { name: /./ })
+      await browserExpect(dialog).toBeVisible()
+      await browserExpect(dialog.getByText('Research prompt', { exact: true })).toHaveCount(0)
+      await browserExpect(dialog.getByRole('button', { name: 'Copy research prompt' })).toHaveCount(
+        0
+      )
+      await labPage
+        .context()
+        .grantPermissions(['clipboard-read', 'clipboard-write'], { origin: web })
+      const clipboard = () => labPage.evaluate(() => navigator.clipboard.readText())
+      const disclosure = dialog.getByRole('button', { name: 'Open with an agent' })
+      const instructions = dialog.getByRole('textbox', { name: 'Agent import prompt' })
+      await browserExpect(disclosure).toHaveAttribute('aria-expanded', 'true')
+      await browserExpect(instructions).toBeVisible()
+      const importText = await instructions.inputValue()
+      expect(importText).toStartWith(
+        `Import "${await dialog.getByRole('heading', { level: 2 }).innerText()}" in AIPOCH Open-Science.`
+      )
+      expect(importText).toContain('then import it and open the research session.')
+      expect(importText).toContain('https://aipoch.com/open-science/Open-Science-Install.md')
+      expect(importText).toContain('.science')
+      expect(importText).not.toMatch(/research prompt|prompt\.txt/i)
+      await dialog.getByRole('button', { name: 'Copy import instructions' }).click()
+      await browserExpect.poll(clipboard).toBe(importText)
+      await disclosure.click()
+      await browserExpect(disclosure).toHaveAttribute('aria-expanded', 'false')
+      await dialog.getByRole('button', { name: 'Close project' }).click()
+      await labPage.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(instructions).toBeVisible()
+      await browserExpect(instructions).not.toBeEditable()
+      await browserExpect(instructions).toHaveCSS('resize', 'none')
+      expect(await stats()).toBe(initial)
+      await dialog.getByRole('button', { name: 'Download .science' }).click()
+      await browserExpect(dialog.getByRole('progressbar')).toBeVisible()
+      const saved = labPage.waitForEvent('download')
+      await dialog.getByRole('button', { name: 'Save to device' }).click()
+      expect((await saved).suggestedFilename()).toEndWith('.science')
+      await browserExpect(
+        dialog.getByRole('button', { name: 'Import into Open-Science' })
+      ).toHaveCount(0)
+      await labPage.reload()
+      await labPage.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
+      expect(await stats()).toBe(initial + 1)
+      expect(promptRequests).toHaveLength(0)
+    } finally {
+      await browser.close()
+      await update({ mode: 'normal', replayChunkDelayMs: 0 })
+      await browserExpect
+        .poll(async () =>
+          (await renderedHtml(await fetch(`${web}/open-science/use-cases`))).includes(
+            'Guided 3D labs'
+          )
+        )
+        .toBe(false)
+    }
+  }, 90000)
+
+  test('opens a versioned standalone lab directly and keeps its project on the case page', async () => {
+    const controls = `${api}/__mock/use-case-manifest`
+    const update = (mode: string) =>
+      fetch(controls, { method: 'PUT', body: JSON.stringify({ mode }) })
+    const browser = await chromium.launch()
+    try {
+      await update('standalone-labs')
+      const gallery = `${web}/open-science/use-cases`
+      await browserExpect
+        .poll(async () => (await renderedHtml(await fetch(gallery))).includes('Guided 3D labs'))
+        .toBe(true)
+      const page = await browser.newPage({ reducedMotion: 'reduce' })
+      await page.goto(gallery)
+      const region = page.getByRole('region', { name: 'Guided 3D labs' })
+      const explore = region.locator('[data-slot="0"]')
+      const url = await explore.getAttribute('href')
+      expect(url).toMatch(/\/experience\/[a-f0-9]{40}\/index\.html$/)
+      await page.goto(
+        new URL(
+          (await region.getByRole('heading').getByRole('link').getAttribute('href')) ?? '',
+          web
+        ).href
+      )
+      await browserExpect(page.locator('main iframe')).toHaveCount(0)
+      await browserExpect(
+        page.getByRole('link', { name: 'Open 3D lab in a new tab' })
+      ).toHaveAttribute('href', url ?? '')
+      await page.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(page.getByRole('button', { name: 'Download .science' })).toBeVisible()
+
+      if (!url) throw new Error('Missing published lab URL')
+      const standalone = await browser.newPage()
+      await standalone.goto(url)
+      await standalone.getByRole('button', { name: 'Open project' }).click()
+      const dialog = standalone.getByRole('dialog')
+      await browserExpect(dialog.getByLabel('Agent import prompt')).toHaveValue(
+        new RegExp(new URL(url).origin)
+      )
+      await dialog.getByRole('button', { name: 'Download .science' }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
+      await browserExpect(
+        dialog.getByRole('button', { name: 'Import into Open-Science' })
+      ).toHaveCount(0)
+      await standalone.keyboard.press('Escape')
+      await browserExpect(dialog).toHaveCount(0)
+      await standalone.getByRole('button', { name: 'Open project' }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
+    } finally {
+      await browser.close()
+      await update('normal')
+      await browserExpect
+        .poll(async () =>
+          (await renderedHtml(await fetch(`${web}/open-science/use-cases`))).includes(
+            'Guided 3D labs'
+          )
+        )
+        .toBe(false)
+    }
+  }, 90000)
+
   test('server-renders crawlable blog pagination and normalized canonicals', async () => {
     for (const [path, count, canonicalPage, nextPage] of [
       ['/blog', 10, 1, 2],
@@ -183,6 +352,33 @@ describe('mock development end to end', () => {
             body: '<html><body>Video player</body></html>'
           })
         )
+        await page.addInitScript(() => {
+          Object.assign(window, {
+            YT: {
+              Player: class {
+                constructor(
+                  frame: HTMLIFrameElement,
+                  options: {
+                    events: {
+                      onReady(event: { target: { mute(): void; playVideo(): void } }): void
+                      onStateChange(event: { data: number }): void
+                    }
+                  }
+                ) {
+                  const report = (data: number) => options.events.onStateChange({ data })
+                  frame.addEventListener('test-playing', () => report(1))
+                  frame.addEventListener('test-pause', () => report(2))
+                  frame.dataset.playerReady = 'true'
+                  this.playVideo = () => report(3)
+                  options.events.onReady({ target: this })
+                }
+                mute() {}
+                playVideo() {}
+                destroy() {}
+              }
+            }
+          })
+        })
         for (const path of ['/blog/what-is-a-skill', '/open-science']) {
           await page.goto(`${web}${path}`)
           const player = page.locator('iframe[src*="youtube-nocookie.com/embed/"]')
@@ -196,6 +392,18 @@ describe('mock development end to end', () => {
             playsinline: '1'
           })
           if (path.startsWith('/blog/')) {
+            const play = page.getByRole('button', { name: /^Play / })
+            const ring = play.locator('[data-loading]')
+            await browserExpect(player).toHaveAttribute('data-player-ready', 'true')
+            await browserExpect(ring).toHaveAttribute('data-loading', 'true')
+            await player.dispatchEvent('test-playing')
+            await browserExpect(play).toHaveCount(0)
+            await player.dispatchEvent('test-pause')
+            await browserExpect(ring).toHaveAttribute('data-loading', 'false')
+            await play.click()
+            await browserExpect(ring).toHaveAttribute('data-loading', 'true')
+            await player.dispatchEvent('test-playing')
+            await browserExpect(play).toHaveCount(0)
             expect(await page.locator('.blog-article-body > :first-child iframe').count()).toBe(1)
             await browserExpect(
               page.getByRole('img', { name: 'Video preview', exact: true })
@@ -937,7 +1145,9 @@ describe('mock development end to end', () => {
       await browserExpect(nonVideoCard.getByTestId('video-play-indicator')).toHaveCount(0)
       await browserExpect(page.locator('iframe[data-video-id]')).toHaveCount(0)
       await card.hover()
-      await browserExpect(card.getByText('Loading video…')).toHaveCount(0)
+      const loadingRing = card.getByTestId('video-play-indicator').locator('[data-loading="true"]')
+      await browserExpect(loadingRing).toBeVisible()
+      await browserExpect(loadingRing).toHaveCSS('border-top-width', '3px')
       await browserExpect(card.locator('iframe[data-muted="true"]')).toHaveCount(1)
       await browserExpect(card.getByTestId('use-case-video')).toHaveAttribute(
         'data-playing',

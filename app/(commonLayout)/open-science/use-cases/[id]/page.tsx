@@ -9,6 +9,7 @@ import { selectRelatedUseCases } from '@/lib/related-use-cases'
 import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 import { fetchUseCaseAssetText } from '@/service/open-science-use-case-assets'
 import { fetchUseCaseDetail, fetchUseCaseList } from '@/service/open-science-use-cases.server'
+import { GuidedLabView } from '../_components/guided-lab-view'
 import { ScienceImportProvider } from '../_components/science-import-controls'
 import { ShareRow } from '../_components/share-row'
 import { UseCaseActions } from '../_components/use-case-actions'
@@ -74,14 +75,17 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
   return createPageMetadata({
     title,
     description:
-      useCase.description ?? `Read-only replay of the Open-Science session "${useCase.title}".`,
+      useCase.description ??
+      (useCase.labManifestUrl
+        ? `Explore ${useCase.title} in an interactive guided 3D lab.`
+        : `Read-only replay of the Open-Science session "${useCase.title}".`),
     canonical: `${SITE_DOMAIN}/open-science/use-cases/${encodeURIComponent(useCase.slug)}`,
     ...(coverImage
       ? {
           image: {
             url: coverImage.startsWith('http') ? coverImage : `${SITE_DOMAIN}${coverImage}`,
-            width: 1200,
-            height: 630,
+            width: useCase.labManifestUrl ? 1440 : 1200,
+            height: useCase.labManifestUrl ? 810 : 630,
             alt: useCase.title
           }
         }
@@ -96,6 +100,9 @@ const RelatedCard = ({ useCase }: { useCase: UseCaseIndexEntry }) => {
   return (
     <Link
       href={detailHref}
+      prefetch={useCase.labManifestUrl ? false : undefined}
+      target={useCase.labManifestUrl ? '_blank' : undefined}
+      rel={useCase.labManifestUrl ? 'noopener' : undefined}
       className="group flex flex-col overflow-hidden border border-[#e4e4df] bg-white shadow-[0_1px_2px_rgba(16,17,15,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-12px_rgba(16,17,15,0.22)]"
     >
       <div className={`bg-[#e8e8e4] ${useCase.preview?.image ? '' : 'aspect-[626/292]'}`}>
@@ -129,6 +136,29 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
   // publish time; the session package is only fetched by the replay page.
   const [useCase, index] = await Promise.all([fetchUseCaseDetail(id), fetchUseCaseList()])
   if (!useCase) notFound()
+
+  if (useCase.lab && useCase.package) {
+    return (
+      <GuidedLabView
+        key={id}
+        title={useCase.title}
+        lab={useCase.lab}
+        packageInfo={useCase.package}
+      />
+    )
+  }
+
+  if (useCase.labManifestUrl) {
+    return (
+      <main className="mx-auto max-w-xl px-6 py-24">
+        <h1 className="text-3xl">{useCase.title}</h1>
+        <p className="my-4">The 3D lab could not be loaded. Refresh this page to try again.</p>
+        <Link className="underline" href="/open-science/use-cases">
+          Back to use cases
+        </Link>
+      </main>
+    )
+  }
 
   const category = useCase.category
   const figureCount = useCase.figureCount ?? 0

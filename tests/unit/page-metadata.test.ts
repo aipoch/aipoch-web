@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 
 // Metadata checks do not need the gallery's server-only manifest reader.
 mock.module('@/service/open-science-use-cases.server', () => ({
+  fetchGuidedLab: async () => undefined,
   fetchUseCaseList: async () => []
 }))
 mock.module('@/lib/blog-list-pagination', () => ({

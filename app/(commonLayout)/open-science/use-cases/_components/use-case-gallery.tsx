@@ -1,6 +1,6 @@
 'use client'
 
-import { Play } from 'lucide-react'
+import { VideoPlayIndicator } from '@/components/youtube/video-play-indicator'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
@@ -9,7 +9,10 @@ import type { UseCaseIndexEntry } from '@/lib/use-case-types'
 import { USE_CASE_BATCH_SIZE } from './use-case-gallery-data'
 import { UseCaseVideoPlayer } from './use-case-video'
 
-type GalleryEntry = Pick<UseCaseIndexEntry, 'slug' | 'title' | 'preview' | 'video'>
+type GalleryEntry = Pick<
+  UseCaseIndexEntry,
+  'slug' | 'title' | 'preview' | 'video' | 'labManifestUrl'
+>
 type ImageSize = { width: number; height: number }
 type GalleryView = { count: number; images: Record<string, ImageSize> }
 
@@ -74,6 +77,9 @@ const GalleryCard = ({
       onFocus={() => setActive(true)}
       onBlur={() => setActive(false)}
       href={`/open-science/use-cases/${useCase.slug}`}
+      prefetch={useCase.labManifestUrl ? false : undefined}
+      target={useCase.labManifestUrl ? '_blank' : undefined}
+      rel={useCase.labManifestUrl ? 'noopener' : undefined}
       className="group flex min-w-0 flex-col overflow-hidden border border-[#e5e7eb] bg-white transition-colors hover:border-[#999a93] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717]"
     >
       <div
@@ -102,15 +108,7 @@ const GalleryCard = ({
         {imageState !== 'loaded' ? <CoverPlaceholder loading={imageState === 'loading'} /> : null}
         {useCase.video ? (
           <>
-            <span
-              aria-hidden="true"
-              data-testid="video-play-indicator"
-              className="pointer-events-none absolute inset-0 flex items-center justify-center"
-            >
-              <span className="flex size-14 items-center justify-center rounded-full bg-black/65 text-white shadow-lg">
-                <Play className="ml-1 size-6 fill-current" />
-              </span>
-            </span>
+            {!active && <VideoPlayIndicator />}
             {active ? (
               <>
                 <UseCaseVideoPlayer key={useCase.video.id} video={useCase.video} preview />

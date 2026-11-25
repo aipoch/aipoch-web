@@ -240,7 +240,14 @@ export interface UseCaseVideo {
   title?: string
 }
 
+export interface GuidedLab {
+  standalone?: boolean
+  screenshotUrl?: string
+  entryUrl: string
+}
+
 export interface UseCaseIndexEntry {
+  labManifestUrl?: string
   video?: UseCaseVideo
   slug: string
   title: string
@@ -277,6 +284,8 @@ export interface UseCaseReportRef {
 
 /** Detail metadata derived from the shared manifest snapshot. */
 export interface UseCaseDetail {
+  labManifestUrl?: string
+  lab?: GuidedLab
   video?: UseCaseVideo
   slug: string
   title: string
@@ -326,6 +335,7 @@ export interface UseCaseManifestResource {
 }
 
 export interface UseCaseManifestItem {
+  experience?: { path: string; revision: string }
   video?: { type: string; file_path: string; file_name?: string }
   title: string
   name: string

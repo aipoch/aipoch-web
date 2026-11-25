@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { DM_Serif_Display, Inter, Roboto_Mono } from 'next/font/google'
+import { DM_Serif_Display, Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { PublicEnvScript } from 'next-runtime-env'
 import NextTopLoader from 'nextjs-toploader'
 import { Suspense } from 'react'
@@ -15,10 +16,10 @@ const inter = Inter({
   display: 'swap'
 })
 
-const robotoMono = Roboto_Mono({
+const robotoMono = localFont({
+  src: './fonts/roboto-mono/roboto-mono.woff2',
   variable: '--font-mono',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: '300 700',
   display: 'swap'
 })
 

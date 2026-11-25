@@ -1,5 +1,12 @@
 import { HttpResponse, http } from 'msw'
 import { useCaseManifest } from '../fixtures'
+import {
+  guidedLabFixtures,
+  labDescriptor,
+  labDocument,
+  labScreenshot
+} from '../fixtures/guided-labs'
+import { standaloneLabAsset } from '../fixtures/standalone-lab-assets'
 import { buildCoveragePackage } from '../fixtures/science-coverage-package'
 
 const packages = new Map(
@@ -10,6 +17,8 @@ const packages = new Map(
 export const useCaseManifestHandlers = (origin: string) => {
   let revision = 1
   let mode = 'normal'
+  const entries = () =>
+    mode === 'labs' || mode === 'standalone-labs' ? guidedLabFixtures : useCaseManifest
   let titleSuffix = ''
   let delayMs = 0
   let requests = 0
@@ -41,7 +50,7 @@ export const useCaseManifestHandlers = (origin: string) => {
       return HttpResponse.json(
         responseMode === 'empty'
           ? []
-          : useCaseManifest.map((item) => ({
+          : entries().map((item) => ({
               ...item,
               title: `${item.title}${responseSuffix}`,
               case: {
@@ -85,7 +94,9 @@ export const useCaseManifestHandlers = (origin: string) => {
             update.discoveryMode
           )) ||
         (update.mode !== undefined &&
-          !['normal', 'empty', 'error', 'invalid'].includes(update.mode)) ||
+          !['normal', 'empty', 'error', 'invalid', 'labs', 'standalone-labs'].includes(
+            update.mode
+          )) ||
         (update.titleSuffix !== undefined && typeof update.titleSuffix !== 'string') ||
         (update.packageMode !== undefined &&
           !['normal', 'error', 'empty', 'oversized'].includes(update.packageMode)) ||
@@ -119,11 +130,33 @@ export const useCaseManifestHandlers = (origin: string) => {
       revision += 1
       return HttpResponse.json({ revision })
     }),
+    http.head(`${origin}/use-case-manifest/:slug/experience/:revision/index.html`, ({ params }) => {
+      const item = entries().find((item) => item.name === params.slug)
+      if (!item?.experience || item.experience.revision !== params.revision)
+        return new HttpResponse(null, { status: 404 })
+      return new HttpResponse(null, {
+        headers: mode === 'standalone-labs' ? { 'X-Frame-Options': 'SAMEORIGIN' } : {}
+      })
+    }),
     http.get(`${origin}/use-case-manifest/*`, async ({ request }) => {
       const path = decodeURIComponent(
         new URL(request.url).pathname.slice('/use-case-manifest/'.length)
       )
-      for (const item of useCaseManifest) {
+      for (const item of entries()) {
+        if (item.experience) {
+          const prefix = `${item.name}/experience/${item.experience.revision}/`
+          if (path === `${prefix}project-dialog.js` || path === `${prefix}project-dialog.css`) {
+            const asset = await standaloneLabAsset(path.slice(prefix.length))
+            return asset
+              ? new HttpResponse(await asset.text(), { headers: { 'Content-Type': asset.type } })
+              : new HttpResponse(null, { status: 404 })
+          }
+          if (path === `${prefix}${labDescriptor.screenshot.file_name}`)
+            return new HttpResponse(labScreenshot, { headers: { 'Content-Type': 'image/svg+xml' } })
+          if (path === `${prefix}lab.json`) return HttpResponse.json(labDescriptor)
+          if (path === `${prefix}${labDescriptor.entry.file_name}`)
+            return HttpResponse.html(labDocument)
+        }
         // Serve unchanged session JSON and objects restored to their storage-key directories.
         const prefix = `${item.name}/extracted/`
         if (path.startsWith(prefix)) {

@@ -9,6 +9,13 @@ const wikiSitemapUrl = 'http://openscience-wiki/sitemap'
 
 mock.module('@/service/open-science-use-cases.server', () => ({
   fetchUseCaseSitemapEntries: async () => [
+    {
+      slug: 'interactive-lab',
+      title: 'Interactive Lab',
+      labManifestUrl: 'https://assets.example/interactive-lab/lab.json'
+    },
+    { slug: 'how-far-has-ai-drug-discovery-really-gotten', title: 'Drug discovery' },
+    { slug: '99-pure-does-molecular-handedness-matter', title: 'Molecular handedness' },
     { slug: 'diet-diversity-does-the-gut-microbiome-differ', title: 'Diet Diversity' },
     { slug: 'nvda-all-at-once-or-four-weeks', title: 'NVDA: ALL AT ONCE OR FOUR WEEKS?' },
     {
@@ -40,6 +47,8 @@ mock.module('@/lib/config', () => ({
 mock.module('@/service/blog', () => ({
   fetchBlogSitemap: async () => [
     { url: `${siteDomain}/blog/existing-post`, last_modified: '2026-08-12' },
+    { url: `${siteDomain}/blog/project-suncatcher-cooling`, last_modified: '2026-08-12' },
+    { url: `${siteDomain}/blog/ai-pubmed-search`, last_modified: '2026-11-26T08:00:00Z' },
     { url: `${siteDomain}/blog/newer-post`, last_modified: '2026-11-14T08:00:00Z' }
   ]
 }))
@@ -95,7 +104,12 @@ describe('sitemap', () => {
     expect(routes.some((route) => route.url.includes('/replay/dot-science'))).toBe(false)
     // Track gallery and overview media changes independently from replay pages.
     for (const [path, date] of [
-      ['/open-science/use-cases', '2026-11-19'],
+      ['/open-science/use-cases/how-far-has-ai-drug-discovery-really-gotten', '2026-11-23'],
+      ['/open-science/use-cases/99-pure-does-molecular-handedness-matter', '2026-11-23'],
+      ['/open-science/use-cases/99-pure-does-molecular-handedness-matter/replay', '2026-11-02'],
+      ['/open-science/use-cases', '2026-11-25'],
+      ['/open-science/use-cases/interactive-lab', '2026-11-25'],
+      ['/open-science/use-cases/interactive-lab/replay', '2026-11-25'],
       ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-11-19'],
       ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-11-19'],
       [
@@ -170,7 +184,7 @@ describe('sitemap', () => {
       priority: 0.8
     })
     expect((openScienceDownloadRoute?.lastModified as Date).toISOString()).toBe(
-      '2026-10-21T00:00:00.000Z'
+      '2026-11-25T00:00:00.000Z'
     )
 
     expect(medFlowRoute).toMatchObject({
@@ -230,6 +244,10 @@ describe('sitemap', () => {
     expect(routeDate(`${siteDomain}/blog`)).toBe('2026-11-19T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/agent-skills/list`)).toBe('2026-10-20T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/blog/existing-post`)).toBe('2026-11-13T00:00:00.000Z')
+    expect(routeDate(`${siteDomain}/blog/project-suncatcher-cooling`)).toBe(
+      '2026-11-25T00:00:00.000Z'
+    )
+    expect(routeDate(`${siteDomain}/blog/ai-pubmed-search`)).toBe('2026-11-26T08:00:00.000Z')
     expect(routeDate(`${siteDomain}/blog/newer-post`)).toBe('2026-11-14T08:00:00.000Z')
     expect(routeDate(`${siteDomain}/docs/getting-started`)).toBe('2026-08-17T08:30:00.000Z')
     for (const route of routes.filter((route) => !route.url.startsWith(`${siteDomain}/docs/`))) {

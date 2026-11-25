@@ -1,10 +1,11 @@
 type AutoplayYoutubeEmbedProps = {
   videoId: string
   title: string
+  enableApi?: boolean
 }
 
 /** Muted playback lets browsers start the video without a preceding user gesture. */
-export function AutoplayYoutubeEmbed({ videoId, title }: AutoplayYoutubeEmbedProps) {
+export function AutoplayYoutubeEmbed({ videoId, title, enableApi }: AutoplayYoutubeEmbedProps) {
   const params = new URLSearchParams({
     autoplay: '1',
     mute: '1',
@@ -13,6 +14,8 @@ export function AutoplayYoutubeEmbed({ videoId, title }: AutoplayYoutubeEmbedPro
     playsinline: '1',
     rel: '0'
   })
+
+  if (enableApi) params.set('enablejsapi', '1')
 
   return (
     <iframe

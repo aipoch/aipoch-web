@@ -42,6 +42,7 @@ async function ReplayPackage({ id }: { id: string }) {
       <ReplayView
         key={id}
         slug={id}
+        isLab={Boolean(entry?.labManifestUrl)}
         packageInfo={entry?.package ?? null}
         error={entry?.package ? undefined : 'Research package not found.'}
       />
