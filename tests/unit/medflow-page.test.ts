@@ -5,7 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MedFlowContent } from '../../app/(commonLayout)/medflow/medflow-content'
 import {
   MEDFLOW_PAGE_LAST_MODIFIED,
-  medFlowMetadata
+  medFlowMetadata,
+  medFlowStructuredData
 } from '../../app/(commonLayout)/medflow/medflow-metadata'
 import MedFlowPage from '../../app/(commonLayout)/medflow/page'
 
@@ -52,11 +53,18 @@ describe('MedFlow production page', () => {
     expect(medFlowMetadata.openGraph?.description).toBe(medFlowMetadata.description ?? undefined)
     expect(medFlowMetadata.twitter?.description).toBe(medFlowMetadata.description ?? undefined)
     expect(medFlowMetadata.description).not.toContain('July 2026')
-    expect(MEDFLOW_PAGE_LAST_MODIFIED).toBe('2026-09-21')
+    expect(MEDFLOW_PAGE_LAST_MODIFIED).toBe('2026-11-18')
   })
 
   test('renders the replacement directly at the existing route, within the shared shell', () => {
     const html = renderToStaticMarkup(createElement(MedFlowPage))
+    expect(html).toContain('type="application/ld+json"')
+    expect(medFlowStructuredData).toMatchObject({
+      '@type': 'WebPage',
+      url: 'https://aipoch.com/medflow',
+      name: 'MedFlow',
+      description: medFlowMetadata.description
+    })
     expect(html).toContain('aria-label="MedFlow"')
     expect(html).toContain('MEDFLOW')
     expect(text(html)).toContain('A NEW SIGNAL IS COMING')

@@ -12,11 +12,25 @@ mock.module('@/service/open-science-use-cases.server', () => ({
   fetchGuidedLab: async () => ({ screenshotUrl: '/original-opening.png' }),
   fetchUseCaseList: async () => result
 }))
-const { default: UseCasesPage } = await import(
+const { default: UseCasesPage, generateMetadata } = await import(
   '../../app/(commonLayout)/open-science/use-cases/page'
 )
 const render = async (page?: string, category?: string) =>
   renderToStaticMarkup(await UseCasesPage({ searchParams: Promise.resolve({ page, category }) }))
+
+test('server-renders gallery structured data from visible page content', async () => {
+  result = entries
+  const html = await render()
+  const json = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1]
+  expect(json).toBeDefined()
+  expect(JSON.parse(json ?? '{}')).toMatchObject({
+    '@type': 'CollectionPage',
+    url: 'https://aipoch.com/open-science/use-cases',
+    name: 'Use Case Gallery',
+    description:
+      'Explore selected .science research packages and see how research questions become inspectable outputs through connected workflows of data, code, evidence, and conversation.'
+  })
+})
 
 test('server-renders appended cases first without mutating the source snapshot', async () => {
   result = entries
@@ -140,4 +154,33 @@ test('uses the published screenshot in the carousel and the list cover in the ga
   const links = [...gallery.matchAll(/<a [^>]*>/g)].map(([tag]) => tag)
   expect(links.find((tag) => tag.includes('/research-1"'))).toContain('target="_blank"')
   expect(links.find((tag) => tag.includes('/research-2"'))).not.toContain('target="_blank"')
+})
+
+test('canonicalizes unfiltered batches to their normalized page and preserves category policy', async () => {
+  result = entries
+  for (const [page, suffix] of [
+    [undefined, ''],
+    ['1', ''],
+    ['2', '?page=2'],
+    ['3', '?page=3'],
+    ['999', '?page=3'],
+    ['0', ''],
+    ['-2', ''],
+    ['invalid', ''],
+    ['2junk', ''],
+    ['1.5', '']
+  ]) {
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({ page }) })
+    expect(metadata.alternates?.canonical).toBe(
+      `https://aipoch.com/open-science/use-cases${suffix}`
+    )
+    expect(String(metadata.openGraph?.url)).toBe(String(metadata.alternates?.canonical))
+  }
+  const filtered = await generateMetadata({
+    searchParams: Promise.resolve({ page: '2', category: 'science' })
+  })
+  expect(filtered.alternates?.canonical).toBe('https://aipoch.com/open-science/use-cases')
+  result = []
+  const empty = await generateMetadata({ searchParams: Promise.resolve({ page: '2' }) })
+  expect(empty.alternates?.canonical).toBe('https://aipoch.com/open-science/use-cases')
 })

@@ -6,6 +6,9 @@ mock.module('@/service/open-science-use-cases.server', () => ({
   fetchGuidedLab: async () => undefined,
   fetchUseCaseList: async () => []
 }))
+mock.module('@/lib/blog-list-pagination', () => ({
+  getBlogListPage: async () => ({ current: 1 })
+}))
 
 const BLOG_TITLE = 'AIPOCH Blog | Open-Science Updates & Research Workflows'
 const BLOG_DESCRIPTION =
@@ -29,7 +32,10 @@ const expectPageMetadata = (
 
 describe('page metadata contracts', () => {
   test('publishes self-contained metadata for Blog, Leaderboard, and policy pages', async () => {
-    const { metadata: blogMetadata } = await import('../../app/(commonLayout)/blog/page')
+    const { generateMetadata: generateBlogMetadata } = await import(
+      '../../app/(commonLayout)/blog/page'
+    )
+    const blogMetadata = await generateBlogMetadata({ searchParams: Promise.resolve({}) })
     const { metadata: leaderboardMetadata } = await import(
       '../../app/(commonLayout)/leaderboard/layout'
     )
@@ -132,7 +138,10 @@ describe('page metadata contracts', () => {
   })
 
   test('uses the supplied gallery image for use-case social cards', async () => {
-    const { metadata } = await import('../../app/(commonLayout)/open-science/use-cases/page')
+    const { generateMetadata } = await import(
+      '../../app/(commonLayout)/open-science/use-cases/page'
+    )
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({}) })
     const image = 'https://aipoch.com/images/open-science/use-case-gallery-social.png'
 
     expect(metadata.twitter).toMatchObject({

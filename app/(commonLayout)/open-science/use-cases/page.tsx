@@ -1,12 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { JsonLd } from '@/components/json-ld'
+import { AIPOCH_WEBSITE_ID } from '@/lib/aipoch-organization'
 import { SITE_DOMAIN } from '@/lib/config'
 import { createPageMetadata } from '@/lib/page-metadata'
 import { fetchGuidedLab, fetchUseCaseList } from '@/service/open-science-use-cases.server'
 import { LabCarousel } from './_components/lab-carousel'
 import { UseCaseCategories } from './_components/use-case-categories'
 import { UseCaseGallery } from './_components/use-case-gallery'
-import { USE_CASE_BATCH_SIZE } from './_components/use-case-gallery-data'
+import { getUseCaseGalleryPage, USE_CASE_BATCH_SIZE } from './_components/use-case-gallery-data'
 
 const headingClass = 'font-[Georgia,serif] font-normal tracking-normal'
 /** Shared surface for the gallery grid and bottom CTA. */
@@ -15,23 +17,41 @@ const surfaceClass = 'bg-[#f7f7f5]'
 const pageTitle = 'Open-Science Use Cases | AIPOCH'
 const pageDescription =
   'Explore selected .science research packages and see how research questions become inspectable outputs through connected workflows of data, code, evidence, and conversation.'
-
-export const metadata: Metadata = createPageMetadata({
-  title: pageTitle,
+const galleryUrl = `${SITE_DOMAIN}/open-science/use-cases`
+const gallerySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': `${galleryUrl}#webpage`,
+  url: galleryUrl,
+  name: 'Use Case Gallery',
   description: pageDescription,
-  canonical: `${SITE_DOMAIN}/open-science/use-cases`,
-  image: {
-    url: `${SITE_DOMAIN}/images/open-science/use-case-gallery-social.png`,
-    width: 1280,
-    height: 672,
-    alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
-  }
-})
+  inLanguage: 'en',
+  isPartOf: { '@id': AIPOCH_WEBSITE_ID }
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams
+  // Preserve the existing canonical policy for category-filtered URLs.
+  const current = params.category
+    ? 1
+    : getUseCaseGalleryPage(params.page, (await fetchUseCaseList())?.length ?? 0)
+  return createPageMetadata({
+    title: pageTitle,
+    description: pageDescription,
+    canonical: `${SITE_DOMAIN}/open-science/use-cases${current > 1 ? `?page=${current}` : ''}`,
+    image: {
+      url: `${SITE_DOMAIN}/images/open-science/use-case-gallery-social.png`,
+      width: 1280,
+      height: 672,
+      alt: 'AIPOCH Open-Science Use Case Gallery with selected .science package examples'
+    }
+  })
+}
 
 export const dynamic = 'force-dynamic'
 
 type PageProps = {
-  searchParams: Promise<{ page?: string; category?: string }>
+  searchParams: Promise<{ page?: string | string[]; category?: string }>
 }
 
 export default async function OpenScienceUseCasesPage({ searchParams }: PageProps) {
@@ -85,16 +105,13 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
       ? useCases.filter((entry) => entry.catalogKey === activeCategory)
       : useCases
 
-  const pageCount = visibleUseCases
-    ? Math.max(1, Math.ceil(visibleUseCases.length / USE_CASE_BATCH_SIZE))
-    : 1
-  const requested = Number.parseInt(params.page ?? '1', 10)
-  const current = Number.isFinite(requested) ? Math.min(Math.max(1, requested), pageCount) : 1
+  const current = getUseCaseGalleryPage(params.page, visibleUseCases?.length ?? 0)
   // Retain old page links by revealing all batches through the requested page.
   const initialCount = current * USE_CASE_BATCH_SIZE
 
   return (
     <main id="top" className={`-mt-[var(--nav-h)] flex-1 ${surfaceClass} text-[#10110f]`}>
+      <JsonLd data={gallerySchema} />
       <section className="pt-[var(--nav-h)]">
         <div className="mx-auto flex max-w-[1000px] flex-col items-center px-5 py-16 text-center sm:px-10 lg:py-[88px]">
           <h1 className={`${headingClass} text-[clamp(40px,5vw,56px)] leading-[1.08]`}>

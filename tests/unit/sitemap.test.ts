@@ -108,9 +108,13 @@ describe('sitemap', () => {
       ['/open-science/use-cases', '2026-11-23'],
       ['/open-science/use-cases/interactive-lab', '2026-11-23'],
       ['/open-science/use-cases/interactive-lab/replay', '2026-11-23'],
-      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-10-28'],
-      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-10-28'],
-      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-10-28']
+      ['/open-science/use-cases/diet-diversity-does-the-gut-microbiome-differ', '2026-11-19'],
+      ['/open-science/use-cases/nvda-all-at-once-or-four-weeks', '2026-11-19'],
+      [
+        '/open-science/use-cases/first-flight-vs-evening-flight-which-is-more-reliable',
+        '2026-11-19'
+      ],
+      ['/open-science/use-cases/can-a-simple-algorithm-beat-ai-at-wordle', '2026-11-19']
     ]) {
       expect(routes.find((route) => route.url === `${siteDomain}${path}`)?.lastModified).toEqual(
         new Date(date)
@@ -185,7 +189,7 @@ describe('sitemap', () => {
       changeFrequency: 'monthly',
       priority: 0.8
     })
-    expect((medFlowRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
+    expect((medFlowRoute?.lastModified as Date).toISOString()).toBe('2026-11-18T00:00:00.000Z')
 
     expect(agentSkillsRoute).toMatchObject({
       changeFrequency: 'weekly',
@@ -202,7 +206,7 @@ describe('sitemap', () => {
     )
     expect((skillsListRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
     expect((skillDetailRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
-    expect((blogRoute?.lastModified as Date).toISOString()).toBe('2026-10-20T00:00:00.000Z')
+    expect((blogRoute?.lastModified as Date).toISOString()).toBe('2026-11-19T00:00:00.000Z')
     expect(guidesIndexRoute).toBeUndefined()
     expect(guideDetailRoute).toMatchObject({
       url: `${siteDomain}/guides/what-is-a-skill`,
@@ -235,7 +239,7 @@ describe('sitemap', () => {
     const routeDate = (url: string) =>
       (routes.find((route) => route.url === url)?.lastModified as Date)?.toISOString()
 
-    expect(routeDate(`${siteDomain}/blog`)).toBe('2026-10-20T00:00:00.000Z')
+    expect(routeDate(`${siteDomain}/blog`)).toBe('2026-11-19T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/agent-skills/list`)).toBe('2026-10-20T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/blog/existing-post`)).toBe('2026-11-13T00:00:00.000Z')
     expect(routeDate(`${siteDomain}/blog/newer-post`)).toBe('2026-11-14T08:00:00.000Z')
