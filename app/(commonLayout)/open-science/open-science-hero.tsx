@@ -1,4 +1,3 @@
-import { AgentInstallPrompt } from '@/components/agent-install/agent-install-prompt'
 import { ArrowRight, Star } from 'lucide-react'
 import { AutoplayYoutubeEmbed } from '@/components/youtube/autoplay-youtube-embed'
 import { OpenScienceDownload } from './open-science-download'
@@ -60,7 +59,6 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             </a>{' '}
             to see these workflows in practice.
           </p>
-          <AgentInstallPrompt />
           <div data-open-science-reveal="0.18" className="flex flex-wrap items-center gap-3">
             <a
               href="https://github.com/aipoch/open-science"

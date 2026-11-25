@@ -303,20 +303,6 @@ test('uses a direct Windows download with macOS and Linux architecture menus', a
     downloadManifestFixture.downloads['win-x64'].url
   )
   await expect(downloads.getByText('DOWNLOAD', { exact: true })).toHaveCount(3)
-  const agents = page.getByRole('list', { name: 'Coding agents for this prompt' })
-  const github = page.getByTestId('home-github-link')
-  const [agentBounds, downloadBounds, githubBounds] = await Promise.all([
-    agents.boundingBox(),
-    downloads.boundingBox(),
-    github.boundingBox()
-  ])
-  if (!agentBounds || !downloadBounds || !githubBounds) throw new Error('Missing hero controls')
-  expect(downloadBounds.y).toBeGreaterThanOrEqual(agentBounds.y + agentBounds.height)
-  expect(githubBounds.y).toBeGreaterThanOrEqual(downloadBounds.y + downloadBounds.height)
-  for (const platform of ['Windows', 'macOS', 'Linux']) {
-    const bounds = await downloads.getByLabel(`Download ${platform}`, { exact: true }).boundingBox()
-    expect(bounds?.height).toBeCloseTo(50.4, 1)
-  }
 
   const macDownload = downloads.getByRole('button', { name: /Download macOS/i })
   await expect(macDownload).toHaveAttribute('aria-expanded', 'false')

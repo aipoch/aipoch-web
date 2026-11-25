@@ -85,7 +85,7 @@ export const HomeGithubLink = ({ variant = 'hero' }: { variant?: 'hero' | 'compa
       className={
         compact
           ? 'ml-auto inline-flex shrink-0 items-center gap-1.5 text-[#111] transition-colors hover:text-[#915600]'
-          : 'inline-flex min-h-[42px] w-[507px] max-w-full items-center gap-3 bg-[#212121] px-3 py-1 font-mono text-[11px] font-semibold tracking-[.03em] text-white transition-opacity hover:opacity-80 sm:px-5 sm:py-2.5 sm:text-[13px]'
+          : 'inline-flex min-h-[42px] w-[507px] max-w-full items-center gap-3 bg-[#212121] px-5 py-2.5 font-mono text-[11px] font-semibold tracking-[.03em] text-white transition-opacity hover:opacity-80 sm:text-[13px]'
       }
     >
       <GithubIcon

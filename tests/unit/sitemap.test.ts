@@ -171,13 +171,13 @@ describe('sitemap', () => {
       (route) => route.url === `${siteDomain}/guides/what-is-a-skill`
     )
 
-    expect((homepageRoute?.lastModified as Date).toISOString()).toBe('2026-11-25T00:00:00.000Z')
+    expect((homepageRoute?.lastModified as Date).toISOString()).toBe('2026-11-03T00:00:00.000Z')
 
     expect(openScienceRoute).toMatchObject({
       changeFrequency: 'weekly',
       priority: 0.8
     })
-    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-11-25T00:00:00.000Z')
+    expect((openScienceRoute?.lastModified as Date).toISOString()).toBe('2026-11-13T00:00:00.000Z')
 
     expect(openScienceDownloadRoute).toMatchObject({
       changeFrequency: 'weekly',
