@@ -1,3 +1,4 @@
+import { AgentInstallPrompt } from '@/components/agent-install/agent-install-prompt'
 import { ArrowRight, Star } from 'lucide-react'
 import { AutoplayYoutubeEmbed } from '@/components/youtube/autoplay-youtube-embed'
 import { OpenScienceDownload } from './open-science-download'
@@ -71,6 +72,7 @@ export function OpenScienceHero({ releaseManifest }: { releaseManifest: Download
             </a>
             <OpenScienceDownload initialManifest={releaseManifest} />
           </div>
+          <AgentInstallPrompt />
         </div>
         <div data-open-science-reveal="0.24" className="mt-12 pb-8 lg:mt-20">
           <AutoplayYoutubeEmbed

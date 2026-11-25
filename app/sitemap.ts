@@ -17,7 +17,7 @@ import { fetchUseCaseSitemapEntries } from '@/service/open-science-use-cases.ser
 import { fetchOpenScienceWikiSitemap } from '@/service/wiki-sitemap'
 
 const AGENT_SKILLS_LAST_MODIFIED = '2026-09-11'
-const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-10-21'
+const OPEN_SCIENCE_DOWNLOAD_LAST_MODIFIED = '2026-11-25'
 const OPEN_SCIENCE_USE_CASES_LAST_MODIFIED = '2026-11-25'
 const GUIDED_LAB_LAST_MODIFIED = '2026-11-25'
 const RELATED_LAB_CARDS_LAST_MODIFIED = '2026-11-23'
@@ -181,7 +181,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogRoutes: MetadataRoute.Sitemap = blogSitemap.map((item) =>
     withReliableLastModified({
       url: item.url,
-      lastModified: blogArticleLastModified(item.last_modified),
+      lastModified: blogArticleLastModified(
+        item.last_modified,
+        item.url.split('/').filter(Boolean).at(-1)
+      ),
       changeFrequency: (item.change_frequency as 'weekly' | 'monthly') || 'monthly',
       priority: item.priority ?? 0.7
     })

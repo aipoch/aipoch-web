@@ -1,3 +1,4 @@
+import { AgentInstallPrompt } from '@/components/agent-install/agent-install-prompt'
 import { homeHeroStats } from './home-data'
 import { HomeDownload } from './home-download'
 import { HomeGithubLink } from './home-github-link'
@@ -55,6 +56,7 @@ export const HomeHero = () => (
           archiving.
         </p>
         <HomeDownload />
+        <AgentInstallPrompt />
         <div className="mt-12 flex flex-wrap items-center gap-6">
           <HomeGithubLink />
           <a

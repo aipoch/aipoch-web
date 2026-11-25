@@ -83,7 +83,7 @@ afterAll(async () => {
 }, 15000)
 
 describe('mock development end to end', () => {
-  test('opens a manifest lab and shares one downloaded file between save and desktop import', async () => {
+  test('opens a manifest lab and restores its verified package after refresh', async () => {
     const controls = `${api}/__mock/use-case-manifest`
     const update = (body: object) => fetch(controls, { method: 'PUT', body: JSON.stringify(body) })
     const browser = await chromium.launch()
@@ -153,9 +153,7 @@ describe('mock development end to end', () => {
         `Import "${await dialog.getByRole('heading', { level: 2 }).innerText()}" in AIPOCH Open-Science.`
       )
       expect(importText).toContain('then import it and open the research session.')
-      expect(importText).toContain(
-        'https://github.com/aipoch/open-science/blob/main/packages/open-science/CLI.md'
-      )
+      expect(importText).toContain('https://aipoch.com/open-science/Open-Science-Install.md')
       expect(importText).toContain('.science')
       expect(importText).not.toMatch(/research prompt|prompt\.txt/i)
       await dialog.getByRole('button', { name: 'Copy import instructions' }).click()
@@ -173,14 +171,12 @@ describe('mock development end to end', () => {
       const saved = labPage.waitForEvent('download')
       await dialog.getByRole('button', { name: 'Save to device' }).click()
       expect((await saved).suggestedFilename()).toEndWith('.science')
-      await dialog.getByRole('button', { name: 'Import into Open-Science' }).click()
-      // The mock adapter deliberately has no desktop receiver. Exercise the SDK launch,
-      // cancel the wait and verify the prepared bytes remain available for another action.
-      await browserExpect(dialog.getByRole('status')).toContainText('Waiting for Open-Science')
-      await dialog.getByRole('button', { name: 'Cancel' }).click()
       await browserExpect(
         dialog.getByRole('button', { name: 'Import into Open-Science' })
-      ).toBeEnabled()
+      ).toHaveCount(0)
+      await labPage.reload()
+      await labPage.getByRole('button', { name: 'Project', exact: true }).click()
+      await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
       expect(await stats()).toBe(initial + 1)
       expect(promptRequests).toHaveLength(0)
     } finally {
@@ -238,7 +234,7 @@ describe('mock development end to end', () => {
       await browserExpect(dialog.getByRole('button', { name: 'Save to device' })).toBeVisible()
       await browserExpect(
         dialog.getByRole('button', { name: 'Import into Open-Science' })
-      ).toBeVisible()
+      ).toHaveCount(0)
       await standalone.keyboard.press('Escape')
       await browserExpect(dialog).toHaveCount(0)
       await standalone.getByRole('button', { name: 'Open project' }).click()
@@ -356,6 +352,33 @@ describe('mock development end to end', () => {
             body: '<html><body>Video player</body></html>'
           })
         )
+        await page.addInitScript(() => {
+          Object.assign(window, {
+            YT: {
+              Player: class {
+                constructor(
+                  frame: HTMLIFrameElement,
+                  options: {
+                    events: {
+                      onReady(event: { target: { mute(): void; playVideo(): void } }): void
+                      onStateChange(event: { data: number }): void
+                    }
+                  }
+                ) {
+                  const report = (data: number) => options.events.onStateChange({ data })
+                  frame.addEventListener('test-playing', () => report(1))
+                  frame.addEventListener('test-pause', () => report(2))
+                  frame.dataset.playerReady = 'true'
+                  this.playVideo = () => report(3)
+                  options.events.onReady({ target: this })
+                }
+                mute() {}
+                playVideo() {}
+                destroy() {}
+              }
+            }
+          })
+        })
         for (const path of ['/blog/what-is-a-skill', '/open-science']) {
           await page.goto(`${web}${path}`)
           const player = page.locator('iframe[src*="youtube-nocookie.com/embed/"]')
@@ -369,6 +392,18 @@ describe('mock development end to end', () => {
             playsinline: '1'
           })
           if (path.startsWith('/blog/')) {
+            const play = page.getByRole('button', { name: /^Play / })
+            const ring = play.locator('[data-loading]')
+            await browserExpect(player).toHaveAttribute('data-player-ready', 'true')
+            await browserExpect(ring).toHaveAttribute('data-loading', 'true')
+            await player.dispatchEvent('test-playing')
+            await browserExpect(play).toHaveCount(0)
+            await player.dispatchEvent('test-pause')
+            await browserExpect(ring).toHaveAttribute('data-loading', 'false')
+            await play.click()
+            await browserExpect(ring).toHaveAttribute('data-loading', 'true')
+            await player.dispatchEvent('test-playing')
+            await browserExpect(play).toHaveCount(0)
             expect(await page.locator('.blog-article-body > :first-child iframe').count()).toBe(1)
             await browserExpect(
               page.getByRole('img', { name: 'Video preview', exact: true })
@@ -1110,7 +1145,9 @@ describe('mock development end to end', () => {
       await browserExpect(nonVideoCard.getByTestId('video-play-indicator')).toHaveCount(0)
       await browserExpect(page.locator('iframe[data-video-id]')).toHaveCount(0)
       await card.hover()
-      await browserExpect(card.getByText('Loading video…')).toHaveCount(0)
+      await browserExpect(
+        card.locator('[data-testid="video-play-indicator"] [data-loading="true"]')
+      ).toBeVisible()
       await browserExpect(card.locator('iframe[data-muted="true"]')).toHaveCount(1)
       await browserExpect(card.getByTestId('use-case-video')).toHaveAttribute(
         'data-playing',

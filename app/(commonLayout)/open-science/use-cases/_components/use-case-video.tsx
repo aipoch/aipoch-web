@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { VideoPlayIndicator } from '@/components/youtube/video-play-indicator'
 import type { UseCaseVideo } from '@/lib/use-case-types'
 import { loadYouTubePlayer, type YouTubePlayer } from '@/lib/youtube-player'
 
@@ -73,16 +74,19 @@ export function UseCaseVideoPlayer({
     }
   }, [video.id, video.title, preview, failed])
 
-  if (failed) return null
+  if (failed) return preview ? <VideoPlayIndicator /> : null
   return (
-    <div
-      data-testid="use-case-video"
-      data-playing={playing}
-      aria-hidden={preview || !playing}
-      inert={preview || !playing}
-      className={`absolute inset-0 h-full w-full ${playing ? 'opacity-100' : 'pointer-events-none opacity-0'} ${preview ? 'pointer-events-none' : ''}`}
-    >
-      <div ref={container} className="absolute inset-0 h-full w-full" />
-    </div>
+    <>
+      {preview && !playing && <VideoPlayIndicator loading />}
+      <div
+        data-testid="use-case-video"
+        data-playing={playing}
+        aria-hidden={preview || !playing}
+        inert={preview || !playing}
+        className={`absolute inset-0 h-full w-full ${playing ? 'opacity-100' : 'pointer-events-none opacity-0'} ${preview ? 'pointer-events-none' : ''}`}
+      >
+        <div ref={container} className="absolute inset-0 h-full w-full" />
+      </div>
+    </>
   )
 }

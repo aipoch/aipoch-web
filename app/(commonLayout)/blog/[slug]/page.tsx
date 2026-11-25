@@ -6,7 +6,7 @@ import { BlogSidebarCTA } from '@/components/blog-sidebar'
 import { JsonLd } from '@/components/json-ld'
 import { BlogArticleQuote, MarkdownRenderer } from '@/components/markdown'
 import { TableOfContents } from '@/components/markdown/toc'
-import { AutoplayYoutubeEmbed } from '@/components/youtube/autoplay-youtube-embed'
+import { ArticleVideo } from '@/components/youtube/article-video'
 import { extractVideosFromContent, getPost } from '@/lib/blog'
 import { blogArticleLastModified } from '@/lib/blog-page-metadata'
 import { SITE_DOMAIN } from '@/lib/config'
@@ -187,7 +187,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     name: schemaTitle,
     description: schemaDescription,
     ...(publishedDate ? { datePublished: publishedDate } : {}),
-    dateModified: blogArticleLastModified(publishedDate ?? undefined),
+    dateModified: blogArticleLastModified(publishedDate ?? undefined, slug),
     primaryImageOfPage: { '@type': 'ImageObject', url: schemaImage },
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -350,7 +350,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
               {youtubeVideos.length > 0 && (
                 <section className="mb-8 space-y-6" aria-label="Article videos">
                   {youtubeVideos.map((videoId, index) => (
-                    <AutoplayYoutubeEmbed
+                    <ArticleVideo
                       key={videoId}
                       videoId={videoId}
                       title={`${post.frontmatter.title} — video ${index + 1}`}

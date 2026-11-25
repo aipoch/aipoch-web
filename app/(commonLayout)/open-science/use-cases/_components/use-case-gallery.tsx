@@ -1,6 +1,6 @@
 'use client'
 
-import { Play } from 'lucide-react'
+import { VideoPlayIndicator } from '@/components/youtube/video-play-indicator'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigationViewState } from '@/hooks/use-navigation-view-state'
@@ -108,15 +108,7 @@ const GalleryCard = ({
         {imageState !== 'loaded' ? <CoverPlaceholder loading={imageState === 'loading'} /> : null}
         {useCase.video ? (
           <>
-            <span
-              aria-hidden="true"
-              data-testid="video-play-indicator"
-              className="pointer-events-none absolute inset-0 flex items-center justify-center"
-            >
-              <span className="flex size-14 items-center justify-center rounded-full bg-black/65 text-white shadow-lg">
-                <Play className="ml-1 size-6 fill-current" />
-              </span>
-            </span>
+            {!active && <VideoPlayIndicator />}
             {active ? (
               <>
                 <UseCaseVideoPlayer key={useCase.video.id} video={useCase.video} preview />

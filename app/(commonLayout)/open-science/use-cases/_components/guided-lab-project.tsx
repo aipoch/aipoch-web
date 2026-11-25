@@ -8,6 +8,8 @@ import {
   type ImportState,
   scienceImportFilename
 } from '@/lib/science-package/browser-import'
+import { OPEN_SCIENCE_INSTALL_PROMPT } from '@/lib/open-science-install-prompt'
+import { readLabPackage, storeLabPackage } from '@/lib/science-package/lab-package-cache'
 import type { UseCasePackage } from '@/lib/use-case-types'
 import { CopyButton } from './copy-button'
 import styles from './guided-lab-project.module.css'
@@ -48,7 +50,12 @@ export function GuidedLabProjectDialog({
         </button>
       </header>
       {project ? (
-        <ProjectActions title={project.title} packageInfo={project.package} opened={opened} />
+        <ProjectActions
+          key={project.package.sha256}
+          title={project.title}
+          packageInfo={project.package}
+          opened={opened}
+        />
       ) : (
         <div className={styles.body} role="status">
           <p>{error ? 'Could not load the project details.' : 'Loading project details…'}</p>
@@ -100,8 +107,45 @@ function ProjectActions({
     }
   }, [downloadUrl, packageInfo.filename, packageInfo.sizeBytes, packageInfo.sha256])
 
-  const agentPrompt = `Import "${title}" in AIPOCH Open-Science. Download ${packageInfo.filename} from ${downloadUrl}, then import it and open the research session. If Open-Science is missing, Read https://github.com/aipoch/open-science/blob/main/packages/open-science/CLI.md and follow the instructions to install and Import in the current agent.`
-  const file = session.current?.preparedFile()
+  const [file, setFile] = useState<Blob>()
+  const [checking, setChecking] = useState(true)
+  const [storing, setStoring] = useState(false)
+  useEffect(() => {
+    if (!opened || file) return
+    let active = true
+    setChecking(true)
+    readLabPackage(packageInfo)
+      .then((saved) => {
+        if (active && saved) setFile(saved)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setChecking(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [opened, file, packageInfo])
+
+  async function prepareFile() {
+    const current = session.current
+    if (!current || !(await current.prepare(true))) return
+    const verified = current.preparedFile()
+    if (!verified || session.current !== current) return
+    setStoring(true)
+    let message = 'Package ready to save.'
+    try {
+      await storeLabPackage(packageInfo, verified)
+    } catch {
+      message = 'Package ready to save. Your browser could not cache it for the next visit.'
+    }
+    if (session.current !== current) return
+    setFile(verified)
+    setState({ phase: 'ready', message })
+    setStoring(false)
+  }
+
+  const agentPrompt = `Import "${title}" in AIPOCH Open-Science. Download ${packageInfo.filename} from ${downloadUrl}, then import it and open the research session. If Open-Science is missing, ${OPEN_SCIENCE_INSTALL_PROMPT}`
   const busy = ['downloading', 'opening', 'sending', 'canceling'].includes(state.phase)
   const total = state.total ?? packageInfo.sizeBytes
   const percent =
@@ -167,30 +211,14 @@ function ProjectActions({
         </div>
       ) : null}
       <div className={styles.actions}>
-        {!file && !busy && (
-          <button type="button" onClick={() => void session.current?.prepare(true)}>
+        {!file && !busy && !storing && !checking && (
+          <button type="button" onClick={() => void prepareFile()}>
             Download .science
           </button>
         )}
         {file && (
           <button type="button" onClick={save}>
             Save to device
-          </button>
-        )}
-        {file && !busy && state.phase !== 'unsupported' && (
-          <button
-            type="button"
-            onClick={() => {
-              if (state.action === 'resume') void session.current?.resume()
-              else if (state.phase === 'received') session.current?.openApp()
-              else void session.current?.open()
-            }}
-          >
-            {state.action === 'resume'
-              ? 'Reconnect to Open-Science'
-              : state.phase === 'received'
-                ? 'Open Open-Science'
-                : 'Import into Open-Science'}
           </button>
         )}
         {busy && (
@@ -203,7 +231,9 @@ function ProjectActions({
           </button>
         )}
       </div>
-      <p role="status">{state.launchError || state.message}</p>
+      <p role="status">
+        {storing ? 'Caching package…' : checking && !file ? 'Checking local cache…' : state.message}
+      </p>
     </div>
   )
 }
