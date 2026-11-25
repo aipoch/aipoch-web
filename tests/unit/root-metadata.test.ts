@@ -4,9 +4,10 @@ const mockFont = () => ({ variable: '' })
 
 mock.module('next/font/google', () => ({
   DM_Serif_Display: mockFont,
-  Inter: mockFont,
-  Roboto_Mono: mockFont
+  Inter: mockFont
 }))
+
+mock.module('next/font/local', () => ({ default: mockFont }))
 
 describe('root metadata', () => {
   test('does not publish route-specific title, description, canonical, or social fallbacks', async () => {
