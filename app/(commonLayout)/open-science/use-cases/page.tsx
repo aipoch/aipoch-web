@@ -4,6 +4,7 @@ import { JsonLd } from '@/components/json-ld'
 import { AIPOCH_WEBSITE_ID } from '@/lib/aipoch-organization'
 import { SITE_DOMAIN } from '@/lib/config'
 import { createPageMetadata } from '@/lib/page-metadata'
+import { guidedLabEntryUrl } from '@/lib/use-case-manifest'
 import { fetchGuidedLab, fetchUseCaseList } from '@/service/open-science-use-cases.server'
 import { LabCarousel } from './_components/lab-carousel'
 import { UseCaseCategories } from './_components/use-case-categories'
@@ -173,13 +174,19 @@ export default async function OpenScienceUseCasesPage({ searchParams }: PageProp
             key={activeCategory ?? 'all'}
             category={activeCategory}
             initialCount={initialCount}
-            items={visibleUseCases.map(({ slug, title, preview, video, labManifestUrl }) => ({
-              slug,
-              title,
-              preview,
-              labManifestUrl,
-              video
-            }))}
+            items={visibleUseCases.map(
+              ({ slug, title, preview, video, catalogKey, labManifestUrl }) => ({
+                slug,
+                title,
+                preview,
+                opensInNewTab: Boolean(labManifestUrl),
+                href:
+                  catalogKey === '3-d-lab' && labManifestUrl
+                    ? guidedLabEntryUrl(labManifestUrl)
+                    : `/open-science/use-cases/${slug}`,
+                video
+              })
+            )}
           />
         )}
       </section>

@@ -2,7 +2,11 @@ import 'server-only'
 import { after } from 'next/server'
 import { cache } from 'react'
 import { API_URL, STATIC_ASSETS_ORIGIN } from '@/lib/config'
-import { createUseCaseManifestCache, parseGuidedLab } from '@/lib/use-case-manifest'
+import {
+  createUseCaseManifestCache,
+  guidedLabEntryUrl,
+  parseGuidedLab
+} from '@/lib/use-case-manifest'
 import type { GuidedLab, UseCaseDetail, UseCaseIndexEntry } from '@/lib/use-case-types'
 
 // Manifest-relative resources share the configured public static asset origin.
@@ -47,7 +51,7 @@ export const fetchUseCaseList = async (): Promise<UseCaseIndexEntry[] | null> =>
 
 export const fetchGuidedLab = cache(async (descriptorUrl: string): Promise<GuidedLab> => {
   // The publisher always serves index.html. The descriptor adds an optional opening screenshot.
-  const entryUrl = new URL('index.html', descriptorUrl).href
+  const entryUrl = guidedLabEntryUrl(descriptorUrl)
   const options = { cache: 'no-store' as const, signal: AbortSignal.timeout(15000) }
   const [descriptor, entry] = await Promise.allSettled([
     fetch(descriptorUrl, options).then(async (res) =>

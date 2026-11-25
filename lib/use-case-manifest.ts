@@ -150,6 +150,10 @@ export const parseUseCaseManifest = (
   })
 }
 
+// Each published experience has a fixed entry beside its versioned descriptor.
+export const guidedLabEntryUrl = (descriptorUrl: string) =>
+  new URL('index.html', descriptorUrl).href
+
 /** Resolve the published lab entry and its optional carousel screenshot. */
 export const parseGuidedLab = (value: unknown, manifestUrl: string) => {
   const item = record(value, 'lab')

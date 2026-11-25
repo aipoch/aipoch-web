@@ -156,6 +156,31 @@ test('uses the published screenshot in the carousel and the list cover in the ga
   expect(links.find((tag) => tag.includes('/research-2"'))).not.toContain('target="_blank"')
 })
 
+test('only published 3D Lab cards link directly to the scene, including beyond the carousel', async () => {
+  const base = 'https://assets.example/labs'
+  const labs = entries.slice(0, 6).map((item) => ({
+    ...item,
+    catalogKey: '3-d-lab',
+    labManifestUrl: `${base}/${item.slug}/lab.json`
+  }))
+  result = [
+    ...labs,
+    { ...entries[6], catalogKey: '3-d-lab' },
+    { ...entries[7], catalogKey: 'ai-research', labManifestUrl: `${base}/other/lab.json` },
+    { ...entries[8], catalogKey: 'ai-research' }
+  ]
+  for (const category of [undefined, '3-d-lab']) {
+    const [, grid] = (await render('2', category)).split('aria-label="Use case gallery"')
+    for (const lab of labs) expect(grid).toContain(`href="${base}/${lab.slug}/index.html"`)
+    expect(grid).toContain('href="/open-science/use-cases/research-7"')
+    if (!category) {
+      expect(grid).toContain('href="/open-science/use-cases/research-8"')
+      expect(grid).toContain('href="/open-science/use-cases/research-9"')
+      expect(grid).not.toContain(`${base}/other/index.html`)
+    }
+  }
+})
+
 test('canonicalizes unfiltered batches to their normalized page and preserves category policy', async () => {
   result = entries
   for (const [page, suffix] of [
