@@ -149,6 +149,13 @@ describe('mock development end to end', () => {
       await browserExpect(disclosure).toHaveAttribute('aria-expanded', 'true')
       await browserExpect(instructions).toBeVisible()
       const importText = await instructions.inputValue()
+      expect(importText).toStartWith(
+        `Import "${await dialog.getByRole('heading', { level: 2 }).innerText()}" in AIPOCH Open-Science.`
+      )
+      expect(importText).toContain('then import it and open the research session.')
+      expect(importText).toContain(
+        'https://github.com/aipoch/open-science/blob/main/packages/open-science/CLI.md'
+      )
       expect(importText).toContain('.science')
       expect(importText).not.toMatch(/research prompt|prompt\.txt/i)
       await dialog.getByRole('button', { name: 'Copy import instructions' }).click()

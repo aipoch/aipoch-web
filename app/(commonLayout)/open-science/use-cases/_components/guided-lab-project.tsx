@@ -100,7 +100,7 @@ function ProjectActions({
     }
   }, [downloadUrl, packageInfo.filename, packageInfo.sizeBytes, packageInfo.sha256])
 
-  const agentPrompt = `Open "${title}" in AIPOCH Open-Science. Download ${packageInfo.filename} from ${downloadUrl}, then import it and open the research conversation. If Open-Science is missing, install it from https://aipoch.com/open-science/download.`
+  const agentPrompt = `Import "${title}" in AIPOCH Open-Science. Download ${packageInfo.filename} from ${downloadUrl}, then import it and open the research session. If Open-Science is missing, Read https://github.com/aipoch/open-science/blob/main/packages/open-science/CLI.md and follow the instructions to install and Import in the current agent.`
   const file = session.current?.preparedFile()
   const busy = ['downloading', 'opening', 'sending', 'canceling'].includes(state.phase)
   const total = state.total ?? packageInfo.sizeBytes
