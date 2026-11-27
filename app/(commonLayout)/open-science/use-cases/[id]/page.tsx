@@ -139,12 +139,15 @@ export default async function OpenScienceUseCaseIntroPage({ params }: PageProps)
 
   if (useCase.lab && useCase.package) {
     return (
-      <GuidedLabView
-        key={id}
-        title={useCase.title}
-        lab={useCase.lab}
-        packageInfo={useCase.package}
-      />
+      <>
+        <JsonLd data={buildUseCaseStructuredData(useCase)} />
+        <GuidedLabView
+          key={id}
+          title={useCase.title}
+          lab={useCase.lab}
+          packageInfo={useCase.package}
+        />
+      </>
     )
   }
 

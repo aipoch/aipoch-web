@@ -44,13 +44,13 @@ export default async function BlogPage({ searchParams }: PageProps) {
         position: index + 1,
         item: {
           '@type': 'BlogPosting',
-          '@id': `${SITE_DOMAIN}/blog/${post.slug}`,
+          '@id': `${SITE_DOMAIN}/blog/${post.slug}#article`,
           name: schemaTitle,
           description: schemaDescription,
           image: schemaImage,
           url: `${SITE_DOMAIN}/blog/${post.slug}`,
           datePublished: post.frontmatter.date,
-          author: { '@type': 'Organization', name: post.frontmatter.author, url: SITE_DOMAIN },
+          author: { '@type': 'Organization', name: 'AIPOCH', url: SITE_DOMAIN },
           publisher: {
             '@type': 'Organization',
             name: 'AIPOCH',

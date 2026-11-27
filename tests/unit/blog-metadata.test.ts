@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 const getPostMock = mock()
 
+mock.module('@/service/blog', () => ({ fetchBlogSitemap: async () => [] }))
+
 mock.module('@/lib/blog', () => ({
   extractVideosFromContent: () => [],
   getPost: getPostMock
@@ -95,7 +97,8 @@ describe('blog post metadata', () => {
     const webPageSchema = schemas.find((schema) => schema['@type'] === 'WebPage')
 
     expect(blogPostingSchema?.image).toBe('https://cdn.aipoch.com/uploads/schema-cover.png')
-    expect(articleSchema?.image).toBe('https://cdn.aipoch.com/uploads/schema-cover.png')
+    expect(articleSchema).toBeUndefined()
+    expect(blogPostingSchema?.['@id']).toBe(`${webPageSchema?.url}#article`)
     expect(webPageSchema?.primaryImageOfPage).toEqual({
       '@type': 'ImageObject',
       url: 'https://cdn.aipoch.com/uploads/schema-cover.png'
