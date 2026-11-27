@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 
 const getPostMock = mock()
 
+mock.module('@/service/blog', () => ({ fetchBlogSitemap: async () => [] }))
+
 mock.module('@/lib/blog', () => ({
   extractVideosFromContent: () => [],
   getPost: getPostMock

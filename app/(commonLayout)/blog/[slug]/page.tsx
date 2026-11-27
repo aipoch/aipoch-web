@@ -14,6 +14,7 @@ import { remarkYoutubeThumbnails } from '@/lib/remark-youtube-thumbnails'
 import { staticAsset } from '@/lib/staticAsset'
 import { extractToc } from '@/lib/toc'
 import { extractYouTubeVideoIds } from '@/lib/youtube-video'
+import { fetchBlogSitemap } from '@/service/blog'
 
 export const revalidate = 0 // Disable caching so each refresh fetches the latest data.
 
@@ -144,14 +145,28 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
   const schemaImage = post.frontmatter.imagePath
   const publishedDate = normalizeArticleDate(post.frontmatter.date)
 
+  const author = {
+    '@type': 'Organization',
+    '@id': `${SITE_DOMAIN}/#organization`,
+    name: 'AIPOCH',
+    url: SITE_DOMAIN
+  }
+  const articleId = `${baseUrl}#article`
+  const entries = await fetchBlogSitemap({ baseUrl: `${SITE_DOMAIN}/blog` })
+  const contentDate = normalizeArticleDate(
+    entries.find((entry) => entry.url === baseUrl)?.last_modified
+  )
+  const modifiedDate =
+    contentDate && publishedDate && contentDate > publishedDate ? contentDate : null
   const blogPostingSchema = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
+    '@id': articleId,
     headline: schemaTitle,
     description: schemaDescription,
     mainEntityOfPage: { '@type': 'WebPage', '@id': baseUrl },
     image: schemaImage,
-    author: { '@type': 'Organization', name: post.frontmatter.author, url: SITE_DOMAIN },
+    author,
     publisher: {
       '@type': 'Organization',
       name: 'AIPOCH',
@@ -159,24 +174,9 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     },
     url: baseUrl,
     ...(publishedDate ? { datePublished: publishedDate } : {}),
+    ...(modifiedDate ? { dateModified: modifiedDate } : {}),
     articleSection: post.frontmatter.category,
     wordCount: post.content.split(/\s+/).length
-  }
-
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: schemaTitle,
-    description: schemaDescription,
-    image: schemaImage,
-    author: { '@type': 'Organization', name: post.frontmatter.author, url: SITE_DOMAIN },
-    publisher: {
-      '@type': 'Organization',
-      name: 'AIPOCH',
-      logo: { '@type': 'ImageObject', url: ogImage }
-    },
-    ...(publishedDate ? { datePublished: publishedDate } : {}),
-    mainEntityOfPage: { '@type': 'WebPage', '@id': baseUrl }
   }
 
   const webPageSchema = {
@@ -187,7 +187,8 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
     name: schemaTitle,
     description: schemaDescription,
     ...(publishedDate ? { datePublished: publishedDate } : {}),
-    dateModified: blogArticleLastModified(publishedDate ?? undefined, slug),
+    mainEntity: { '@id': articleId },
+    dateModified: blogArticleLastModified(modifiedDate ?? publishedDate ?? undefined, slug),
     primaryImageOfPage: { '@type': 'ImageObject', url: schemaImage },
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -224,7 +225,6 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
 
   const schemas: Record<string, unknown>[] = [
     blogPostingSchema,
-    articleSchema,
     webPageSchema,
     organizationSchema,
     breadcrumbSchema
@@ -331,10 +331,19 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
                 {post.frontmatter.description}
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium leading-4 text-[#61615c]">
+                <Link href="/" rel="author">
+                  AIPOCH
+                </Link>
+                {modifiedDate && (
+                  <span>
+                    Updated <time dateTime={modifiedDate}>{formatVisibleDate(modifiedDate)}</time>
+                  </span>
+                )}
                 {visiblePublishedDate ? (
                   <>
                     <span className="inline-flex items-center gap-2">
                       <CalendarDays className="size-3 shrink-0" strokeWidth={2} aria-hidden />
+                      Published{' '}
                       <time dateTime={publishedDate ?? undefined}>{visiblePublishedDate}</time>
                     </span>
                     <span aria-hidden>·</span>
